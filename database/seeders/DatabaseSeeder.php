@@ -29,7 +29,16 @@ class DatabaseSeeder extends Seeder
         $this->call(AdminUserSeeder::class);
 
         $registrar->forgetCachedPermissions();
+        $this->call(DemoUsersSeeder::class);
+
+        $registrar->forgetCachedPermissions();
         $this->call(ApprovalFlowSeeder::class);
         $this->call(AidProgramSeeder::class);
+        $this->call(BeneficiaryCategorySeeder::class);
+
+        // Only seed demo data in local environment
+        if (app()->environment('local')) {
+            $this->call(DemoDataSeeder::class);
+        }
     }
 }
