@@ -1,0 +1,214 @@
+<?php
+
+return [
+    'index_title' => 'Beneficiaries',
+    'index_subtitle' => 'Manage beneficiary data and information',
+    'create_title' => 'Add New Beneficiary',
+    'create_subtitle' => 'Fill in the basic and additional information for the beneficiary',
+    'edit_title' => 'Edit Beneficiary Data',
+    'edit_subtitle' => 'Update the beneficiary information',
+    'create_button' => 'New Beneficiary',
+    'search_placeholder' => 'Search by name, ID number or phone...',
+
+    'tab' => [
+        'basic' => 'Basic Information',
+        'contact_work' => 'Contact & Work',
+        'housing_income' => 'Housing & Income',
+        'bank' => 'Bank Details',
+        'categories' => 'Categories',
+        'family' => 'Family Members',
+        'documents' => 'Documents',
+        'activity' => 'Activity Log',
+    ],
+
+    'field_first_name' => 'First Name',
+    'field_second_name' => 'Second Name',
+    'field_third_name' => 'Third Name',
+    'field_last_name' => 'Last Name',
+    'field_full_name' => 'Full Name',
+    'field_id_type' => 'ID Type',
+    'field_national_id' => 'ID Number',
+    'field_nationality' => 'Nationality',
+    'field_birth_date' => 'Date of Birth',
+    'field_gender' => 'Gender',
+    'field_marital_status' => 'Marital Status',
+    'field_family_members_count' => 'Family Members Count',
+    'field_mobile' => 'Mobile Number',
+    'field_occupation' => 'Occupation',
+    'field_employer' => 'Employer',
+    'field_health_status' => 'Health Status',
+    'field_special_needs' => 'Special Needs',
+    'field_housing_type' => 'Housing Type',
+    'field_rent_amount' => 'Monthly Rent Amount',
+    'field_national_address' => 'National Address',
+    'field_city' => 'City',
+    'field_district' => 'District',
+    'field_monthly_income' => 'Monthly Income',
+    'field_bank_name' => 'Bank Name',
+    'field_bank_account_holder' => 'Account Holder Name',
+    'field_iban' => 'IBAN',
+    'field_categories' => 'Categories',
+    'field_status' => 'Beneficiary Status',
+
+    'select_placeholder' => 'Select from list',
+
+    'filter_category' => 'By Category',
+    'filter_status' => 'By Status',
+    'filter_city' => 'By City',
+    'show_trashed' => 'Show Deleted',
+
+    'empty_title' => 'No data available',
+    'empty_description' => 'No beneficiaries have been added yet. Start by adding a new beneficiary.',
+
+    'confirm_delete' => 'Are you sure you want to delete this beneficiary? This action cannot be undone.',
+    'confirm_restore' => 'Do you want to restore this beneficiary\'s data?',
+
+    'bank_hint_keep' => 'Leave the bank details empty to keep the previous data',
+
+    'bank' => [
+        'title' => 'Bank Details',
+        'empty_title' => 'No bank details',
+        'empty_description' => 'No bank details have been added for this beneficiary',
+        'field_bank_name' => 'Bank Name',
+        'field_iban' => 'IBAN',
+        'field_holder' => 'Account Holder Name',
+        'hide_button' => 'Hide Details',
+        'reveal_button' => 'Show Details',
+        'reveal_notice' => 'Bank details are protected. Request additional permissions to view and edit.',
+        'no_permission_notice' => 'You do not have permission to view bank details',
+    ],
+
+    'family' => [
+        'title' => 'Family Members',
+        'add_button' => 'Add Member',
+        'field_name' => 'Name',
+        'field_relation' => 'Relation',
+        'field_birth_date' => 'Date of Birth',
+        'field_health_status' => 'Health Status',
+        'field_education_status' => 'Education Status',
+        'empty_title' => 'No family members',
+        'empty_description' => 'No family members have been added yet',
+        'confirm_delete' => 'Are you sure you want to delete this member?',
+    ],
+
+    'income' => [
+        'title' => 'Income Sources',
+        'add_button' => 'Add Income Source',
+        'field_source_type' => 'Source Type',
+        'field_amount' => 'Monthly Amount',
+        'field_notes' => 'Notes',
+        'empty_title' => 'No income sources',
+        'empty_description' => 'No income sources have been added yet',
+        'total_label' => 'Total Monthly Income',
+        'confirm_delete' => 'Are you sure you want to delete this source?',
+    ],
+
+    'documents' => [
+        'title' => 'Documents',
+        'field_type' => 'Document Type',
+        'upload_label' => 'Upload Document',
+        'upload_hint' => 'Drag file here or click to select',
+        'upload_button' => 'Upload',
+        'download' => 'Download',
+        'confirm_delete' => 'Are you sure you want to delete this document?',
+        'empty_title' => 'No documents',
+        'empty_description' => 'No documents have been uploaded yet',
+    ],
+
+    'activity' => [
+        'title' => 'Activity Log',
+        'empty_title' => 'No activities',
+        'empty_description' => 'No changes have been recorded for this beneficiary',
+        'by' => '— by :actor',
+        'system_actor' => 'System',
+    ],
+
+    'categories' => [
+        'index_title' => 'Beneficiary Categories',
+        'index_subtitle' => 'Manage beneficiary categories',
+        'form_title_create' => 'Add New Category',
+        'form_title_edit' => 'Edit Category',
+        'field_name' => 'Category Name',
+        'field_description' => 'Description',
+        'field_is_active' => 'Active',
+        'empty_title' => 'No categories',
+        'empty_description' => 'No categories have been added yet',
+        'status_active' => 'Active',
+        'status_inactive' => 'Inactive',
+        'table_beneficiary_count' => 'Beneficiaries Count',
+        'confirm_delete' => 'Are you sure you want to delete this category?',
+    ],
+
+    'status' => [
+        'active' => 'Active',
+        'suspended' => 'Suspended',
+        'under_study' => 'Under Study',
+    ],
+
+    'gender' => [
+        'male' => 'Male',
+        'female' => 'Female',
+    ],
+
+    'id_type' => [
+        'national_id' => 'National ID',
+        'iqama' => 'Residence Permit',
+    ],
+
+    'marital_status' => [
+        'single' => 'Single',
+        'married' => 'Married',
+        'divorced' => 'Divorced',
+        'widowed' => 'Widowed',
+    ],
+
+    'housing_type' => [
+        'owned' => 'Owned',
+        'rented' => 'Rented',
+        'shared' => 'Shared',
+        'charity' => 'Charity Housing',
+        'other' => 'Other',
+    ],
+
+    'relation' => [
+        'son' => 'Son',
+        'daughter' => 'Daughter',
+        'wife' => 'Wife',
+        'husband' => 'Husband',
+        'mother' => 'Mother',
+        'father' => 'Father',
+        'brother' => 'Brother',
+        'sister' => 'Sister',
+        'other' => 'Other',
+    ],
+
+    'income_source' => [
+        'salary' => 'Salary',
+        'social_security' => 'Social Security',
+        'retirement' => 'Retirement Pension',
+        'charity_support' => 'Charity Support',
+        'other' => 'Other',
+    ],
+
+    'document_type' => [
+        'national_id_doc' => 'National ID',
+        'property_deed' => 'Property Deed',
+        'rent_contract' => 'Rent Contract',
+        'medical_report' => 'Medical Report',
+        'income_proof' => 'Income Proof',
+        'other' => 'Other',
+    ],
+
+    'messages' => [
+        'saved' => 'Beneficiary data has been saved successfully',
+        'deleted' => 'Beneficiary data has been deleted',
+        'restored' => 'Beneficiary data has been restored',
+        'cannot_manage_bank_data' => 'You do not have permission to manage bank data',
+        'family_member_saved' => 'Family member data has been saved successfully',
+        'family_member_deleted' => 'Family member has been deleted',
+        'income_source_saved' => 'Income source has been saved successfully',
+        'income_source_deleted' => 'Income source has been deleted',
+        'document_uploaded' => 'Document has been uploaded successfully',
+        'document_deleted' => 'Document has been deleted',
+    ],
+];

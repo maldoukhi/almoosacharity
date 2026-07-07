@@ -15,4 +15,6 @@ return [
     'toggle_sidebar' => 'Toggle Sidebar',
     'toggle_theme' => 'Toggle Theme',
     'dash' => '—',
+    'restore' => 'Restore',
+    'view' => 'View',
 ];

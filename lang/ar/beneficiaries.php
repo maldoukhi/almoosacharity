@@ -1,0 +1,214 @@
+<?php
+
+return [
+    'index_title' => 'المستفيدون',
+    'index_subtitle' => 'إدارة بيانات المستفيدين من الإعانات',
+    'create_title' => 'إضافة مستفيد جديد',
+    'create_subtitle' => 'استكمل البيانات الأساسية والإضافية للمستفيد',
+    'edit_title' => 'تعديل بيانات المستفيد',
+    'edit_subtitle' => 'حدّث البيانات المتعلقة بالمستفيد',
+    'create_button' => 'مستفيد جديد',
+    'search_placeholder' => 'ابحث بالاسم أو رقم الهوية أو رقم الجوال...',
+
+    'tab' => [
+        'basic' => 'البيانات الأساسية',
+        'contact_work' => 'التواصل والعمل',
+        'housing_income' => 'السكن والدخل',
+        'bank' => 'البيانات البنكية',
+        'categories' => 'التصنيفات',
+        'family' => 'أفراد الأسرة',
+        'documents' => 'المستندات',
+        'activity' => 'السجل',
+    ],
+
+    'field_first_name' => 'الاسم الأول',
+    'field_second_name' => 'الاسم الثاني',
+    'field_third_name' => 'الاسم الثالث',
+    'field_last_name' => 'اسم العائلة',
+    'field_full_name' => 'الاسم الكامل',
+    'field_id_type' => 'نوع الهوية',
+    'field_national_id' => 'رقم الهوية',
+    'field_nationality' => 'الجنسية',
+    'field_birth_date' => 'تاريخ الميلاد',
+    'field_gender' => 'النوع',
+    'field_marital_status' => 'الحالة الاجتماعية',
+    'field_family_members_count' => 'عدد أفراد الأسرة',
+    'field_mobile' => 'رقم الجوال',
+    'field_occupation' => 'المهنة',
+    'field_employer' => 'جهة العمل',
+    'field_health_status' => 'الحالة الصحية',
+    'field_special_needs' => 'الاحتياجات الخاصة',
+    'field_housing_type' => 'نوع السكن',
+    'field_rent_amount' => 'قيمة الإيجار الشهري',
+    'field_national_address' => 'العنوان الوطني',
+    'field_city' => 'المدينة',
+    'field_district' => 'الحي',
+    'field_monthly_income' => 'الدخل الشهري',
+    'field_bank_name' => 'اسم البنك',
+    'field_bank_account_holder' => 'اسم صاحب الحساب',
+    'field_iban' => 'الآيبان (IBAN)',
+    'field_categories' => 'التصنيفات',
+    'field_status' => 'حالة المستفيد',
+
+    'select_placeholder' => 'اختر من القائمة',
+
+    'filter_category' => 'حسب التصنيف',
+    'filter_status' => 'حسب الحالة',
+    'filter_city' => 'حسب المدينة',
+    'show_trashed' => 'إظهار المحذوفين',
+
+    'empty_title' => 'لا توجد بيانات',
+    'empty_description' => 'لم يتم إضافة أي مستفيدين بعد. ابدأ بإضافة مستفيد جديد.',
+
+    'confirm_delete' => 'هل أنت متأكد من حذف هذا المستفيد؟ لا يمكن التراجع عن هذا الإجراء.',
+    'confirm_restore' => 'هل تريد استرجاع بيانات هذا المستفيد؟',
+
+    'bank_hint_keep' => 'اترك البيانات البنكية فارغة إذا أردت الاحتفاظ بالبيانات السابقة',
+
+    'bank' => [
+        'title' => 'البيانات البنكية',
+        'empty_title' => 'لا توجد بيانات بنكية',
+        'empty_description' => 'لم يتم إضافة بيانات بنكية لهذا المستفيد',
+        'field_bank_name' => 'اسم البنك',
+        'field_iban' => 'الآيبان (IBAN)',
+        'field_holder' => 'اسم صاحب الحساب',
+        'hide_button' => 'إخفاء البيانات',
+        'reveal_button' => 'عرض البيانات',
+        'reveal_notice' => 'البيانات البنكية محمية. اطلب صلاحيات إضافية للعرض والتعديل.',
+        'no_permission_notice' => 'ليس لديك صلاحيات لعرض البيانات البنكية',
+    ],
+
+    'family' => [
+        'title' => 'أفراد الأسرة',
+        'add_button' => 'إضافة فرد',
+        'field_name' => 'الاسم',
+        'field_relation' => 'صلة القرابة',
+        'field_birth_date' => 'تاريخ الميلاد',
+        'field_health_status' => 'الحالة الصحية',
+        'field_education_status' => 'الحالة التعليمية',
+        'empty_title' => 'لا يوجد أفراد أسرة',
+        'empty_description' => 'لم يتم إضافة أفراد أسرة بعد',
+        'confirm_delete' => 'هل أنت متأكد من حذف هذا الفرد؟',
+    ],
+
+    'income' => [
+        'title' => 'مصادر الدخل',
+        'add_button' => 'إضافة مصدر دخل',
+        'field_source_type' => 'نوع المصدر',
+        'field_amount' => 'المبلغ الشهري',
+        'field_notes' => 'ملاحظات',
+        'empty_title' => 'لا توجد مصادر دخل',
+        'empty_description' => 'لم يتم إضافة مصادر دخل بعد',
+        'total_label' => 'إجمالي الدخل الشهري',
+        'confirm_delete' => 'هل أنت متأكد من حذف هذا المصدر؟',
+    ],
+
+    'documents' => [
+        'title' => 'المستندات',
+        'field_type' => 'نوع المستند',
+        'upload_label' => 'رفع مستند',
+        'upload_hint' => 'اسحب الملف هنا أو انقر للاختيار',
+        'upload_button' => 'رفع',
+        'download' => 'تنزيل',
+        'confirm_delete' => 'هل أنت متأكد من حذف هذا المستند؟',
+        'empty_title' => 'لا توجد مستندات',
+        'empty_description' => 'لم يتم رفع أي مستندات بعد',
+    ],
+
+    'activity' => [
+        'title' => 'السجل',
+        'empty_title' => 'لا توجد نشاطات',
+        'empty_description' => 'لم يتم تسجيل أي تغييرات على بيانات هذا المستفيد',
+        'by' => '— بواسطة :actor',
+        'system_actor' => 'النظام',
+    ],
+
+    'categories' => [
+        'index_title' => 'تصنيفات المستفيدين',
+        'index_subtitle' => 'إدارة تصنيفات المستفيدين',
+        'form_title_create' => 'إضافة تصنيف جديد',
+        'form_title_edit' => 'تعديل التصنيف',
+        'field_name' => 'اسم التصنيف',
+        'field_description' => 'الوصف',
+        'field_is_active' => 'مفعّل',
+        'empty_title' => 'لا توجد تصنيفات',
+        'empty_description' => 'لم يتم إضافة أي تصنيفات بعد',
+        'status_active' => 'مفعّل',
+        'status_inactive' => 'معطّل',
+        'table_beneficiary_count' => 'عدد المستفيدين',
+        'confirm_delete' => 'هل أنت متأكد من حذف هذا التصنيف؟',
+    ],
+
+    'status' => [
+        'active' => 'نشط',
+        'suspended' => 'موقوف',
+        'under_study' => 'قيد الدراسة',
+    ],
+
+    'gender' => [
+        'male' => 'ذكر',
+        'female' => 'أنثى',
+    ],
+
+    'id_type' => [
+        'national_id' => 'بطاقة الهوية الوطنية',
+        'iqama' => 'الإقامة',
+    ],
+
+    'marital_status' => [
+        'single' => 'أعزب/عزباء',
+        'married' => 'متزوج/متزوجة',
+        'divorced' => 'مطلق/مطلقة',
+        'widowed' => 'أرمل/أرملة',
+    ],
+
+    'housing_type' => [
+        'owned' => 'مملوك',
+        'rented' => 'مستأجر',
+        'shared' => 'مشترك',
+        'charity' => 'من جهة خيرية',
+        'other' => 'آخر',
+    ],
+
+    'relation' => [
+        'son' => 'الابن',
+        'daughter' => 'الابنة',
+        'wife' => 'الزوجة',
+        'husband' => 'الزوج',
+        'mother' => 'الأم',
+        'father' => 'الأب',
+        'brother' => 'الأخ',
+        'sister' => 'الأخت',
+        'other' => 'آخر',
+    ],
+
+    'income_source' => [
+        'salary' => 'راتب',
+        'social_security' => 'الضمان الاجتماعي',
+        'retirement' => 'معاش تقاعدي',
+        'charity_support' => 'دعم خيري',
+        'other' => 'آخر',
+    ],
+
+    'document_type' => [
+        'national_id_doc' => 'بطاقة الهوية الوطنية',
+        'property_deed' => 'صك العقار',
+        'rent_contract' => 'عقد الإيجار',
+        'medical_report' => 'التقرير الطبي',
+        'income_proof' => 'إثبات الدخل',
+        'other' => 'آخر',
+    ],
+
+    'messages' => [
+        'saved' => 'تم حفظ بيانات المستفيد بنجاح',
+        'deleted' => 'تم حذف بيانات المستفيد',
+        'restored' => 'تم استرجاع بيانات المستفيد',
+        'cannot_manage_bank_data' => 'ليس لديك صلاحيات إدارة البيانات البنكية',
+        'family_member_saved' => 'تم حفظ بيانات الفرد بنجاح',
+        'family_member_deleted' => 'تم حذف الفرد',
+        'income_source_saved' => 'تم حفظ مصدر الدخل بنجاح',
+        'income_source_deleted' => 'تم حذف مصدر الدخل',
+        'document_uploaded' => 'تم رفع المستند بنجاح',
+        'document_deleted' => 'تم حذف المستند',
+    ],
+];

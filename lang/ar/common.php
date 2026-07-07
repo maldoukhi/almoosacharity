@@ -15,4 +15,6 @@ return [
     'toggle_sidebar' => 'تبديل الشريط الجانبي',
     'toggle_theme' => 'تبديل المظهر',
     'dash' => '—',
+    'restore' => 'استرجاع',
+    'view' => 'عرض',
 ];
