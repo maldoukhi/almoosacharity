@@ -14,22 +14,11 @@ enum AidStatus: string
     case Cancelled = 'cancelled';
 
     /**
-     * Human readable label. Hardcoded rather than routed through __():
-     * this phase (3a) owns no resources/views/** or lang/**, mirroring the
-     * precedent set by MessageChannel::label().
+     * Human readable, translated label.
      */
     public function label(): string
     {
-        return match ($this) {
-            self::Draft => 'مسودة',
-            self::Submitted => 'مقدَّمة',
-            self::UnderReview => 'قيد المراجعة',
-            self::Approved => 'معتمدة',
-            self::InDisbursement => 'قيد الصرف',
-            self::Delivered => 'مُسلَّمة',
-            self::Rejected => 'مرفوضة',
-            self::Cancelled => 'ملغاة',
-        };
+        return __('aids.status.'.$this->value);
     }
 
     /**

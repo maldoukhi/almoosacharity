@@ -9,16 +9,10 @@ enum AidProgramType: string
     case Both = 'both';
 
     /**
-     * Human readable label. Hardcoded rather than routed through __():
-     * this phase (3a) owns no resources/views/** or lang/**, mirroring the
-     * precedent set by MessageChannel::label().
+     * Human readable, translated label.
      */
     public function label(): string
     {
-        return match ($this) {
-            self::Cash => 'نقدي',
-            self::InKind => 'عيني',
-            self::Both => 'نقدي وعيني',
-        };
+        return __('aids.program_type.'.$this->value);
     }
 }
