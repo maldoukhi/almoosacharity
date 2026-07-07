@@ -10,6 +10,7 @@ Laravel 13.19 · Livewire 4.3 · Tailwind 4 (Vite plugin) · PHP 8.4 · Pest 4.7
 - `composer dev` — التشغيل المحلي (server + queue + vite)
 - `./vendor/bin/pest` أو `php artisan test` — الاختبارات
 - `npm run build` — الأصول
+- `./vendor/bin/pint` — التنسيق (Laravel Pint)
 
 ## قرارات معمارية (حدّثها عند كل قرار)
 - **قاعدة البيانات**: MySQL 8 للإنتاج؛ SQLite للتطوير المحلي والاختبارات (لا MySQL في بيئة التطوير الحالية). بيئة الاستضافة لم تُحدد → لا اعتماد على Redis؛ queues بـ database driver.
@@ -25,6 +26,13 @@ Laravel 13.19 · Livewire 4.3 · Tailwind 4 (Vite plugin) · PHP 8.4 · Pest 4.7
 - Pest بدل PHPUnit (أزيل phpunit/phpunit من require-dev، والاختبارات بصيغة Pest functions).
 - **spatie/laravel-activitylog 5.0**: النيمسبيس الفعلي للـ trait هو `Spatie\Activitylog\Models\Concerns\LogsActivity` (لا `Spatie\Activitylog\Traits\LogsActivity` كما في نسخ أقدم)، و`LogOptions` في `Spatie\Activitylog\Support\LogOptions`. الميثود الصحيحة لتخطي السجلات الفارغة هي `dontLogEmptyChanges()` (لا `dontSubmitEmptyLogs()`). تغييرات الحقول تُخزَّن في عمود `attribute_changes` وليس `properties`.
 - **spatie/laravel-permission 8.3**: يجب استدعاء `PermissionRegistrar::forgetCachedPermissions()` بين كل seeder (صلاحيات ← أدوار ← مستخدمين) لأن الكاش لا يُنعش تلقائيًا عند إنشاء صلاحيات/أدوار جديدة داخل نفس الطلب.
+- **Gate::before لـ system-admin**: يستثني قدرات `delete` و`suspend` عندما يكون الهدف (subject) هو الفاعل نفسه — منع الحذف/الإيقاف الذاتي. أي قدرة مستقبلية بهذا النمط يجب إضافتها للاستثناء.
+- **إسناد الأدوار**: يتطلب صلاحية `roles.assign`، وإسناد `system-admin` محصور بمن يحمله فقط. مصدر الحقيقة في `app/Actions/Users/AuthorizeRoleAssignment.php` + تحقق ودي في الفورم.
+- **تغيير status**: عبر `UpdateUser` يتطلب Gate `suspend`.
+- **ميدلوير active**: `EnsureUserIsActive` على مجموعة `auth` يطرد المستخدم الموقوف من جلسته الحية.
+- **Password::defaults()**: معرفة في `AppServiceProvider` (min 8 + أحرف وأرقام، بلا `uncompromised` لبيئات بلا إنترنت).
+- **نمط Livewire 4**: فئات في `app/Livewire` + عروض في `resources/views/livewire` منفصلة (لا SFC) — layouts بصيغة `layouts::app` / `layouts::guest`.
+- **forgot-password**: رسالة نجاح عامة دائمًا (منع enumeration) + rate limit 3/دقيقة.
 
 ## قرارات منتج (من المستخدم — المرحلة 0)
 - طرق التسليم الأربع كلها: تحويل بنكي، استلام من المقر، مندوب توصيل، تسليم يدوي ميداني.
@@ -38,9 +46,9 @@ Beneficiaries / Aids / Approvals / Deliveries / Notifications / Confirmations / 
 
 ## حالة المراحل
 - [x] المرحلة 0 — التأسيس: الوكلاء التسعة في `.claude/agents/`، أسئلة القرارات أُجيبت كلها، الألوان استُخرجت واعتُمدت، مشروع Laravel 13.19 + Livewire 4.3 + Tailwind 4 + Pest جاهز، توكنز الهوية في `@theme`، الشعار في `public/images/brand/`، اللغة الافتراضية عربية.
-- [ ] المرحلة 1 — المصادقة والأدوار + نظام التصميم (مكتبة `x-ui.*` + Layout RTL + dark mode)
-  - [x] 1أ — الأساس: هجرة users، Enums (`UserStatus`/`Locale`/`RoleName`)، تحديث User model (HasRoles/SoftDeletes/LogsActivity/HasMedia)، `SetLocale` middleware، aliases ميدلوير Spatie، `Gate::before` لـ system-admin، Seeders (Permission/Role/AdminUser). لم تُبنَ بعد: شاشات/مسارات/Livewire (مرحلة 1ب).
-  - [ ] 1ب — شاشات المصادقة ونظام التصميم
+- [x] **المرحلة 1 — المصادقة والأدوار + نظام التصميم** — مكتملة بالكامل.
+  - [x] 1أ — الأساس: هجرة users، Enums (`UserStatus`/`Locale`/`RoleName`)، تحديث User model (HasRoles/SoftDeletes/LogsActivity/HasMedia)، `SetLocale` middleware، aliases ميدلوير Spatie، `Gate::before` لـ system-admin، Seeders (Permission/Role/AdminUser).
+  - [x] 1ب — شاشات المصادقة (login/forgot/reset يدوي + rate limiting + فحص الموقوف)، إدارة مستخدمين/أدوار بصلاحيات granular، مكتبة x-ui (12 مكون) + layouts RTL ثنائية مع dark mode، ترجمة كاملة ar/en (119+ مفتاح)، 35 اختبار Pest أخضر، مراجعة أمنية أُغلقت ملاحظاتها الحرجة الثلاث.
 - [ ] المرحلة 2 — ملف المستفيد
 - [ ] المرحلة 3 — الإعانات وسير الموافقات
 - [ ] المرحلة 4 — الصرف والتسليم
@@ -70,7 +78,7 @@ Beneficiaries / Aids / Approvals / Deliveries / Notifications / Confirmations / 
 - لاحقًا: `maatwebsite/excel` (استيراد/تصدير) و`barryvdh/laravel-dompdf` (PDF) — تثبت عند مرحلتها.
 
 ## ملاحظات للجلسة القادمة
-- المرحلة التالية: **المرحلة 1** — ابدأ بوكيل architect لخطة المصادقة/الأدوار ونظام التصميم، ثم وزّع على backend-builder وui-builder بالتوازي.
-- لا يوجد starter kit مصادقة مثبت — قرر (أو اسأل) بين بناء شاشات المصادقة يدويًا بـ Livewire أو استخدام Fortify. لا حاجة للتسجيل الذاتي (المستخدمون يُنشأون من لوحة الإدارة).
+- **المرحلة التالية: المرحلة 2 — ملف المستفيد** — ابدأ بوكيل architect لخطة النموذج والعلاقات والحقول، اطلب من المستخدم عينة Excel للاستيراد لمطابقة الأعمدة، ثم وزّع على backend-builder بالتوازي.
+- مستخدم التجربة: `admin@almoosacharity.org` / `password` (متاح للاختبار E2E بالمتصفح).
+- فحص E2E بالمتصفح: متاح عبر Playwright على `/opt/pw-browsers/chromium`.
 - بيئة التطوير هذه بلا MySQL — أبقِ الاختبارات والتشغيل المحلي على SQLite، وتجنب SQL خاص بـ MySQL في migrations.
-- ملف Excel للاستيراد: اطلبه من المستخدم عند بدء المرحلة 2.
