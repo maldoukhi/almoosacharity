@@ -4,8 +4,8 @@ namespace App\Actions\Roles;
 
 use App\Enums\RoleName;
 use Illuminate\Support\Facades\DB;
-use Spatie\Permission\Models\Role;
 use InvalidArgumentException;
+use Spatie\Permission\Models\Role;
 
 class UpdateRole
 {

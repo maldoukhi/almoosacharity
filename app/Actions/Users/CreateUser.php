@@ -16,6 +16,8 @@ class CreateUser
      */
     public function handle(array $data): User
     {
+        app(AuthorizeRoleAssignment::class)->handle($data['role'], null);
+
         return DB::transaction(function () use ($data): User {
             $user = User::create([
                 'name' => $data['name'],

@@ -25,7 +25,7 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/reset-password/{token}', ResetPassword::class)->name('password.reset');
 });
 
-Route::middleware('auth')->group(function (): void {
+Route::middleware(['auth', 'active'])->group(function (): void {
     Route::post('/logout', function (Request $request) {
         Auth::logout();
 

@@ -1,11 +1,13 @@
 <?php
 
+use App\Enums\Locale;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Livewire\Admin\Users\Form as UserForm;
 use App\Livewire\Admin\Users\Index as UserIndex;
 use App\Models\User;
 use Livewire\Livewire;
+use Spatie\Permission\Models\Role;
 
 it('lets an admin create a user with a role and see them in the table with that role', function () {
     asAdmin();
@@ -39,7 +41,7 @@ it('updates a user without changing their password when the password field is le
     $target = User::factory()->create([
         'name' => 'Old Name',
         'status' => UserStatus::Active,
-        'preferred_locale' => \App\Enums\Locale::Ar,
+        'preferred_locale' => Locale::Ar,
     ]);
     $target->assignRole(RoleName::DataEntry->value);
     $originalPasswordHash = $target->password;
@@ -95,26 +97,32 @@ it('lets an admin soft delete a user', function () {
 |--------------------------------------------------------------------------
 |
 | UserPolicy explicitly blocks a user from suspending/deleting their own
-| account, but Gate::before grants system-admin an unconditional pass on
-| every ability (see AppServiceProvider::boot()), so it bypasses this
-| policy entirely for admins. These tests therefore use a custom
-| non-admin role holding users.suspend/users.delete directly, which is
-| the only way to exercise the self-protection check in UserPolicy.
-| See the final report for the system-admin self-suspend/self-delete gap.
+| account. Users\Index::toggleStatus()/delete() also short-circuit with a
+| friendly error toast before ever calling Gate::authorize(), so the
+| assertion here is a dispatched error toast rather than a 403 — see
+| tests/Feature/Security/PrivilegeEscalationTest.php for the equivalent
+| system-admin scenario (which previously bypassed this check entirely via
+| Gate::before, before that gap was closed in AppServiceProvider::boot()).
+|
+| The two tests below additionally assert directly against UserPolicy, so
+| the underlying policy-level denial keeps its own coverage independent of
+| the Livewire-level toast short-circuit.
 */
 it('forbids a non-admin user manager from suspending their own account', function () {
     seedRolesAndPermissions();
 
-    $role = \Spatie\Permission\Models\Role::create(['name' => 'user-manager', 'guard_name' => 'web']);
+    $role = Role::create(['name' => 'user-manager', 'guard_name' => 'web']);
     $role->syncPermissions(['users.view', 'users.suspend']);
 
     $manager = User::factory()->create(['status' => UserStatus::Active]);
     $manager->assignRole($role->name);
     $this->actingAs($manager);
 
+    expect($manager->can('suspend', $manager))->toBeFalse();
+
     Livewire::test(UserIndex::class)
         ->call('toggleStatus', $manager->id)
-        ->assertForbidden();
+        ->assertDispatched('toast', type: 'error');
 
     expect($manager->fresh()->status)->toBe(UserStatus::Active);
 });
@@ -122,16 +130,18 @@ it('forbids a non-admin user manager from suspending their own account', functio
 it('forbids a non-admin user manager from deleting their own account', function () {
     seedRolesAndPermissions();
 
-    $role = \Spatie\Permission\Models\Role::create(['name' => 'user-manager', 'guard_name' => 'web']);
+    $role = Role::create(['name' => 'user-manager', 'guard_name' => 'web']);
     $role->syncPermissions(['users.view', 'users.delete']);
 
     $manager = User::factory()->create(['status' => UserStatus::Active]);
     $manager->assignRole($role->name);
     $this->actingAs($manager);
 
+    expect($manager->can('delete', $manager))->toBeFalse();
+
     Livewire::test(UserIndex::class)
         ->call('delete', $manager->id)
-        ->assertForbidden();
+        ->assertDispatched('toast', type: 'error');
 
     expect(User::find($manager->id))->not->toBeNull();
 });

@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\Roles;
 use App\Actions\Roles\CreateRole;
 use App\Actions\Roles\UpdateRole;
 use App\Enums\RoleName;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
@@ -43,7 +44,7 @@ class Form extends Component
      * Permissions grouped by the first segment of their dot-notation name,
      * e.g. 'users.view' groups under 'users'.
      *
-     * @return array<string, \Illuminate\Support\Collection<int, Permission>>
+     * @return array<string, Collection<int, Permission>>
      */
     #[Computed]
     public function permissionGroups(): array

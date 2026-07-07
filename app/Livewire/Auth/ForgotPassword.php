@@ -3,6 +3,8 @@
 namespace App\Livewire\Auth;
 
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -13,22 +15,39 @@ class ForgotPassword extends Component
 
     public ?string $status = null;
 
+    /**
+     * Always show the same generic success message regardless of whether
+     * the email matches an account, so this form can never be used to
+     * enumerate registered addresses. Throttled at 3 attempts per minute,
+     * keyed by email + client IP, matching the login form's pattern.
+     */
     public function sendResetLink(): void
     {
         $this->validate([
             'email' => ['required', 'string', 'email'],
         ]);
 
-        $status = Password::sendResetLink(['email' => $this->email]);
+        $throttleKey = $this->throttleKey();
 
-        if ($status !== Password::RESET_LINK_SENT) {
-            $this->addError('email', __($status));
+        if (RateLimiter::tooManyAttempts($throttleKey, 3)) {
+            $this->addError('email', __('auth.throttle', [
+                'seconds' => RateLimiter::availableIn($throttleKey),
+            ]));
 
             return;
         }
 
-        $this->status = __($status);
+        RateLimiter::hit($throttleKey, 60);
+
+        Password::sendResetLink(['email' => $this->email]);
+
+        $this->status = __('passwords.sent');
         $this->reset('email');
+    }
+
+    protected function throttleKey(): string
+    {
+        return Str::lower($this->email).'|'.request()->ip();
     }
 
     public function render()

@@ -38,5 +38,8 @@ return [
     'messages' => [
         'status_updated' => 'User status updated successfully.',
         'deleted' => 'User deleted successfully.',
+        'cannot_assign_admin' => 'You cannot assign the system-admin role.',
+        'cannot_assign_roles' => 'You do not have permission to assign roles.',
+        'cannot_modify_self' => 'You cannot perform this action on your own account.',
     ],
 ];

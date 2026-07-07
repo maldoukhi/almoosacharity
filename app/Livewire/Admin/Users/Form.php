@@ -2,11 +2,15 @@
 
 namespace App\Livewire\Admin\Users;
 
+use App\Actions\Users\AuthorizeRoleAssignment;
 use App\Actions\Users\CreateUser;
 use App\Actions\Users\UpdateUser;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
@@ -55,7 +59,7 @@ class Form extends Component
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Role>
+     * @return Collection<int, Role>
      */
     #[Computed]
     public function roles()
@@ -87,8 +91,25 @@ class Form extends Component
             'role' => ['required', 'string', 'exists:roles,name'],
             'status' => ['required', 'string', 'in:active,suspended'],
             'preferred_locale' => ['required', 'string', 'in:ar,en'],
-            'password' => [$isUpdate ? 'nullable' : 'required', 'string', 'min:8', 'confirmed'],
+            'password' => [$isUpdate ? 'nullable' : 'required', 'confirmed', Password::defaults()],
         ]);
+
+        $currentRole = $isUpdate ? $this->user->roles->first()?->name : null;
+
+        try {
+            app(AuthorizeRoleAssignment::class)->handle($validated['role'], $currentRole);
+        } catch (AuthorizationException $exception) {
+            $this->addError('role', $exception->getMessage());
+
+            return;
+        }
+
+        // Re-verified in UpdateUser::handle() as the source of truth; this
+        // check just gives a clean 403 as soon as possible and mirrors the
+        // self-suspend protection enforced by UserPolicy::suspend().
+        if ($isUpdate && $validated['status'] !== $this->user->status->value) {
+            Gate::authorize('suspend', $this->user);
+        }
 
         if ($isUpdate) {
             app(UpdateUser::class)->handle($this->user, $validated);

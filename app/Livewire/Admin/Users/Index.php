@@ -6,6 +6,8 @@ use App\Actions\Users\DeleteUser;
 use App\Actions\Users\ToggleUserStatus;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
@@ -25,6 +27,11 @@ class Index extends Component
 
     #[Url]
     public string $statusFilter = '';
+
+    public function mount(): void
+    {
+        Gate::authorize('viewAny', User::class);
+    }
 
     public function updatingSearch(): void
     {
@@ -68,7 +75,7 @@ class Index extends Component
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, Role>
+     * @return Collection<int, Role>
      */
     #[Computed]
     public function roles()
@@ -80,6 +87,15 @@ class Index extends Component
     {
         $user = User::findOrFail($userId);
 
+        // Second, defense-in-depth layer on top of UserPolicy::suspend() +
+        // the Gate::before self-protection carve-out: never let an actor
+        // suspend their own account, even a system-admin.
+        if ($user->is(Auth::user())) {
+            $this->dispatch('toast', type: 'error', message: __('users.messages.cannot_modify_self'));
+
+            return;
+        }
+
         Gate::authorize('suspend', $user);
 
         app(ToggleUserStatus::class)->handle($user);
@@ -90,6 +106,15 @@ class Index extends Component
     public function delete(int $userId): void
     {
         $user = User::findOrFail($userId);
+
+        // Second, defense-in-depth layer on top of UserPolicy::delete() +
+        // the Gate::before self-protection carve-out: never let an actor
+        // delete their own account, even a system-admin.
+        if ($user->is(Auth::user())) {
+            $this->dispatch('toast', type: 'error', message: __('users.messages.cannot_modify_self'));
+
+            return;
+        }
 
         Gate::authorize('delete', $user);
 

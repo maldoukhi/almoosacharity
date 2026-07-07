@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Roles;
 
 use App\Enums\RoleName;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -10,8 +11,13 @@ use Spatie\Permission\Models\Role;
 
 class Index extends Component
 {
+    public function mount(): void
+    {
+        Gate::authorize('viewAny', Role::class);
+    }
+
     /**
-     * @return \Illuminate\Support\Collection<int, Role>
+     * @return Collection<int, Role>
      */
     #[Computed]
     public function roles()
