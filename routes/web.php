@@ -8,7 +8,11 @@ use App\Livewire\Admin\Users\Index as UserIndex;
 use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\ResetPassword;
+use App\Livewire\Beneficiaries\Form as BeneficiaryForm;
+use App\Livewire\Beneficiaries\Index as BeneficiaryIndex;
+use App\Livewire\Beneficiaries\Show as BeneficiaryShow;
 use App\Livewire\Dashboard;
+use App\Livewire\Settings\Categories\Index as CategoryIndex;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -62,6 +66,17 @@ Route::middleware(['auth', 'active'])->group(function (): void {
             Route::get('/', RoleIndex::class)->name('index')->middleware('permission:roles.view');
             Route::get('/create', RoleForm::class)->name('create')->middleware('permission:roles.create');
             Route::get('/{role}/edit', RoleForm::class)->name('edit')->middleware('permission:roles.update');
+        });
+
+        Route::prefix('beneficiaries')->name('beneficiaries.')->group(function (): void {
+            Route::get('/', BeneficiaryIndex::class)->name('index')->middleware('permission:beneficiaries.view');
+            Route::get('/create', BeneficiaryForm::class)->name('create')->middleware('permission:beneficiaries.create');
+            Route::get('/{beneficiary}/edit', BeneficiaryForm::class)->name('edit')->middleware('permission:beneficiaries.update');
+            Route::get('/{beneficiary}', BeneficiaryShow::class)->name('show')->middleware('permission:beneficiaries.view');
+        });
+
+        Route::prefix('settings')->name('settings.')->group(function (): void {
+            Route::get('/categories', CategoryIndex::class)->name('categories.index')->middleware('permission:settings.view');
         });
     });
 });

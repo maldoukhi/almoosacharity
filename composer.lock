@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "401ae16e7b99526a2cfc19ea716e1cee",
+    "content-hash": "2850cb4c31059d80ec4a0fb37ef0fe85",
     "packages": [
         {
             "name": "brick/math",
@@ -654,6 +654,61 @@
                 }
             ],
             "time": "2025-12-03T09:33:47+00:00"
+        },
+        {
+            "name": "getokta/okta-connect-sdk",
+            "version": "v0.6.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/getokta/okta-connect-sdk.git",
+                "reference": "de6cdf2fc036055e194c23fa34f06b5792126159"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/getokta/okta-connect-sdk/zipball/de6cdf2fc036055e194c23fa34f06b5792126159",
+                "reference": "de6cdf2fc036055e194c23fa34f06b5792126159",
+                "shasum": ""
+            },
+            "require": {
+                "guzzlehttp/guzzle": "^7.8",
+                "php": "^8.2",
+                "psr/http-client": "^1.0",
+                "psr/http-message": "^1.1 || ^2.0"
+            },
+            "require-dev": {
+                "guzzlehttp/promises": "^2.0",
+                "mockery/mockery": "^1.6",
+                "phpunit/phpunit": "^10.5"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-main": "0.6.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Okta\\Connect\\WhatsApp\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "Official PHP SDK for Okta Connect — the omnichannel messaging platform (WhatsApp first; SMS / Email to follow).",
+            "keywords": [
+                "connect",
+                "messaging",
+                "okta",
+                "omnichannel",
+                "sdk",
+                "whatsapp"
+            ],
+            "support": {
+                "issues": "https://github.com/getokta/okta-connect-sdk/issues",
+                "source": "https://github.com/getokta/okta-connect-sdk/tree/v0.6.0"
+            },
+            "time": "2026-06-03T08:10:34+00:00"
         },
         {
             "name": "graham-campbell/result-type",

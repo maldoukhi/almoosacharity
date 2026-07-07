@@ -35,4 +35,33 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Messaging (SMS + WhatsApp) — Phase 5
+    |--------------------------------------------------------------------------
+    |
+    | Sender name/template management lives in an in-app settings screen
+    | (later phase); only secrets and the active driver selection live
+    | here / in .env, per CLAUDE.md.
+    */
+
+    'sms' => [
+        'driver' => env('SMS_DRIVER', 'fake'), // taqnyat|fake
+    ],
+
+    'taqnyat' => [
+        'api_key' => env('TAQNYAT_API_KEY'),
+        'sender' => env('TAQNYAT_SENDER'),
+    ],
+
+    'whatsapp' => [
+        'driver' => env('WHATSAPP_DRIVER', 'fake'), // okta|fake
+    ],
+
+    'okta_connect' => [
+        'base_url' => env('OKTA_CONNECT_BASE_URL'),
+        'token' => env('OKTA_CONNECT_TOKEN'),
+        'channel_id' => env('OKTA_CONNECT_CHANNEL_ID'),
+    ],
+
 ];
