@@ -4,6 +4,7 @@ namespace App\Services\Messaging\Drivers;
 
 use App\Services\Messaging\Contracts\SmsGatewayInterface;
 use App\Services\Messaging\GatewayResponse;
+use App\Support\Settings;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -40,11 +41,17 @@ class TaqnyatSmsGateway implements SmsGatewayInterface
 
     public function send(string $to, string $message): GatewayResponse
     {
+        // Sender name is admin-editable at runtime from the notifications
+        // settings screen (App\Support\Settings), falling back to the
+        // constructor-configured default (config('services.taqnyat.sender')
+        // in the bound singleton) when no override has been saved yet.
+        $sender = app(Settings::class)->get('taqnyat_sender') ?: $this->sender;
+
         $response = Http::withToken($this->apiKey)
             ->acceptJson()
             ->post(rtrim($this->baseUrl, '/').'/v1/messages', [
                 'recipients' => [$to],
-                'sender' => $this->sender,
+                'sender' => $sender,
                 'body' => $message,
                 'smsId' => (string) Str::uuid(),
                 'scheduledDatetime' => '',

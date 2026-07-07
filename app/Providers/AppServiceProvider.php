@@ -3,8 +3,15 @@
 namespace App\Providers;
 
 use App\Enums\RoleName;
+use App\Events\Aids\AidApproved;
+use App\Events\Aids\AidDelivered;
+use App\Events\Aids\AidReadyForCollection;
+use App\Events\Approvals\AidEnteredStage;
+use App\Listeners\NotifyStageApprovers;
+use App\Listeners\SendBeneficiaryAidNotification;
 use App\Models\User;
 use App\Policies\RolePolicy;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -58,5 +65,11 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(function (): Password {
             return Password::min(8)->letters()->numbers();
         });
+
+        // Notifications (Phase 5): beneficiary-facing SMS/WhatsApp on aid
+        // lifecycle events, and in-app + email alerts for the approvers of
+        // whichever stage an aid just entered.
+        Event::listen([AidApproved::class, AidReadyForCollection::class, AidDelivered::class], SendBeneficiaryAidNotification::class);
+        Event::listen(AidEnteredStage::class, NotifyStageApprovers::class);
     }
 }

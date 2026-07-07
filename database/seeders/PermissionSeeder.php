@@ -66,6 +66,9 @@ class PermissionSeeder extends Seeder
         'settings.view',
         'settings.manage',
 
+        // Notifications
+        'notifications.settings.manage',
+
         // Reports
         'reports.view',
         'reports.export',

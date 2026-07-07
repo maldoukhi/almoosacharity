@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -12,7 +13,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable(['name', 'slug', 'is_default', 'is_active', 'description'])]
 class ApprovalFlow extends Model
 {
-    use LogsActivity;
+    use HasFactory, LogsActivity;
 
     /**
      * @return array<string, string>

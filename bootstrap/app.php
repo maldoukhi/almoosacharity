@@ -11,6 +11,12 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 use Spatie\Permission\Middleware\RoleOrPermissionMiddleware;
 
 return Application::configure(basePath: dirname(__DIR__))
+    // Event auto-discovery would register every Listeners/* class a second
+    // time purely from its handle() type-hint, double-firing events that
+    // are also wired explicitly via Event::listen() in AppServiceProvider
+    // (see Notifications, Phase 5). Wiring stays explicit and centralized
+    // there instead.
+    ->withEvents(discover: false)
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         commands: __DIR__.'/../routes/console.php',

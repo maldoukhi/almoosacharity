@@ -23,6 +23,11 @@
     </div>
 
     <div class="flex shrink-0 items-center gap-2">
+        @auth
+            {{-- Notifications bell --}}
+            <livewire:notifications.bell />
+        @endauth
+
         {{-- Language switcher --}}
         <form method="POST" action="{{ route('locale.switch', $otherLocale) }}">
             @csrf

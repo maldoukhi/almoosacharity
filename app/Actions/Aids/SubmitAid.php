@@ -4,6 +4,7 @@ namespace App\Actions\Aids;
 
 use App\Enums\AidStatus;
 use App\Enums\AidType;
+use App\Events\Approvals\AidEnteredStage;
 use App\Exceptions\InvalidAidTransitionException;
 use App\Models\Aid;
 use App\Models\ApprovalFlow;
@@ -49,6 +50,8 @@ class SubmitAid
                 'status' => AidStatus::UnderReview,
                 'submitted_at' => now(),
             ]);
+
+            event(new AidEnteredStage($aid->refresh(), $firstStage));
 
             return $aid->fresh();
         });

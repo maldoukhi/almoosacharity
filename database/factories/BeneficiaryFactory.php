@@ -81,8 +81,9 @@ class BeneficiaryFactory extends Factory
         // Generate 20 random digits using numerify (safer than randomNumber)
         $accountNumber = $this->faker->numerify('####################');
 
-        // Build: account number + SA (will move to end)
-        $rearranged = $accountNumber . '2810'; // SA = 28 10 in numeric form
+        // Build: account number + SA + "00" placeholder for the check
+        // digits (ISO 13616 requires the placeholder before computing).
+        $rearranged = $accountNumber . '281000'; // SA = 28 10, then 00
 
         // Calculate mod 97
         $mod = 0;

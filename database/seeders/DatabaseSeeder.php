@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ApprovalFlowSeeder::class);
         $this->call(AidProgramSeeder::class);
         $this->call(BeneficiaryCategorySeeder::class);
+        $this->call(NotificationTemplateSeeder::class);
 
         // Demo accounts and demo data carry well-known passwords: they must
         // never be created outside the local environment.

@@ -59,7 +59,7 @@
             />
         </div>
 
-        @can('restore', \App\Models\Beneficiary::class)
+        @can('beneficiaries.restore')
             <div class="mt-4 flex items-center justify-end border-t border-gray-100 pt-4 dark:border-white/10">
                 <label class="flex cursor-pointer items-center gap-3 select-none">
                     <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('beneficiaries.show_trashed') }}</span>

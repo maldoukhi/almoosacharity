@@ -4,6 +4,8 @@ namespace App\Actions\Approvals;
 
 use App\Enums\AidStatus;
 use App\Enums\ApprovalAction;
+use App\Events\Aids\AidApproved;
+use App\Events\Approvals\AidEnteredStage;
 use App\Exceptions\InvalidAidTransitionException;
 use App\Models\Aid;
 use App\Models\ApprovalDecision;
@@ -85,6 +87,8 @@ class RecordApprovalDecision
         if ($next) {
             $aid->update(['current_stage_id' => $next->id]);
 
+            event(new AidEnteredStage($aid->refresh(), $next));
+
             return;
         }
 
@@ -95,6 +99,8 @@ class RecordApprovalDecision
             'current_stage_id' => null,
             'decided_at' => now(),
         ]);
+
+        event(new AidApproved($aid->refresh()));
     }
 
     private function applyReject(Aid $aid): void
