@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -248,7 +249,13 @@ class Show extends Component
         ]);
     }
 
-    private function refreshAid(): void
+    /**
+     * Also listens for 'disbursement-updated', dispatched by the nested
+     * Disbursements\Panel component whenever it starts/records/confirms a
+     * disbursement, since that changes this aid's own status.
+     */
+    #[On('disbursement-updated')]
+    public function refreshAid(): void
     {
         $this->aid->refresh();
 

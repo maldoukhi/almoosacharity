@@ -32,6 +32,8 @@ class RoleSeeder extends Seeder
             'surveys.view',
             'surveys.results.view',
             'reports.view',
+            'disbursements.view',
+            'disbursements.manage',
         ]);
 
         $dataEntry = Role::findOrCreate(RoleName::DataEntry->value, 'web');
@@ -43,6 +45,8 @@ class RoleSeeder extends Seeder
             'beneficiaries.bank-data.manage',
             'aids.view',
             'aids.create',
+            'disbursements.view',
+            'disbursements.manage',
         ]);
 
         // Manager: acts on the final stage of the default approval flow.
@@ -56,6 +60,8 @@ class RoleSeeder extends Seeder
             'aids.view-any',
             'reports.view',
             'beneficiaries.view',
+            'disbursements.view',
+            'disbursements.confirm',
         ]);
     }
 }

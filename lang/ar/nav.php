@@ -14,4 +14,6 @@ return [
     'aid_programs' => 'برامج الإعانات',
     'approval_flows' => 'مسارات الموافقات',
     'logout' => 'تسجيل الخروج',
+    'surveys' => 'الاستبيانات',
+    'notification_settings' => 'إعدادات الإشعارات',
 ];

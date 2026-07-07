@@ -133,6 +133,10 @@
 
                 <x-ui.timeline :items="$this->timeline" />
             </x-ui.card>
+
+            @if (in_array($aid->status, [\App\Enums\AidStatus::Approved, \App\Enums\AidStatus::InDisbursement, \App\Enums\AidStatus::Delivered], true))
+                <livewire:disbursements.panel :aid="$aid" :wire:key="'disb-'.$aid->id" />
+            @endif
         </div>
 
         <div class="space-y-6">

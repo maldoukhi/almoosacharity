@@ -40,6 +40,16 @@ return [
             'stage_action_required' => 'Each stage must allow at least one action.',
             'stages_in_use' => 'This flow\'s stages cannot be edited while aids are currently under review within it.',
         ],
+        'disbursement' => [
+            'not_approved' => 'Disbursement can only be started for an approved aid.',
+            'missing_bank_account' => 'Bank transfer cannot be selected because this beneficiary has no IBAN on file.',
+            'not_in_disbursement' => 'Delivery can only be recorded for an aid that is in disbursement.',
+            'not_delivered' => 'Review can only be confirmed after the aid has been delivered.',
+            'already_confirmed' => 'This disbursement\'s review has already been confirmed.',
+            'not_pending_update' => 'Disbursement details can only be edited before delivery is recorded.',
+            'reference_required' => 'A reference/receipt number is required before recording delivery.',
+            'courier_name_required' => 'A courier name is required for the courier delivery method.',
+        ],
     ],
 
 ];

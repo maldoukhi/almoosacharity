@@ -14,4 +14,6 @@ return [
     'aid_programs' => 'Aid Programs',
     'approval_flows' => 'Approval Flows',
     'logout' => 'Logout',
+    'surveys' => 'Surveys',
+    'notification_settings' => 'Notification Settings',
 ];

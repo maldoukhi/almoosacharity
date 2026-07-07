@@ -16,12 +16,17 @@ use App\Livewire\Beneficiaries\Form as BeneficiaryForm;
 use App\Livewire\Beneficiaries\Index as BeneficiaryIndex;
 use App\Livewire\Beneficiaries\Show as BeneficiaryShow;
 use App\Livewire\Dashboard;
+use App\Livewire\Notifications\Index;
 use App\Livewire\Settings\AidPrograms\Form as AidProgramForm;
 use App\Livewire\Settings\AidPrograms\Index as AidProgramIndex;
 use App\Livewire\Settings\ApprovalFlows\Form as ApprovalFlowForm;
 use App\Livewire\Settings\ApprovalFlows\Index as ApprovalFlowIndex;
 use App\Livewire\Settings\Categories\Index as CategoryIndex;
+use App\Livewire\Settings\Notifications\Manage;
+use App\Livewire\Surveys\Builder;
+use App\Livewire\Surveys\Results;
 use App\Models\Beneficiary;
+use App\Models\Disbursement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -51,6 +56,8 @@ Route::middleware(['auth', 'active'])->group(function (): void {
     })->name('logout');
 
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
+
+    Route::get('/notifications', Index::class)->name('notifications.index');
 
     Route::post('/locale/{locale}', function (Request $request, string $locale) {
         if (! in_array($locale, array_column(Locale::cases(), 'value'), true)) {
@@ -97,8 +104,16 @@ Route::middleware(['auth', 'active'])->group(function (): void {
             Route::get('/{beneficiary}', BeneficiaryShow::class)->name('show')->middleware('permission:beneficiaries.view');
         });
 
+        Route::prefix('surveys')->name('surveys.')->group(function (): void {
+            Route::get('/', App\Livewire\Surveys\Index::class)->name('index')->middleware('permission:surveys.view');
+            Route::get('/create', Builder::class)->name('create')->middleware('permission:surveys.manage');
+            Route::get('/{survey}/edit', Builder::class)->name('edit')->middleware('permission:surveys.manage');
+            Route::get('/{survey}/results', Results::class)->name('results')->middleware('permission:surveys.results.view');
+        });
+
         Route::prefix('settings')->name('settings.')->group(function (): void {
             Route::get('/categories', CategoryIndex::class)->name('categories.index')->middleware('permission:settings.view');
+            Route::get('/notifications', Manage::class)->name('notifications.index')->middleware('permission:notifications.settings.manage');
 
             Route::prefix('aid-programs')->name('aid-programs.')->group(function (): void {
                 Route::get('/', AidProgramIndex::class)->name('index')->middleware('permission:settings.manage');
@@ -124,4 +139,14 @@ Route::middleware(['auth', 'active'])->group(function (): void {
     Route::prefix('approvals')->name('approvals.')->group(function (): void {
         Route::get('/inbox', ApprovalsInbox::class)->name('inbox')->middleware('permission:approvals.view');
     });
+
+    Route::get('/disbursements/{disbursement}/proof', function (Disbursement $disbursement) {
+        Gate::authorize('view', $disbursement);
+
+        $media = $disbursement->getFirstMedia('delivery_proof');
+
+        abort_unless($media !== null, 404);
+
+        return response()->download($media->getPath(), $media->file_name);
+    })->name('disbursements.proof.download')->middleware('permission:disbursements.view');
 });

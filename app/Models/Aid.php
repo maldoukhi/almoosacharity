@@ -5,9 +5,11 @@ namespace App\Models;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -19,7 +21,7 @@ use Spatie\Activitylog\Support\LogOptions;
 ])]
 class Aid extends Model
 {
-    use LogsActivity, SoftDeletes;
+    use HasFactory, LogsActivity, SoftDeletes;
 
     /**
      * @return array<string, string>
@@ -105,5 +107,13 @@ class Aid extends Model
     public function decisions(): HasMany
     {
         return $this->hasMany(ApprovalDecision::class)->latest('decided_at');
+    }
+
+    /**
+     * @return HasOne<Disbursement, $this>
+     */
+    public function disbursement(): HasOne
+    {
+        return $this->hasOne(Disbursement::class);
     }
 }
