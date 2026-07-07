@@ -73,6 +73,48 @@
             </a>
         @endcan
 
+        @can('aids.view')
+            <a
+                href="{{ route('aids.index') }}"
+                wire:navigate
+                title="{{ __('nav.aids') }}"
+                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 90ms"
+                @class([
+                    'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
+                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('aids.*'),
+                    'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('aids.*'),
+                ])
+            >
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25-2.25m-2.25 2.25V6.75m-8.25.75h16.5m-9-3H12a2.25 2.25 0 0 0-2.25 2.25v.75h4.5v-.75A2.25 2.25 0 0 0 12 3.75Z" />
+                </svg>
+                <span x-show="! sidebarCollapsed" x-transition.opacity.duration.150ms class="truncate">
+                    {{ __('nav.aids') }}
+                </span>
+            </a>
+        @endcan
+
+        @can('approvals.view')
+            <a
+                href="{{ route('approvals.inbox') }}"
+                wire:navigate
+                title="{{ __('nav.approvals_inbox') }}"
+                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 100ms"
+                @class([
+                    'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
+                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('approvals.*'),
+                    'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('approvals.*'),
+                ])
+            >
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <span x-show="! sidebarCollapsed" x-transition.opacity.duration.150ms class="truncate">
+                    {{ __('nav.approvals_inbox') }}
+                </span>
+            </a>
+        @endcan
+
         @can('users.view')
             <a
                 href="{{ route('admin.users.index') }}"
@@ -141,6 +183,48 @@
                 </svg>
                 <span x-show="! sidebarCollapsed" x-transition.opacity.duration.150ms class="truncate">
                     {{ __('nav.categories') }}
+                </span>
+            </a>
+        @endcan
+
+        @can('settings.manage')
+            <a
+                href="{{ route('admin.settings.aid-programs.index') }}"
+                wire:navigate
+                title="{{ __('nav.aid_programs') }}"
+                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 260ms"
+                @class([
+                    'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
+                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.settings.aid-programs.*'),
+                    'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.settings.aid-programs.*'),
+                ])
+            >
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5m6 4.125 2.25 2.25m0 0 2.25-2.25m-2.25 2.25V6.75m-8.25.75h16.5m-9-3H12a2.25 2.25 0 0 0-2.25 2.25v.75h4.5v-.75A2.25 2.25 0 0 0 12 3.75Z" />
+                </svg>
+                <span x-show="! sidebarCollapsed" x-transition.opacity.duration.150ms class="truncate">
+                    {{ __('nav.aid_programs') }}
+                </span>
+            </a>
+        @endcan
+
+        @can('approvals.configure')
+            <a
+                href="{{ route('admin.settings.approval-flows.index') }}"
+                wire:navigate
+                title="{{ __('nav.approval_flows') }}"
+                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 280ms"
+                @class([
+                    'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
+                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.settings.approval-flows.*'),
+                    'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.settings.approval-flows.*'),
+                ])
+            >
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                <span x-show="! sidebarCollapsed" x-transition.opacity.duration.150ms class="truncate">
+                    {{ __('nav.approval_flows') }}
                 </span>
             </a>
         @endcan
