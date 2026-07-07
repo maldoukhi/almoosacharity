@@ -213,6 +213,71 @@
                     @endif
                 </div>
             </x-ui.card>
+
+            @if (in_array($aid->status, [\App\Enums\AidStatus::Delivered, \App\Enums\AidStatus::Confirmed], true))
+                <x-ui.card>
+                    <x-slot:header>
+                        <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('confirmations.tracking_title') }}</h2>
+                    </x-slot:header>
+
+                    @if ($this->confirmation)
+                        <ul class="space-y-3 text-sm">
+                            <li class="flex items-center justify-between gap-3">
+                                <span class="text-gray-500 dark:text-gray-400">{{ __('confirmations.tracking_sent_at') }}</span>
+                                @if ($this->confirmation->sent_at)
+                                    <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ $this->confirmation->sent_at->translatedFormat('Y/m/d H:i') }}</span>
+                                @else
+                                    <span class="text-gray-400 dark:text-gray-500">{{ __('confirmations.tracking_not_sent') }}</span>
+                                @endif
+                            </li>
+
+                            <li class="flex items-center justify-between gap-3">
+                                <span class="text-gray-500 dark:text-gray-400">{{ __('confirmations.tracking_opened_at') }}</span>
+                                @if ($this->confirmation->opened_at)
+                                    <span class="font-medium tabular-nums text-gray-900 dark:text-white">{{ $this->confirmation->opened_at->translatedFormat('Y/m/d H:i') }}</span>
+                                @else
+                                    <span class="text-gray-400 dark:text-gray-500">{{ __('confirmations.tracking_not_opened') }}</span>
+                                @endif
+                            </li>
+
+                            <li class="flex items-center justify-between gap-3">
+                                <span class="text-gray-500 dark:text-gray-400">{{ __('confirmations.tracking_confirmed_at') }}</span>
+                                @if ($this->confirmation->confirmed_at)
+                                    <x-ui.badge color="delivered">{{ $this->confirmation->confirmed_at->translatedFormat('Y/m/d H:i') }}</x-ui.badge>
+                                @else
+                                    <span class="text-gray-400 dark:text-gray-500">{{ __('confirmations.tracking_not_confirmed') }}</span>
+                                @endif
+                            </li>
+
+                            @if ($this->confirmation->confirmed_ip)
+                                <li class="text-xs text-gray-400 dark:text-gray-500">
+                                    {{ __('confirmations.tracking_confirmed_ip', ['ip' => $this->confirmation->confirmed_ip]) }}
+                                </li>
+                            @endif
+
+                            @if ($this->confirmation->reminder_sent_at)
+                                <li class="text-xs text-gray-400 dark:text-gray-500">
+                                    {{ __('confirmations.tracking_reminder_sent_at') }} &middot; {{ $this->confirmation->reminder_sent_at->translatedFormat('Y/m/d H:i') }}
+                                </li>
+                            @endif
+                        </ul>
+
+                        @if ($this->canResendConfirmation && ! $this->confirmation->isConfirmed())
+                            <x-ui.button
+                                type="button"
+                                variant="ghost"
+                                class="mt-4 w-full"
+                                wire:click="resendConfirmation"
+                                wire:confirm="{{ __('confirmations.confirm_resend') }}"
+                            >
+                                {{ __('confirmations.resend_button') }}
+                            </x-ui.button>
+                        @endif
+                    @else
+                        <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('confirmations.tracking_no_confirmation_yet') }}</p>
+                    @endif
+                </x-ui.card>
+            @endif
         </div>
     </div>
 </div>

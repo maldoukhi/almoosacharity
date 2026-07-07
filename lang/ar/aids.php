@@ -76,6 +76,7 @@ return [
         'approved' => 'معتمدة',
         'in_disbursement' => 'قيد الصرف',
         'delivered' => 'مُسلَّمة',
+        'confirmed' => 'مؤكَّدة الاستلام',
         'rejected' => 'مرفوضة',
         'cancelled' => 'ملغاة',
     ],

@@ -116,4 +116,15 @@ class Aid extends Model
     {
         return $this->hasOne(Disbursement::class);
     }
+
+    /**
+     * The single beneficiary delivery-confirmation-link record for this
+     * aid (phase 6b) — see {@see AidConfirmation}.
+     *
+     * @return HasOne<AidConfirmation, $this>
+     */
+    public function confirmation(): HasOne
+    {
+        return $this->hasOne(AidConfirmation::class);
+    }
 }

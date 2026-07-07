@@ -76,6 +76,7 @@ return [
         'approved' => 'Approved',
         'in_disbursement' => 'In Disbursement',
         'delivered' => 'Delivered',
+        'confirmed' => 'Receipt Confirmed',
         'rejected' => 'Rejected',
         'cancelled' => 'Cancelled',
     ],

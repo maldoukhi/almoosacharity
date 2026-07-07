@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['survey_id', 'aid_id', 'beneficiary_id', 'submitted_at', 'ip'])]
+#[Fillable(['survey_id', 'aid_id', 'beneficiary_id', 'aid_confirmation_id', 'submitted_at', 'ip'])]
 class SurveyResponse extends Model
 {
     /**
@@ -42,6 +42,18 @@ class SurveyResponse extends Model
     public function beneficiary(): BelongsTo
     {
         return $this->belongsTo(Beneficiary::class);
+    }
+
+    /**
+     * The delivery-confirmation link this response was submitted through,
+     * when it came from the public post-confirmation survey step (phase
+     * 6b) rather than any other channel.
+     *
+     * @return BelongsTo<AidConfirmation, $this>
+     */
+    public function aidConfirmation(): BelongsTo
+    {
+        return $this->belongsTo(AidConfirmation::class);
     }
 
     /**

@@ -10,6 +10,7 @@ enum AidStatus: string
     case Approved = 'approved';
     case InDisbursement = 'in_disbursement';
     case Delivered = 'delivered';
+    case Confirmed = 'confirmed';
     case Rejected = 'rejected';
     case Cancelled = 'cancelled';
 
@@ -32,7 +33,7 @@ enum AidStatus: string
             self::Draft, self::Cancelled => 'draft',
             self::Submitted, self::UnderReview => 'review',
             self::Approved, self::InDisbursement => 'approved',
-            self::Delivered => 'delivered',
+            self::Delivered, self::Confirmed => 'delivered',
             self::Rejected => 'rejected',
         };
     }
@@ -52,7 +53,8 @@ enum AidStatus: string
             self::UnderReview => [self::Approved, self::Rejected, self::Draft, self::Cancelled],
             self::Approved => [self::InDisbursement],
             self::InDisbursement => [self::Delivered],
-            self::Delivered, self::Rejected, self::Cancelled => [],
+            self::Delivered => [self::Confirmed],
+            self::Confirmed, self::Rejected, self::Cancelled => [],
         };
     }
 
@@ -62,9 +64,13 @@ enum AidStatus: string
     }
 
     /**
-     * Rejected/Cancelled are truly terminal states. Delivered is
-     * intentionally not final: it awaits the beneficiary delivery
-     * confirmation flow added in phase 6.
+     * Rejected/Cancelled are the failure/abort terminal states this method
+     * has always tracked (kept as-is: nothing outside this enum currently
+     * calls isFinal(), and Confirmed — the successful-completion terminal
+     * state added in phase 6 — is deliberately not folded into it, since
+     * it is a different kind of "done" than an aborted aid). Delivered
+     * itself is still not final: it awaits the beneficiary delivery
+     * confirmation flow to reach Confirmed.
      */
     public function isFinal(): bool
     {

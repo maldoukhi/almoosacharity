@@ -4,6 +4,7 @@ namespace App\Actions\Surveys;
 
 use App\Enums\SurveyQuestionType;
 use App\Models\Aid;
+use App\Models\AidConfirmation;
 use App\Models\Beneficiary;
 use App\Models\Survey;
 use App\Models\SurveyResponse;
@@ -21,8 +22,14 @@ class RecordSurveyResponse
      *
      * @param  array<int, mixed>  $answers  keyed by survey_question_id
      */
-    public function handle(Survey $survey, array $answers, ?Aid $aid, ?Beneficiary $beneficiary, ?string $ip): SurveyResponse
-    {
+    public function handle(
+        Survey $survey,
+        array $answers,
+        ?Aid $aid,
+        ?Beneficiary $beneficiary,
+        ?string $ip,
+        ?AidConfirmation $aidConfirmation = null,
+    ): SurveyResponse {
         $questions = $survey->questions()->orderBy('position')->get();
 
         $validatedValues = [];
@@ -43,11 +50,12 @@ class RecordSurveyResponse
             $validatedValues[$question->id] = $validator->validated()['value'] ?? null;
         }
 
-        return DB::transaction(function () use ($survey, $questions, $validatedValues, $aid, $beneficiary, $ip): SurveyResponse {
+        return DB::transaction(function () use ($survey, $questions, $validatedValues, $aid, $beneficiary, $ip, $aidConfirmation): SurveyResponse {
             $response = SurveyResponse::create([
                 'survey_id' => $survey->id,
                 'aid_id' => $aid?->id,
                 'beneficiary_id' => $beneficiary?->id,
+                'aid_confirmation_id' => $aidConfirmation?->id,
                 'submitted_at' => now(),
                 'ip' => $ip,
             ]);

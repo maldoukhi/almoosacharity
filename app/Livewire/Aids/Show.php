@@ -5,11 +5,14 @@ namespace App\Livewire\Aids;
 use App\Actions\Aids\CancelAid;
 use App\Actions\Aids\SubmitAid;
 use App\Actions\Approvals\RecordApprovalDecision;
+use App\Actions\Confirmations\ResendConfirmationLink;
 use App\Enums\AidStatus;
 use App\Enums\ApprovalAction;
 use App\Enums\RoleName;
+use App\Exceptions\Confirmations\AidConfirmationException;
 use App\Exceptions\InvalidAidTransitionException;
 use App\Models\Aid;
+use App\Models\AidConfirmation;
 use App\Models\ApprovalDecision;
 use App\Models\ApprovalFlow;
 use App\Models\ApprovalFlowStage;
@@ -219,6 +222,46 @@ class Show extends Component
         }));
     }
 
+    /**
+     * The aid's single delivery-confirmation-link record, once its
+     * disbursement has been recorded as delivered (phase 6b) — null
+     * before that point.
+     */
+    #[Computed]
+    public function confirmation(): ?AidConfirmation
+    {
+        return $this->aid->confirmation;
+    }
+
+    #[Computed]
+    public function canResendConfirmation(): bool
+    {
+        return $this->confirmation !== null && Gate::allows('resend', $this->confirmation);
+    }
+
+    public function resendConfirmation(): void
+    {
+        $confirmation = $this->confirmation;
+
+        if (! $confirmation) {
+            abort(404);
+        }
+
+        Gate::authorize('resend', $confirmation);
+
+        try {
+            app(ResendConfirmationLink::class)->handle($confirmation, Auth::user());
+        } catch (AidConfirmationException|AuthorizationException $exception) {
+            $this->dispatch('toast', type: 'error', message: $exception->getMessage());
+
+            return;
+        }
+
+        $this->dispatch('toast', type: 'success', message: __('confirmations.messages.resent'));
+
+        $this->refreshAid();
+    }
+
     public function cancel(): void
     {
         Gate::authorize('cancel', $this->aid);
@@ -246,6 +289,7 @@ class Show extends Component
             'decisions.user',
             'createdBy',
             'approvalFlow.stages',
+            'confirmation',
         ]);
     }
 
@@ -270,6 +314,8 @@ class Show extends Component
             $this->canSubmit,
             $this->canCancel,
             $this->latestReturnNote,
+            $this->confirmation,
+            $this->canResendConfirmation,
         );
     }
 

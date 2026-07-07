@@ -7,6 +7,7 @@ use App\Events\Aids\AidApproved;
 use App\Events\Aids\AidDelivered;
 use App\Events\Aids\AidReadyForCollection;
 use App\Events\Approvals\AidEnteredStage;
+use App\Listeners\CreateConfirmationOnDelivery;
 use App\Listeners\NotifyStageApprovers;
 use App\Listeners\SendBeneficiaryAidNotification;
 use App\Models\User;
@@ -71,5 +72,6 @@ class AppServiceProvider extends ServiceProvider
         // whichever stage an aid just entered.
         Event::listen([AidApproved::class, AidReadyForCollection::class, AidDelivered::class], SendBeneficiaryAidNotification::class);
         Event::listen(AidEnteredStage::class, NotifyStageApprovers::class);
+        Event::listen(AidDelivered::class, CreateConfirmationOnDelivery::class);
     }
 }
