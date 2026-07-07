@@ -75,7 +75,8 @@ final class BeneficiariesReport implements Report
     {
         return [
             $row->full_name,
-            $row->national_id,
+            // Partial mask: keep the first and last two digits only.
+            substr((string) $row->national_id, 0, 2).'••••••'.substr((string) $row->national_id, -2),
             $row->mobile,
             $row->city,
             $row->categories->pluck('name')->implode('، '),

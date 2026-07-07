@@ -32,6 +32,7 @@ final class AidsReport implements Report
             ->with([
                 'beneficiary:id,first_name,second_name,third_name,last_name',
                 'program:id,name',
+                'items:id,aid_id,quantity,estimated_value',
             ])
             ->when($this->filter->from, fn (Builder $q) => $q->whereDate('created_at', '>=', $this->filter->from))
             ->when($this->filter->to, fn (Builder $q) => $q->whereDate('created_at', '<=', $this->filter->to))

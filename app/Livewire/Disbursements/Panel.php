@@ -13,6 +13,7 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -26,6 +27,7 @@ class Panel extends Component
 {
     use WithFileUploads;
 
+    #[Locked]
     public Aid $aid;
 
     public string $method = '';
