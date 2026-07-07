@@ -29,5 +29,7 @@ class DatabaseSeeder extends Seeder
         $this->call(AdminUserSeeder::class);
 
         $registrar->forgetCachedPermissions();
+        $this->call(ApprovalFlowSeeder::class);
+        $this->call(AidProgramSeeder::class);
     }
 }

@@ -44,5 +44,18 @@ class RoleSeeder extends Seeder
             'aids.view',
             'aids.create',
         ]);
+
+        // Manager: acts on the final stage of the default approval flow.
+        // No approvals.configure — workflow configuration stays reserved
+        // for system-admin.
+        $manager = Role::findOrCreate(RoleName::Manager->value, 'web');
+        $manager->syncPermissions([
+            'approvals.view',
+            'approvals.act',
+            'aids.view',
+            'aids.view-any',
+            'reports.view',
+            'beneficiaries.view',
+        ]);
     }
 }

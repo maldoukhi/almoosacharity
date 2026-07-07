@@ -7,6 +7,7 @@ enum RoleName: string
     case SystemAdmin = 'system-admin';
     case SocialResearcher = 'social-researcher';
     case DataEntry = 'data-entry';
+    case Manager = 'manager';
 
     /**
      * Human readable, translated label.
