@@ -1,0 +1,94 @@
+@import 'tailwindcss';
+
+@import '@fontsource/ibm-plex-sans-arabic/300.css';
+@import '@fontsource/ibm-plex-sans-arabic/400.css';
+@import '@fontsource/ibm-plex-sans-arabic/500.css';
+@import '@fontsource/ibm-plex-sans-arabic/600.css';
+@import '@fontsource/ibm-plex-sans-arabic/700.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+@source '../../app/Livewire/**/*.php';
+
+/* Dark mode via .dark class on <html> (user toggle), not OS preference alone */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+    /* ==== هوية جمعية الموسى الخيرية — Almoosa Charity brand tokens ====
+       Primary  : petrol/teal  #1C545E (dominant site + logo color)
+       Secondary: green        #85BF40 (logo green)
+       Accent   : warm sand    #EAB977 (site --secondary-color)          */
+
+    --color-primary-50: #eef6f7;
+    --color-primary-100: #d5e8ea;
+    --color-primary-200: #add1d6;
+    --color-primary-300: #7fb4bc;
+    --color-primary-400: #4f919c;
+    --color-primary-500: #2f707c;
+    --color-primary-600: #235d68;
+    --color-primary-700: #1c545e;
+    --color-primary-800: #16424a;
+    --color-primary-900: #113239;
+    --color-primary-950: #0a2126;
+    --color-primary: #1c545e;
+
+    --color-secondary-50: #f4faeb;
+    --color-secondary-100: #e5f3d2;
+    --color-secondary-200: #cce7aa;
+    --color-secondary-300: #afd87d;
+    --color-secondary-400: #97cb58;
+    --color-secondary-500: #85bf40;
+    --color-secondary-600: #6ca02f;
+    --color-secondary-700: #547d26;
+    --color-secondary-800: #44631f;
+    --color-secondary-900: #39531c;
+    --color-secondary-950: #1d2d0c;
+    --color-secondary: #85bf40;
+
+    --color-accent-50: #fdf8f0;
+    --color-accent-100: #f9ecd9;
+    --color-accent-200: #f3d9b3;
+    --color-accent-300: #eab977;
+    --color-accent-400: #e3a557;
+    --color-accent-500: #da8f3a;
+    --color-accent-600: #c97729;
+    --color-accent-700: #a75e23;
+    --color-accent-800: #864b22;
+    --color-accent-900: #6d3e1f;
+    --color-accent-950: #3a1f0e;
+    --color-accent: #eab977;
+
+    /* ==== Semantic status colors — aid workflow (fixed across the system) ====
+       draft: gray · submitted/review: amber · approved: green
+       rejected: red · delivered/confirmed: dark brand green            */
+    --color-status-draft: #6b7280;
+    --color-status-review: #d97706;
+    --color-status-approved: #16a34a;
+    --color-status-rejected: #dc2626;
+    --color-status-delivered: #44631f;
+
+    /* ==== Typography ==== */
+    --font-sans: 'IBM Plex Sans Arabic', ui-sans-serif, system-ui, sans-serif,
+        'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+    /* ==== Shape & elevation ==== */
+    --radius-brand: 0.75rem;
+    --shadow-card: 0 1px 3px 0 rgb(10 33 38 / 0.08), 0 1px 2px -1px rgb(10 33 38 / 0.08);
+}
+
+@layer base {
+    html {
+        font-feature-settings: 'tnum' on; /* tabular numerals for financial tables */
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
