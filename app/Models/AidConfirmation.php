@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Actions\Confirmations\ConfirmAidReceipt;
 use App\Actions\Confirmations\CreateAidConfirmation;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -27,7 +28,7 @@ use Spatie\Activitylog\Support\LogOptions;
 ])]
 class AidConfirmation extends Model
 {
-    use LogsActivity;
+    use HasFactory, LogsActivity;
 
     /**
      * @return array<string, string>
