@@ -17,4 +17,6 @@ return [
     'dash' => '—',
     'restore' => 'استرجاع',
     'view' => 'عرض',
+    'active' => 'نشط',
+    'inactive' => 'معطل',
 ];

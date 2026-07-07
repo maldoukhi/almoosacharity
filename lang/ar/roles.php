@@ -5,6 +5,7 @@ return [
         'system-admin' => 'مدير النظام',
         'social-researcher' => 'باحث اجتماعي',
         'data-entry' => 'إدخال بيانات',
+        'manager' => 'المدير',
     ],
     'field_name' => 'اسم الدور',
     'field_permissions' => 'الصلاحيات',

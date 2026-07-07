@@ -5,6 +5,7 @@ return [
         'system-admin' => 'System Admin',
         'social-researcher' => 'Social Researcher',
         'data-entry' => 'Data Entry',
+        'manager' => 'Manager',
     ],
     'field_name' => 'Role Name',
     'field_permissions' => 'Permissions',

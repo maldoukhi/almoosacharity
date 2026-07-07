@@ -17,4 +17,6 @@ return [
     'dash' => '—',
     'restore' => 'Restore',
     'view' => 'View',
+    'active' => 'Active',
+    'inactive' => 'Inactive',
 ];
