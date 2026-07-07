@@ -29,15 +29,15 @@ class DatabaseSeeder extends Seeder
         $this->call(AdminUserSeeder::class);
 
         $registrar->forgetCachedPermissions();
-        $this->call(DemoUsersSeeder::class);
-
-        $registrar->forgetCachedPermissions();
         $this->call(ApprovalFlowSeeder::class);
         $this->call(AidProgramSeeder::class);
         $this->call(BeneficiaryCategorySeeder::class);
 
-        // Only seed demo data in local environment
+        // Demo accounts and demo data carry well-known passwords: they must
+        // never be created outside the local environment.
         if (app()->environment('local')) {
+            $registrar->forgetCachedPermissions();
+            $this->call(DemoUsersSeeder::class);
             $this->call(DemoDataSeeder::class);
         }
     }

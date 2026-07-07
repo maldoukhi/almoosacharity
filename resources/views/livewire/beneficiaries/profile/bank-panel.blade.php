@@ -13,11 +13,11 @@
             <div>
                 <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('beneficiaries.bank.field_iban') }}</dt>
                 <dd class="mt-1 font-mono text-sm tabular-nums text-gray-900 dark:text-white" dir="ltr">
-                    {{ $revealed ? $beneficiary->iban : $beneficiary->maskedIban() }}
+                    {{ $revealed && $this->canView ? $ibanReveal : $this->maskedIban }}
                 </dd>
             </div>
 
-            @if ($revealed)
+            @if ($revealed && $this->canView)
                 <div
                     x-data
                     x-transition:enter="transition ease-out duration-200"
@@ -25,7 +25,7 @@
                     x-transition:enter-end="opacity-100"
                 >
                     <dt class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('beneficiaries.bank.field_holder') }}</dt>
-                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $beneficiary->bank_account_holder }}</dd>
+                    <dd class="mt-1 text-sm text-gray-900 dark:text-white">{{ $holderReveal }}</dd>
                 </div>
             @endif
         </div>

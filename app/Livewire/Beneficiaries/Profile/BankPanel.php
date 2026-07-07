@@ -7,20 +7,28 @@ use App\Models\Beneficiary;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
  * "Bank data" tab of the beneficiary profile: masked by default, with an
  * explicit, audited reveal action gated by beneficiaries.bank-data.view.
+ *
+ * The reveal state and decrypted values are #[Locked]: they may only be
+ * set server-side through reveal(), which authorizes and audits the
+ * access — never via client-side property manipulation.
  */
 class BankPanel extends Component
 {
     public Beneficiary $beneficiary;
 
+    #[Locked]
     public bool $revealed = false;
 
+    #[Locked]
     public ?string $ibanReveal = null;
 
+    #[Locked]
     public ?string $holderReveal = null;
 
     public function mount(Beneficiary $beneficiary): void

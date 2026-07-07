@@ -21,9 +21,12 @@ use App\Livewire\Settings\AidPrograms\Index as AidProgramIndex;
 use App\Livewire\Settings\ApprovalFlows\Form as ApprovalFlowForm;
 use App\Livewire\Settings\ApprovalFlows\Index as ApprovalFlowIndex;
 use App\Livewire\Settings\Categories\Index as CategoryIndex;
+use App\Models\Beneficiary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 Route::get('/', function () {
     return Auth::check()
@@ -80,6 +83,17 @@ Route::middleware(['auth', 'active'])->group(function (): void {
             Route::get('/', BeneficiaryIndex::class)->name('index')->middleware('permission:beneficiaries.view');
             Route::get('/create', BeneficiaryForm::class)->name('create')->middleware('permission:beneficiaries.create');
             Route::get('/{beneficiary}/edit', BeneficiaryForm::class)->name('edit')->middleware('permission:beneficiaries.update');
+            Route::get('/{beneficiary}/documents/{media}', function (Beneficiary $beneficiary, Media $media) {
+                Gate::authorize('view', $beneficiary);
+
+                abort_unless(
+                    $media->model_type === Beneficiary::class
+                    && (int) $media->model_id === $beneficiary->getKey(),
+                    404,
+                );
+
+                return response()->download($media->getPath(), $media->file_name);
+            })->name('documents.download')->middleware('permission:beneficiaries.view');
             Route::get('/{beneficiary}', BeneficiaryShow::class)->name('show')->middleware('permission:beneficiaries.view');
         });
 

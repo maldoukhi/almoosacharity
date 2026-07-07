@@ -7,6 +7,8 @@ use App\Actions\Approvals\RecordApprovalDecision;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
 use App\Enums\ApprovalAction;
+use App\Enums\IncomeSourceType;
+use App\Enums\RelationKind;
 use App\Enums\RoleName;
 use App\Models\Aid;
 use App\Models\AidItem;
@@ -16,7 +18,7 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryCategory;
 use App\Models\User;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DemoDataSeeder extends Seeder
 {
@@ -41,7 +43,7 @@ class DemoDataSeeder extends Seeder
             ->whereHas('roles', fn ($q) => $q->where('name', RoleName::DataEntry->value))
             ->first();
 
-        if (!$dataEntryUser) {
+        if (! $dataEntryUser) {
             $dataEntryUser = User::query()->first();
         }
 
@@ -74,20 +76,20 @@ class DemoDataSeeder extends Seeder
     {
         $maleNames = ['محمد', 'أحمد', 'سعود', 'فهد', 'خالد', 'علي', 'عبدالله'];
         $femaleNames = ['فاطمة', 'عائشة', 'علا', 'منى', 'حنان', 'نور', 'ريم'];
-        $relations = \App\Enums\RelationKind::cases();
+        $relations = RelationKind::cases();
         $relation = $relations[array_rand($relations)];
 
         $isMale = in_array($relation, [
-            \App\Enums\RelationKind::Son,
-            \App\Enums\RelationKind::Husband,
-            \App\Enums\RelationKind::Father,
-            \App\Enums\RelationKind::Brother,
+            RelationKind::Son,
+            RelationKind::Husband,
+            RelationKind::Father,
+            RelationKind::Brother,
         ]);
 
         $names = $isMale ? $maleNames : $femaleNames;
 
         $beneficiary->familyMembers()->create([
-            'name' => $names[array_rand($names)] . ' ' . $names[array_rand($names)],
+            'name' => $names[array_rand($names)].' '.$names[array_rand($names)],
             'relation' => $relation,
             'birth_date' => fake()->dateTimeBetween('-80 years', 'now'),
             'health_status' => rand(0, 100) < 60 ? 'سليم' : 'يعاني من مشاكل صحية',
@@ -97,7 +99,7 @@ class DemoDataSeeder extends Seeder
 
     private function createIncomeSourceFor(Beneficiary $beneficiary): void
     {
-        $types = \App\Enums\IncomeSourceType::cases();
+        $types = IncomeSourceType::cases();
 
         $beneficiary->incomeSources()->create([
             'source_type' => $types[array_rand($types)],
@@ -124,7 +126,7 @@ class DemoDataSeeder extends Seeder
         $programs = AidProgram::all();
         $flow = ApprovalFlow::query()->where('is_active', true)->first();
 
-        if (!$flow || !$beneficiaries->count() || !$programs->count()) {
+        if (! $flow || ! $beneficiaries->count() || ! $programs->count()) {
             return;
         }
 
@@ -157,7 +159,7 @@ class DemoDataSeeder extends Seeder
                     'both' => rand(0, 1) ? AidType::Cash : AidType::InKind,
                 };
 
-                $reference = 'AID-' . now()->format('Y') . '-' . str_pad((string) $aidIndex, 6, '0', STR_PAD_LEFT);
+                $reference = 'AID-'.now()->format('Y').'-'.str_pad((string) $aidIndex, 6, '0', STR_PAD_LEFT);
 
                 $aid = Aid::create([
                     'reference' => $reference,
@@ -221,7 +223,7 @@ class DemoDataSeeder extends Seeder
             };
         } catch (\Exception $e) {
             // Log error but continue with seeding
-            \Illuminate\Support\Facades\Log::warning("Could not apply status transition for aid {$aid->id}: " . $e->getMessage());
+            Log::warning("Could not apply status transition for aid {$aid->id}: ".$e->getMessage());
         }
     }
 

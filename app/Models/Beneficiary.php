@@ -81,7 +81,9 @@ class Beneficiary extends Model implements HasMedia
     public function registerMediaCollections(): void
     {
         foreach (DocumentType::cases() as $documentType) {
-            $this->addMediaCollection($documentType->value);
+            // Identity/bank documents must never live on the public disk:
+            // they are served only through the gated download route.
+            $this->addMediaCollection($documentType->value)->useDisk('local');
         }
     }
 

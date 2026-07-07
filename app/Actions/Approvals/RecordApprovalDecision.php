@@ -49,6 +49,15 @@ class RecordApprovalDecision
         }
 
         return DB::transaction(function () use ($aid, $actor, $action, $note, $stage): Aid {
+            // Re-read under a row lock: two concurrent decisions on the same
+            // aid would otherwise both pass the pre-transaction status check
+            // and record conflicting decisions.
+            $locked = Aid::query()->whereKey($aid->id)->lockForUpdate()->first();
+
+            if ($locked->status !== AidStatus::UnderReview || $locked->current_stage_id !== $stage->id) {
+                throw InvalidAidTransitionException::notUnderReview();
+            }
+
             ApprovalDecision::create([
                 'aid_id' => $aid->id,
                 'approval_flow_stage_id' => $stage->id,
