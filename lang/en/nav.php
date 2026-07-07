@@ -16,4 +16,5 @@ return [
     'logout' => 'Logout',
     'surveys' => 'Surveys',
     'notification_settings' => 'Notification Settings',
+    'reports' => 'Reports',
 ];

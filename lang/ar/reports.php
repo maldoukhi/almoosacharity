@@ -1,0 +1,123 @@
+<?php
+
+return [
+
+    // Reports index screen (cards linking to each report)
+    'index' => [
+        'title' => 'التقارير',
+        'subtitle' => 'تقارير مفصّلة قابلة للتصدير Excel وPDF',
+        'card_aids_title' => 'تقرير الإعانات المفصل',
+        'card_aids_description' => 'كل إعانة مع المستفيد والبرنامج والقيمة والحالة',
+        'card_beneficiaries_title' => 'تقرير المستفيدين',
+        'card_beneficiaries_description' => 'بيانات المستفيدين مع عدد إعاناتهم وآخر إعانة',
+        'card_financial_title' => 'التقرير المالي',
+        'card_financial_description' => 'إجماليات شهرية/سنوية لكل برنامج إعانة',
+        'card_surveys_title' => 'نتائج الاستبيانات',
+        'card_surveys_description' => 'ملخص نتائج استبيانات رضا المستفيدين',
+        'coming_soon' => 'قريبًا',
+        'open' => 'فتح التقرير',
+    ],
+
+    // Shared filter labels
+    'filters' => [
+        'from' => 'من تاريخ',
+        'to' => 'إلى تاريخ',
+        'status' => 'الحالة',
+        'program' => 'البرنامج',
+        'type' => 'النوع',
+        'category' => 'التصنيف',
+        'city' => 'المدينة',
+        'delivery_method' => 'طريقة التسليم',
+        'delivery_method_hint' => 'قريبًا — بانتظار ربط بيانات التسليم',
+    ],
+
+    // Shared export/actions
+    'actions' => [
+        'export_excel' => 'تصدير Excel',
+        'export_pdf' => 'تصدير PDF',
+        'exporting' => 'جارٍ التصدير...',
+    ],
+
+    // Dashboard-specific keys (owned exclusively by this phase's agent
+    // alongside the rest of this file, per CLAUDE.md's phase-7 exception)
+    'dashboard' => [
+        'stat_approved_this_month' => 'معتمدة هذا الشهر',
+        'stat_pending_inbox' => 'بانتظار إجرائي',
+        'stat_pending_inbox_link' => 'الانتقال إلى صندوق الموافقات ←',
+        'chart_by_status' => 'الإعانات حسب الحالة',
+        'chart_by_type' => 'الإعانات حسب النوع',
+        'chart_by_month' => 'الإعانات حسب الشهر',
+        'chart_by_month_count' => 'عدد الإعانات',
+        'chart_by_month_cash' => 'إجمالي النقدي (ر.س)',
+    ],
+
+    // PDF layout strings
+    'pdf' => [
+        'generated_at' => 'تاريخ الإصدار: :date',
+        'filters_applied' => 'الفلاتر المطبقة',
+        'no_data' => 'لا توجد بيانات مطابقة',
+    ],
+
+    // Aids report
+    'aids' => [
+        'title' => 'تقرير الإعانات المفصل',
+        'subtitle' => 'كل إعانة مع المستفيد والبرنامج والقيمة والحالة',
+        'column_reference' => 'الرقم المرجعي',
+        'column_beneficiary' => 'المستفيد',
+        'column_program' => 'البرنامج',
+        'column_type' => 'النوع',
+        'column_status' => 'الحالة',
+        'column_amount' => 'المبلغ (ر.س)',
+        'column_items_value' => 'قيمة العناصر (ر.س)',
+        'column_submitted_at' => 'تاريخ التقديم',
+        'column_decided_at' => 'تاريخ القرار',
+        'total_count' => 'العدد: :count',
+        'total_cash' => 'إجمالي النقدي: :amount ر.س',
+        'total_in_kind' => 'إجمالي العيني: :amount ر.س',
+    ],
+
+    // Beneficiaries report
+    'beneficiaries' => [
+        'title' => 'تقرير المستفيدين',
+        'subtitle' => 'بيانات المستفيدين مع عدد إعاناتهم وآخر إعانة',
+        'column_full_name' => 'الاسم الكامل',
+        'column_national_id' => 'رقم الهوية',
+        'column_mobile' => 'الجوال',
+        'column_city' => 'المدينة',
+        'column_categories' => 'التصنيفات',
+        'column_status' => 'الحالة',
+        'column_aids_count' => 'عدد الإعانات',
+        'column_last_aid_at' => 'تاريخ آخر إعانة',
+        'total_count' => 'إجمالي المستفيدين: :count',
+    ],
+
+    // Financial report
+    'financial' => [
+        'title' => 'التقرير المالي',
+        'subtitle' => 'إجماليات شهرية لكل برنامج، حسب تاريخ القرار',
+        'column_program' => 'البرنامج',
+        'column_month' => 'الشهر',
+        'column_count' => 'عدد الإعانات',
+        'column_cash_total' => 'إجمالي النقدي (ر.س)',
+        'column_in_kind_total' => 'إجمالي العيني (ر.س)',
+        'column_grand_total' => 'الإجمالي (ر.س)',
+        'total_count' => 'العدد: :count',
+        'total_cash' => 'إجمالي النقدي: :amount ر.س',
+        'total_in_kind' => 'إجمالي العيني: :amount ر.س',
+        'total_grand' => 'الإجمالي الكلي: :amount ر.س',
+        'no_program' => 'بدون برنامج',
+    ],
+
+    // Surveys report — stub until the surveys domain lands
+    'surveys' => [
+        'title' => 'نتائج الاستبيانات',
+        'subtitle' => 'ملخص نتائج استبيانات رضا المستفيدين',
+        'column_survey' => 'الاستبيان',
+        'column_question' => 'السؤال',
+        'column_response' => 'الإجابة',
+        'column_submitted_at' => 'تاريخ الإرسال',
+        'stub_notice' => 'هذا التقرير متاح بعد ربط الاستبيانات',
+        'coming_soon_badge' => 'قريبًا',
+    ],
+
+];

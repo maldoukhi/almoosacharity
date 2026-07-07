@@ -16,4 +16,5 @@ return [
     'logout' => 'تسجيل الخروج',
     'surveys' => 'الاستبيانات',
     'notification_settings' => 'إعدادات الإشعارات',
+    'reports' => 'التقارير',
 ];

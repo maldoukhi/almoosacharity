@@ -17,6 +17,10 @@ use App\Livewire\Beneficiaries\Index as BeneficiaryIndex;
 use App\Livewire\Beneficiaries\Show as BeneficiaryShow;
 use App\Livewire\Dashboard;
 use App\Livewire\Notifications\Index;
+use App\Livewire\Reports\AidsReport;
+use App\Livewire\Reports\BeneficiariesReport;
+use App\Livewire\Reports\FinancialReport;
+use App\Livewire\Reports\SurveysReport;
 use App\Livewire\Settings\AidPrograms\Form as AidProgramForm;
 use App\Livewire\Settings\AidPrograms\Index as AidProgramIndex;
 use App\Livewire\Settings\ApprovalFlows\Form as ApprovalFlowForm;
@@ -138,6 +142,14 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
     Route::prefix('approvals')->name('approvals.')->group(function (): void {
         Route::get('/inbox', ApprovalsInbox::class)->name('inbox')->middleware('permission:approvals.view');
+    });
+
+    Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function (): void {
+        Route::get('/', App\Livewire\Reports\Index::class)->name('index');
+        Route::get('/aids', AidsReport::class)->name('aids');
+        Route::get('/beneficiaries', BeneficiariesReport::class)->name('beneficiaries');
+        Route::get('/financial', FinancialReport::class)->name('financial');
+        Route::get('/surveys', SurveysReport::class)->name('surveys');
     });
 
     Route::get('/disbursements/{disbursement}/proof', function (Disbursement $disbursement) {
