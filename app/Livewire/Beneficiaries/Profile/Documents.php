@@ -53,6 +53,13 @@ class Documents extends Component
         return DocumentType::cases();
     }
 
+    public function updatedUpload(): void
+    {
+        if ($this->upload !== null) {
+            $this->uploadDocument();
+        }
+    }
+
     public function uploadDocument(): void
     {
         Gate::authorize('update', $this->beneficiary);

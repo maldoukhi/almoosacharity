@@ -27,6 +27,8 @@ class IncomeSources extends Component
 
     public ?int $editingId = null;
 
+    public bool $showForm = false;
+
     public string $source_type = '';
 
     public ?float $amount = null;
@@ -71,6 +73,7 @@ class IncomeSources extends Component
         Gate::authorize('update', $this->beneficiary);
 
         $this->resetForm();
+        $this->showForm = true;
     }
 
     public function edit(int $id): void
@@ -79,6 +82,7 @@ class IncomeSources extends Component
 
         $source = $this->beneficiary->incomeSources()->findOrFail($id);
 
+        $this->showForm = true;
         $this->editingId = $source->id;
         $this->source_type = $source->source_type->value;
         $this->amount = (float) $source->amount;
@@ -135,7 +139,7 @@ class IncomeSources extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['editingId', 'source_type', 'amount', 'notes']);
+        $this->reset(['editingId', 'showForm', 'source_type', 'amount', 'notes']);
     }
 
     public function render()

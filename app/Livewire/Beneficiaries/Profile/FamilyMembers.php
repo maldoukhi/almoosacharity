@@ -20,6 +20,8 @@ class FamilyMembers extends Component
 
     public ?int $editingId = null;
 
+    public bool $showForm = false;
+
     public string $name = '';
 
     public string $relation = '';
@@ -58,6 +60,7 @@ class FamilyMembers extends Component
         Gate::authorize('update', $this->beneficiary);
 
         $this->resetForm();
+        $this->showForm = true;
     }
 
     public function edit(int $id): void
@@ -66,6 +69,7 @@ class FamilyMembers extends Component
 
         $member = $this->beneficiary->familyMembers()->findOrFail($id);
 
+        $this->showForm = true;
         $this->editingId = $member->id;
         $this->name = $member->name;
         $this->relation = $member->relation->value;
@@ -117,7 +121,7 @@ class FamilyMembers extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['editingId', 'name', 'relation', 'birth_date', 'health_status', 'education_status']);
+        $this->reset(['editingId', 'showForm', 'name', 'relation', 'birth_date', 'health_status', 'education_status']);
     }
 
     public function render()
