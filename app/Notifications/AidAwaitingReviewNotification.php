@@ -37,6 +37,7 @@ class AidAwaitingReviewNotification extends Notification implements ShouldQueue
     public function toDatabase(object $notifiable): array
     {
         return [
+            'lang_key' => 'notifications.awaiting_review.body',
             'aid_id' => $this->aid->id,
             'reference' => $this->aid->reference,
             'stage_name' => $this->stage->name,

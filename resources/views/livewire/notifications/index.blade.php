@@ -55,7 +55,7 @@
                                 @endif
 
                                 <p class="text-sm text-gray-700 dark:text-gray-200">
-                                    {{ __('notifications.awaiting_review.body', [
+                                    {{ __($data['lang_key'] ?? 'notifications.awaiting_review.body', [
                                         'reference' => $data['reference'] ?? '',
                                         'beneficiary' => $data['beneficiary_name'] ?? '',
                                         'stage' => $data['stage_name'] ?? '',

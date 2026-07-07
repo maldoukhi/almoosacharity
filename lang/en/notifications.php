@@ -72,4 +72,7 @@ return [
             'footer' => 'Thank you, Al-Moosa Charity Association.',
         ],
     ],
+    'confirmed' => [
+        'body' => 'Beneficiary :beneficiary confirmed receipt of aid :reference.',
+    ],
 ];

@@ -34,6 +34,7 @@ class AidConfirmedNotification extends Notification implements ShouldQueue
     public function toDatabase(object $notifiable): array
     {
         return [
+            'lang_key' => 'notifications.confirmed.body',
             'aid_id' => $this->aid->id,
             'reference' => $this->aid->reference,
             'beneficiary_name' => $this->aid->beneficiary?->full_name,

@@ -72,4 +72,7 @@ return [
             'footer' => 'شكرًا لك، جمعية الموسى الخيرية.',
         ],
     ],
+    'confirmed' => [
+        'body' => 'أكّد المستفيد :beneficiary استلام الإعانة :reference.',
+    ],
 ];
