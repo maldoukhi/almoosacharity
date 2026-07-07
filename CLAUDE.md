@@ -23,6 +23,8 @@ Laravel 13.19 · Livewire 4.3 · Tailwind 4 (Vite plugin) · PHP 8.4 · Pest 4.7
 - **بيانات المزودات (Taqnyat/Okta)**: اسم المرسل والقوالب تُدار من شاشة إعدادات داخل النظام؛ المفاتيح السرية في `.env` فقط.
 - **إشعارات المدير**: داخل النظام (جرس) + بريد إلكتروني عند وصول طلب لمرحلته.
 - Pest بدل PHPUnit (أزيل phpunit/phpunit من require-dev، والاختبارات بصيغة Pest functions).
+- **spatie/laravel-activitylog 5.0**: النيمسبيس الفعلي للـ trait هو `Spatie\Activitylog\Models\Concerns\LogsActivity` (لا `Spatie\Activitylog\Traits\LogsActivity` كما في نسخ أقدم)، و`LogOptions` في `Spatie\Activitylog\Support\LogOptions`. الميثود الصحيحة لتخطي السجلات الفارغة هي `dontLogEmptyChanges()` (لا `dontSubmitEmptyLogs()`). تغييرات الحقول تُخزَّن في عمود `attribute_changes` وليس `properties`.
+- **spatie/laravel-permission 8.3**: يجب استدعاء `PermissionRegistrar::forgetCachedPermissions()` بين كل seeder (صلاحيات ← أدوار ← مستخدمين) لأن الكاش لا يُنعش تلقائيًا عند إنشاء صلاحيات/أدوار جديدة داخل نفس الطلب.
 
 ## قرارات منتج (من المستخدم — المرحلة 0)
 - طرق التسليم الأربع كلها: تحويل بنكي، استلام من المقر، مندوب توصيل، تسليم يدوي ميداني.
@@ -37,6 +39,8 @@ Beneficiaries / Aids / Approvals / Deliveries / Notifications / Confirmations / 
 ## حالة المراحل
 - [x] المرحلة 0 — التأسيس: الوكلاء التسعة في `.claude/agents/`، أسئلة القرارات أُجيبت كلها، الألوان استُخرجت واعتُمدت، مشروع Laravel 13.19 + Livewire 4.3 + Tailwind 4 + Pest جاهز، توكنز الهوية في `@theme`، الشعار في `public/images/brand/`، اللغة الافتراضية عربية.
 - [ ] المرحلة 1 — المصادقة والأدوار + نظام التصميم (مكتبة `x-ui.*` + Layout RTL + dark mode)
+  - [x] 1أ — الأساس: هجرة users، Enums (`UserStatus`/`Locale`/`RoleName`)، تحديث User model (HasRoles/SoftDeletes/LogsActivity/HasMedia)، `SetLocale` middleware، aliases ميدلوير Spatie، `Gate::before` لـ system-admin، Seeders (Permission/Role/AdminUser). لم تُبنَ بعد: شاشات/مسارات/Livewire (مرحلة 1ب).
+  - [ ] 1ب — شاشات المصادقة ونظام التصميم
 - [ ] المرحلة 2 — ملف المستفيد
 - [ ] المرحلة 3 — الإعانات وسير الموافقات
 - [ ] المرحلة 4 — الصرف والتسليم

@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\PermissionRegistrar;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,11 +15,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $registrar = app(PermissionRegistrar::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // The permission cache is forgotten between each seeder so newly
+        // created permissions/roles are visible to the following seeder.
+        $registrar->forgetCachedPermissions();
+        $this->call(PermissionSeeder::class);
+
+        $registrar->forgetCachedPermissions();
+        $this->call(RoleSeeder::class);
+
+        $registrar->forgetCachedPermissions();
+        $this->call(AdminUserSeeder::class);
+
+        $registrar->forgetCachedPermissions();
     }
 }
