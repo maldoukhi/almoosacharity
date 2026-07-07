@@ -9,12 +9,14 @@
     // toggles that variable — panels must then be shown with `x-show="activeTab === '...'"`.
     'wireClick' => null,
     // Optional map of tab-key => bool to render a small error indicator dot.
-    'errors' => [],
+    // Named tabErrors (not `errors`) to avoid shadowing Laravel's shared
+    // ViewErrorBag when the prop is omitted.
+    'tabErrors' => [],
 ])
 
 <div class="flex gap-1 overflow-x-auto border-b border-gray-100 dark:border-white/10" role="tablist">
     @foreach ($tabs as $key => $label)
-        @php $hasError = $errors[$key] ?? false; @endphp
+        @php $hasError = $tabErrors[$key] ?? false; @endphp
 
         <button
             type="button"

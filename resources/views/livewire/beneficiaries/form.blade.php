@@ -62,7 +62,7 @@
 
     <x-ui.card>
         <form wire:submit="save" class="space-y-5">
-            <x-ui.tabs :tabs="$tabs" :errors="$tabErrors" />
+            <x-ui.tabs :tabs="$tabs" :tab-errors="$tabErrors" />
 
             {{-- أساسي --}}
             <div x-show="activeTab === 'basic'" x-transition.opacity.duration.200ms class="grid grid-cols-1 gap-5 pt-2 sm:grid-cols-2 lg:grid-cols-3">
