@@ -30,7 +30,6 @@
             href="{{ route('dashboard') }}"
             wire:navigate
             title="{{ __('nav.dashboard') }}"
-            style="animation: fade-in-up 0.3s ease-out both; animation-delay: 0ms"
             @class([
                 'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                 'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('dashboard'),
@@ -50,7 +49,6 @@
                 href="{{ route('admin.beneficiaries.index') }}"
                 wire:navigate
                 title="{{ __('nav.beneficiaries') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 60ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.beneficiaries.*'),
@@ -71,7 +69,6 @@
                 href="{{ route('aids.index') }}"
                 wire:navigate
                 title="{{ __('nav.aids') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 90ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('aids.*'),
@@ -92,7 +89,6 @@
                 href="{{ route('admin.messaging.broadcast') }}"
                 wire:navigate
                 title="{{ __('nav.broadcast') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 95ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.messaging.*'),
@@ -113,7 +109,6 @@
                 href="{{ route('approvals.inbox') }}"
                 wire:navigate
                 title="{{ __('nav.approvals_inbox') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 100ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('approvals.*'),
@@ -134,7 +129,6 @@
                 href="{{ route('admin.users.index') }}"
                 wire:navigate
                 title="{{ __('nav.users') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 120ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.users.*'),
@@ -155,7 +149,6 @@
                 href="{{ route('admin.roles.index') }}"
                 wire:navigate
                 title="{{ __('nav.roles') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 180ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.roles.*'),
@@ -176,7 +169,6 @@
                 href="{{ route('reports.index') }}"
                 wire:navigate
                 title="{{ __('nav.reports') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 205ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('reports.*'),
@@ -197,7 +189,6 @@
                 href="{{ route('admin.surveys.index') }}"
                 wire:navigate
                 title="{{ __('nav.surveys') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 210ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.surveys.*'),
@@ -226,7 +217,6 @@
                 href="{{ route('admin.settings.categories.index') }}"
                 wire:navigate
                 title="{{ __('nav.categories') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 240ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.settings.categories.*'),
@@ -248,7 +238,6 @@
                 href="{{ route('admin.settings.aid-programs.index') }}"
                 wire:navigate
                 title="{{ __('nav.aid_programs') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 260ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.settings.aid-programs.*'),
@@ -269,7 +258,6 @@
                 href="{{ route('admin.settings.approval-flows.index') }}"
                 wire:navigate
                 title="{{ __('nav.approval_flows') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 280ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.settings.approval-flows.*'),
@@ -290,7 +278,6 @@
                 href="{{ route('admin.settings.notifications.index') }}"
                 wire:navigate
                 title="{{ __('nav.notification_settings') }}"
-                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 300ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
                     'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.settings.notifications.*'),
