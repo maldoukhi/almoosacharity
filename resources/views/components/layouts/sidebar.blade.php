@@ -40,7 +40,7 @@
             style="animation: fade-in-up 0.3s ease-out both; animation-delay: 0ms"
             @class([
                 'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('dashboard'),
+                'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('dashboard'),
                 'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('dashboard'),
             ])
         >
@@ -60,7 +60,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 60ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.beneficiaries.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.beneficiaries.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.beneficiaries.*'),
                 ])
             >
@@ -81,7 +81,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 90ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('aids.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('aids.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('aids.*'),
                 ])
             >
@@ -102,7 +102,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 100ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('approvals.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('approvals.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('approvals.*'),
                 ])
             >
@@ -123,7 +123,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 120ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.users.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.users.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.users.*'),
                 ])
             >
@@ -144,7 +144,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 180ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.roles.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.roles.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.roles.*'),
                 ])
             >
@@ -165,7 +165,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 205ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('reports.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('reports.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('reports.*'),
                 ])
             >
@@ -186,7 +186,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 210ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.surveys.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.surveys.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.surveys.*'),
                 ])
             >
@@ -215,7 +215,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 240ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.settings.categories.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.settings.categories.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.settings.categories.*'),
                 ])
             >
@@ -237,7 +237,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 260ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.settings.aid-programs.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.settings.aid-programs.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.settings.aid-programs.*'),
                 ])
             >
@@ -258,7 +258,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 280ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.settings.approval-flows.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.settings.approval-flows.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.settings.approval-flows.*'),
                 ])
             >
@@ -279,7 +279,7 @@
                 style="animation: fade-in-up 0.3s ease-out both; animation-delay: 300ms"
                 @class([
                     'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
-                    'border-primary bg-primary-50 text-primary-800 dark:bg-primary-900/40 dark:text-white' => request()->routeIs('admin.settings.notifications.*'),
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.settings.notifications.*'),
                     'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.settings.notifications.*'),
                 ])
             >
