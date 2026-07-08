@@ -11,7 +11,7 @@
     $basicInfo = [
         __('beneficiaries.field_id_type') => $beneficiary->id_type?->label(),
         __('beneficiaries.field_national_id') => $beneficiary->national_id,
-        __('beneficiaries.field_nationality') => $beneficiary->nationality,
+        __('beneficiaries.field_nationality') => \App\Support\Countries::nationalityName($beneficiary->nationality),
         __('beneficiaries.field_birth_date') => $beneficiary->birth_date?->translatedFormat('Y/m/d'),
         __('beneficiaries.field_gender') => $beneficiary->gender?->label(),
         __('beneficiaries.field_marital_status') => $beneficiary->marital_status?->label(),

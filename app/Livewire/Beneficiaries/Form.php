@@ -14,6 +14,8 @@ use App\Models\BeneficiaryCategory;
 use App\Rules\SaudiIban;
 use App\Rules\SaudiMobile;
 use App\Rules\SaudiNationalId;
+use App\Support\Countries;
+use App\Support\MobileNumber;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -145,6 +147,50 @@ class Form extends Component
     }
 
     /**
+     * Nationality picker options: ISO code => localized country name,
+     * Saudi Arabia and its neighboring/most common nationalities first.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function countryOptions(): array
+    {
+        return Countries::all();
+    }
+
+    /**
+     * Normalizes a mobile number typed in any of the flexible formats the
+     * field accepts (05XXXXXXXX, 5XXXXXXXX, +9665XXXXXXXX, 009665XXXXXXXX)
+     * down to the canonical 05XXXXXXXX storage format expected by
+     * {@see SaudiMobile}. Anything else is returned unchanged so it still
+     * fails validation with a clear error instead of being silently
+     * mangled.
+     */
+    private function normalizeMobile(string $raw): string
+    {
+        $value = MobileNumber::normalize($raw);
+
+        // MobileNumber::normalize() only rewrites the internationally
+        // prefixed variants (+966/00966/966). Also accept the bare local
+        // number typed without its leading 0, e.g. "512345678".
+        if (preg_match('/^5\d{8}$/', $value) === 1) {
+            $value = '0'.$value;
+        }
+
+        return $value;
+    }
+
+    /**
+     * Livewire hook: re-normalizes the mobile field to 05XXXXXXXX as soon
+     * as the user finishes typing/leaves the field, so what they see
+     * before submitting already matches the stored format.
+     */
+    public function updatedMobile(string $value): void
+    {
+        $this->mobile = $this->normalizeMobile($value);
+    }
+
+    /**
      * Whether the current actor may write the bank fields on this form.
      * Checked as a raw permission (rather than the viewBankData/
      * manageBankData Policy abilities, which require a real Beneficiary
@@ -161,6 +207,11 @@ class Form extends Component
         $isUpdate = $this->beneficiary?->exists ?? false;
 
         Gate::authorize($isUpdate ? 'update' : 'create', $this->beneficiary ?? Beneficiary::class);
+
+        // Defensive re-normalization: updatedMobile() already normalizes on
+        // every change, but this guarantees 05XXXXXXXX is what gets
+        // validated/stored even if the property was set some other way.
+        $this->mobile = $this->normalizeMobile($this->mobile);
 
         $rules = [
             'first_name' => ['required', 'string', 'max:255'],

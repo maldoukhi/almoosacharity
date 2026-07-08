@@ -80,7 +80,16 @@
                 />
 
                 <x-ui.input :label="__('beneficiaries.field_national_id')" name="national_id" wire:model="national_id" dir="ltr" class="font-mono" />
-                <x-ui.input :label="__('beneficiaries.field_nationality')" name="nationality" wire:model="nationality" />
+
+                <x-ui.searchable-select
+                    :label="__('beneficiaries.field_nationality')"
+                    model="nationality"
+                    :options="$this->countryOptions"
+                    :placeholder="__('beneficiaries.select_placeholder')"
+                    :search-placeholder="__('beneficiaries.nationality_search_placeholder')"
+                    :no-results-text="__('beneficiaries.nationality_no_results')"
+                />
+
                 <x-ui.input :label="__('beneficiaries.field_birth_date')" name="birth_date" type="date" wire:model="birth_date" />
 
                 <x-ui.select
@@ -104,7 +113,35 @@
 
             {{-- التواصل والعمل --}}
             <div x-show="activeTab === 'contact_work'" x-transition.opacity.duration.200ms class="grid grid-cols-1 gap-5 pt-2 sm:grid-cols-2">
-                <x-ui.input :label="__('beneficiaries.field_mobile')" name="mobile" wire:model="mobile" dir="ltr" />
+                <div>
+                    <label for="mobile" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                        {{ __('beneficiaries.field_mobile') }}
+                    </label>
+
+                    <div class="flex" dir="ltr">
+                        <span
+                            class="inline-flex select-none items-center rounded-s-(--radius-brand) border border-e-0 bg-gray-50 px-3 text-sm text-gray-500 dark:bg-white/5 dark:text-gray-400 {{ $errors->has('mobile') ? 'border-status-rejected' : 'border-gray-300 dark:border-white/10' }}"
+                        >
+                            +966
+                        </span>
+
+                        <input
+                            type="tel"
+                            id="mobile"
+                            name="mobile"
+                            wire:model.live.debounce.500ms="mobile"
+                            inputmode="numeric"
+                            placeholder="05XXXXXXXX"
+                            class="block w-full flex-1 rounded-e-(--radius-brand) border bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition duration-200 ease-out placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-0 dark:bg-primary-950/30 dark:text-gray-100 dark:placeholder:text-gray-500 {{ $errors->has('mobile') ? 'border-status-rejected focus:border-status-rejected focus:ring-status-rejected/30' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500/30 dark:border-white/10' }}"
+                        />
+                    </div>
+
+                    @error('mobile')
+                        <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                    @else
+                        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('beneficiaries.mobile_hint') }}</p>
+                    @enderror
+                </div>
                 <x-ui.input :label="__('beneficiaries.field_occupation')" name="occupation" wire:model="occupation" />
                 <x-ui.input :label="__('beneficiaries.field_employer')" name="employer" wire:model="employer" />
 

@@ -8,6 +8,7 @@ it('lets a manager (reports.view) open every report route', function () {
     $this->get(route('reports.beneficiaries'))->assertOk();
     $this->get(route('reports.financial'))->assertOk();
     $this->get(route('reports.surveys'))->assertOk();
+    $this->get(route('reports.messages'))->assertOk();
 });
 
 it('forbids a data-entry user (no reports.view) from opening any report route', function () {
@@ -16,4 +17,5 @@ it('forbids a data-entry user (no reports.view) from opening any report route', 
     $this->get(route('reports.index'))->assertForbidden();
     $this->get(route('reports.aids'))->assertForbidden();
     $this->get(route('reports.financial'))->assertForbidden();
+    $this->get(route('reports.messages'))->assertForbidden();
 });

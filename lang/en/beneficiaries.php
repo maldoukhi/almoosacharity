@@ -52,6 +52,11 @@ return [
 
     'select_placeholder' => 'Select from list',
 
+    'nationality_search_placeholder' => 'Search for a country or nationality...',
+    'nationality_no_results' => 'No matching results',
+
+    'mobile_hint' => 'Example: 0512345678',
+
     'filter_category' => 'By Category',
     'filter_status' => 'By Status',
     'filter_city' => 'By City',

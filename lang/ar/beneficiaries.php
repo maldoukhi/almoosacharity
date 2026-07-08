@@ -52,6 +52,11 @@ return [
 
     'select_placeholder' => 'اختر من القائمة',
 
+    'nationality_search_placeholder' => 'ابحث عن دولة أو جنسية...',
+    'nationality_no_results' => 'لا توجد نتائج مطابقة',
+
+    'mobile_hint' => 'مثال: 0512345678',
+
     'filter_category' => 'حسب التصنيف',
     'filter_status' => 'حسب الحالة',
     'filter_city' => 'حسب المدينة',

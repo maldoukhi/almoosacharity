@@ -21,6 +21,7 @@ use App\Livewire\Notifications\Index;
 use App\Livewire\Reports\AidsReport;
 use App\Livewire\Reports\BeneficiariesReport;
 use App\Livewire\Reports\FinancialReport;
+use App\Livewire\Reports\MessagesReport;
 use App\Livewire\Reports\SurveysReport;
 use App\Livewire\Settings\AidPrograms\Form as AidProgramForm;
 use App\Livewire\Settings\AidPrograms\Index as AidProgramIndex;
@@ -157,6 +158,7 @@ Route::middleware(['auth', 'active'])->group(function (): void {
         Route::get('/beneficiaries', BeneficiariesReport::class)->name('beneficiaries');
         Route::get('/financial', FinancialReport::class)->name('financial');
         Route::get('/surveys', SurveysReport::class)->name('surveys');
+        Route::get('/messages', MessagesReport::class)->name('messages');
     });
 
     Route::get('/disbursements/{disbursement}/proof', function (Disbursement $disbursement) {

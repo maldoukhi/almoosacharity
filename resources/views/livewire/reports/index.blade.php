@@ -55,5 +55,17 @@
                 </x-ui.button>
             </div>
         </x-ui.card>
+
+        <x-ui.card>
+            <div class="flex h-full flex-col justify-between gap-4">
+                <div>
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('reports.index.card_messages_title') }}</h2>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('reports.index.card_messages_description') }}</p>
+                </div>
+                <x-ui.button href="{{ route('reports.messages') }}" variant="primary" size="sm">
+                    {{ __('reports.index.open') }}
+                </x-ui.button>
+            </div>
+        </x-ui.card>
     </div>
 </div>
