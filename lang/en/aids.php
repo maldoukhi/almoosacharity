@@ -55,6 +55,12 @@ return [
     'submit_button' => 'Submit for Approval',
 
     'confirm_submit' => 'Are you sure you want to submit this aid for approval?',
+
+    'submit_confirm' => [
+        'title' => 'Save & submit for approval',
+        'subtitle' => 'Review the details below before saving and sending into the approval workflow.',
+        'bulk_note' => ':count separate aids will be created and submitted, one per selected beneficiary.',
+    ],
     'confirm_cancel' => 'Are you sure you want to cancel this aid?',
     'confirm_delete' => 'Are you sure you want to delete this aid?',
     'confirm_decision' => 'Are you sure about this decision?',

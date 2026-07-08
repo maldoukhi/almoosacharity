@@ -76,6 +76,12 @@ class Form extends Component
      */
     public string $beneficiarySearch = '';
 
+    /**
+     * Whether the "confirm before submitting for approval" modal is open —
+     * opened by {@see confirmSubmit()} once the form validates.
+     */
+    public bool $showSubmitConfirm = false;
+
     public function mount(?Aid $aid = null): void
     {
         $this->aid = $aid;
@@ -347,6 +353,8 @@ class Form extends Component
 
     public function saveAndSubmit(): void
     {
+        $this->showSubmitConfirm = false;
+
         $result = $this->persist();
 
         if ($result === null) {
@@ -411,40 +419,7 @@ class Form extends Component
 
         Gate::authorize($isUpdate ? 'update' : 'create', $this->aid ?? Aid::class);
 
-        $isInKind = $this->type === AidType::InKind->value;
-
-        $rules = [
-            'aid_program_id' => [
-                'required',
-                'integer',
-                Rule::exists('aid_programs', 'id')->where('is_active', true)->whereNull('deleted_at'),
-            ],
-            'type' => ['required', Rule::enum(AidType::class)],
-            'amount' => ['nullable', 'numeric', 'min:0.01', 'required_if:type,cash'],
-            'purpose' => ['nullable', 'string', 'max:255', 'required_if:type,cash'],
-            'notes' => ['nullable', 'string'],
-            'items' => $isInKind ? ['required', 'array', 'min:1'] : ['array'],
-            'items.*.name' => ['required', 'string', 'max:255'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.estimated_value' => ['nullable', 'numeric', 'min:0'],
-            'items.*.description' => ['nullable', 'string'],
-        ];
-
-        if ($isUpdate) {
-            $rules['beneficiary_id'] = [
-                'required',
-                'integer',
-                Rule::exists('beneficiaries', 'id')->whereNull('deleted_at'),
-            ];
-        } else {
-            $rules['beneficiary_ids'] = ['required', 'array', 'min:1'];
-            $rules['beneficiary_ids.*'] = [
-                'integer',
-                Rule::exists('beneficiaries', 'id')->whereNull('deleted_at'),
-            ];
-        }
-
-        $validated = $this->validate($rules);
+        $validated = $this->validate($this->validationRules($isUpdate));
 
         $program = AidProgram::findOrFail($validated['aid_program_id']);
 
@@ -494,6 +469,90 @@ class Form extends Component
         $this->dispatch('toast', type: 'success', message: __('aids.messages.bulk_created', ['count' => $createdAids->count()]));
 
         return $createdAids;
+    }
+
+    /**
+     * Validation rules shared by {@see persist()} and the submit-confirm
+     * pre-flight ({@see confirmSubmit()}).
+     *
+     * @return array<string, mixed>
+     */
+    private function validationRules(bool $isUpdate): array
+    {
+        $isInKind = $this->type === AidType::InKind->value;
+
+        $rules = [
+            'aid_program_id' => [
+                'required',
+                'integer',
+                Rule::exists('aid_programs', 'id')->where('is_active', true)->whereNull('deleted_at'),
+            ],
+            'type' => ['required', Rule::enum(AidType::class)],
+            'amount' => ['nullable', 'numeric', 'min:0.01', 'required_if:type,cash'],
+            'purpose' => ['nullable', 'string', 'max:255', 'required_if:type,cash'],
+            'notes' => ['nullable', 'string'],
+            'items' => $isInKind ? ['required', 'array', 'min:1'] : ['array'],
+            'items.*.name' => ['required', 'string', 'max:255'],
+            'items.*.quantity' => ['required', 'integer', 'min:1'],
+            'items.*.estimated_value' => ['nullable', 'numeric', 'min:0'],
+            'items.*.description' => ['nullable', 'string'],
+        ];
+
+        if ($isUpdate) {
+            $rules['beneficiary_id'] = [
+                'required',
+                'integer',
+                Rule::exists('beneficiaries', 'id')->whereNull('deleted_at'),
+            ];
+        } else {
+            $rules['beneficiary_ids'] = ['required', 'array', 'min:1'];
+            $rules['beneficiary_ids.*'] = [
+                'integer',
+                Rule::exists('beneficiaries', 'id')->whereNull('deleted_at'),
+            ];
+        }
+
+        return $rules;
+    }
+
+    /**
+     * Validate the form and, if valid, open the "confirm submit" modal so
+     * the actor reviews what will be created/submitted. An invalid form
+     * surfaces its errors inline and never opens the modal.
+     */
+    public function confirmSubmit(): void
+    {
+        if (! $this->passesSubmitPreflight()) {
+            return;
+        }
+
+        $this->showSubmitConfirm = true;
+    }
+
+    public function cancelSubmit(): void
+    {
+        $this->showSubmitConfirm = false;
+    }
+
+    private function passesSubmitPreflight(): bool
+    {
+        $isUpdate = $this->aid?->exists ?? false;
+
+        Gate::authorize($isUpdate ? 'update' : 'create', $this->aid ?? Aid::class);
+
+        $validated = $this->validate($this->validationRules($isUpdate));
+
+        $program = AidProgram::findOrFail($validated['aid_program_id']);
+
+        try {
+            app(AssertAidTypeMatchesProgram::class)->handle(AidType::from($validated['type']), $program);
+        } catch (InvalidArgumentException $exception) {
+            $this->addError('aid_program_id', $exception->getMessage());
+
+            return false;
+        }
+
+        return true;
     }
 
     public function render()

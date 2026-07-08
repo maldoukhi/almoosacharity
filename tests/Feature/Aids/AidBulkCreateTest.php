@@ -97,6 +97,34 @@ it('submits every bulk-created aid to under_review at the first stage', function
     }
 });
 
+it('opens the submit-confirm modal only for a valid form', function () {
+    seedAidCatalog();
+    asDataEntry();
+
+    $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
+    $beneficiary = Beneficiary::factory()->create();
+
+    // Missing amount/beneficiaries → validation fails, modal stays closed.
+    Livewire::test(Form::class)
+        ->set('type', AidType::Cash->value)
+        ->call('confirmSubmit')
+        ->assertHasErrors()
+        ->assertSet('showSubmitConfirm', false);
+
+    // Valid form → modal opens without persisting anything yet.
+    Livewire::test(Form::class)
+        ->set('beneficiary_ids', [$beneficiary->id])
+        ->set('aid_program_id', $program->id)
+        ->set('type', AidType::Cash->value)
+        ->set('amount', 750)
+        ->set('purpose', 'اختبار')
+        ->call('confirmSubmit')
+        ->assertHasNoErrors()
+        ->assertSet('showSubmitConfirm', true);
+
+    expect(Aid::query()->where('purpose', 'اختبار')->exists())->toBeFalse();
+});
+
 it('requires at least one beneficiary to be selected on create', function () {
     seedAidCatalog();
     asDataEntry();

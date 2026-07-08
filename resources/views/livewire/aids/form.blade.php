@@ -335,13 +335,76 @@
                 <x-ui.button
                     type="button"
                     variant="primary"
-                    wire:click="saveAndSubmit"
-                    wire:confirm="{{ __('aids.confirm_submit') }}"
-                    wire:target="saveAndSubmit"
+                    wire:click="confirmSubmit"
+                    wire:target="confirmSubmit"
                 >
                     {{ __('aids.save_and_submit') }}
                 </x-ui.button>
             </div>
         </form>
     </x-ui.card>
+
+    {{-- Confirm before saving & submitting for approval --}}
+    @if ($showSubmitConfirm)
+        @php
+            $confirmCount = $isEdit ? 1 : count($beneficiary_ids);
+        @endphp
+        <div class="fixed inset-0 z-[70] overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="absolute inset-0 bg-primary-950/60 backdrop-blur-sm" wire:click="cancelSubmit"></div>
+
+            <div class="flex min-h-dvh items-center justify-center p-4">
+                <div class="relative w-full max-w-lg overflow-hidden rounded-(--radius-brand) bg-white shadow-xl dark:bg-primary-950 dark:ring-1 dark:ring-white/10">
+                    <div class="flex items-start gap-3 border-b border-gray-100 px-6 py-4 dark:border-white/10">
+                        <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-600 dark:bg-primary-500/15 dark:text-primary-300">
+                            <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                            </svg>
+                        </span>
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('aids.submit_confirm.title') }}</h3>
+                            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('aids.submit_confirm.subtitle') }}</p>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-5">
+                        <dl class="divide-y divide-gray-100 rounded-(--radius-brand) border border-gray-100 dark:divide-white/10 dark:border-white/10">
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_type') }}</dt>
+                                <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ \App\Enums\AidType::from($type)->label() }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">
+                                    {{ $type === \App\Enums\AidType::Cash->value ? __('aids.field_amount') : __('aids.field_items') }}
+                                </dt>
+                                <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+                                    @if ($type === \App\Enums\AidType::Cash->value)
+                                        {{ __('aids.currency_sar') }} {{ number_format((float) $amount, 2) }}
+                                    @else
+                                        {{ trans_choice('aids.items_count', count($items), ['count' => count($items)]) }}
+                                    @endif
+                                </dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_beneficiaries') }}</dt>
+                                <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">{{ $confirmCount }}</dd>
+                            </div>
+                        </dl>
+
+                        @if (! $isEdit && $confirmCount > 1)
+                            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.submit_confirm.bulk_note', ['count' => $confirmCount]) }}</p>
+                        @endif
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4 dark:border-white/10">
+                        <x-ui.button type="button" variant="ghost" wire:click="cancelSubmit">
+                            {{ __('common.cancel') }}
+                        </x-ui.button>
+                        <x-ui.button type="button" variant="primary" wire:click="saveAndSubmit" wire:target="saveAndSubmit" wire:loading.attr="disabled">
+                            {{ __('aids.save_and_submit') }}
+                        </x-ui.button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
