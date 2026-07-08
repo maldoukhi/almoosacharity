@@ -63,6 +63,7 @@ return [
     'filter_status' => 'By Status',
     'filter_city' => 'By City',
     'show_trashed' => 'Show Deleted',
+    'results_count' => '{0} No results|{1} 1 result|[2,*] :count results',
 
     'empty_title' => 'No data available',
     'empty_description' => 'No beneficiaries have been added yet. Start by adding a new beneficiary.',

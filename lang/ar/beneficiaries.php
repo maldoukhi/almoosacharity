@@ -63,6 +63,7 @@ return [
     'filter_status' => 'حسب الحالة',
     'filter_city' => 'حسب المدينة',
     'show_trashed' => 'إظهار المحذوفين',
+    'results_count' => '{0} لا نتائج|{1} نتيجة واحدة|[2,*] :count نتيجة',
 
     'empty_title' => 'لا توجد بيانات',
     'empty_description' => 'لم يتم إضافة أي مستفيدين بعد. ابدأ بإضافة مستفيد جديد.',

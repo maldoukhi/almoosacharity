@@ -71,9 +71,15 @@
                 :options="$cityOptions"
             />
         </div>
+    </x-ui.card>
 
-        @can('beneficiaries.restore')
-            <div class="mt-4 flex items-center justify-end border-t border-gray-100 pt-4 dark:border-white/10">
+    <x-ui.card>
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ trans_choice('beneficiaries.results_count', $this->beneficiaries->total(), ['count' => $this->beneficiaries->total()]) }}
+            </p>
+
+            @can('beneficiaries.restore')
                 <label class="flex cursor-pointer items-center gap-3 select-none">
                     <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('beneficiaries.show_trashed') }}</span>
                     <span class="relative inline-block h-6 w-11 shrink-0">
@@ -82,11 +88,10 @@
                         <span class="absolute start-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-out peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5"></span>
                     </span>
                 </label>
-            </div>
-        @endcan
-    </x-ui.card>
+            @endcan
+        </div>
 
-    <div class="relative">
+        <div class="relative">
         <div wire:loading.flex wire:target="search, categoryFilter, statusFilter, cityFilter, trashed" class="hidden flex-col gap-2" style="display: none">
             <x-ui.skeleton height="3rem" />
             <x-ui.skeleton height="3rem" />
@@ -222,5 +227,6 @@
                 </div>
             @endif
         </div>
-    </div>
+        </div>
+    </x-ui.card>
 </div>
