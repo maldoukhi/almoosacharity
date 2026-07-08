@@ -123,6 +123,50 @@ it('rejects a confirmation body that is missing the {link} placeholder, and save
     expect(app(Settings::class)->get('confirmation_body'))->toBe($valid);
 });
 
+it('rejects turning on combined delivery mode when the AidDelivered template is missing {link}, and accepts it once added', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    $smsField = 'templates.'.NotificationEvent::AidDelivered->value.'.'.MessageChannel::Sms->value.'.body';
+
+    // The seeded default AidDelivered body has no {link} — turning combined
+    // mode on must fail without persisting the setting.
+    Livewire::test(Manage::class)
+        ->set('combinedDeliveryMessage', true)
+        ->call('save')
+        ->assertHasErrors([$smsField]);
+
+    expect(app(Settings::class)->get('combined_delivery_message'))->not->toBe('1');
+
+    // Once the admin edits the same template directly to include {link},
+    // saving succeeds — this is "one template, edited directly" instead of
+    // a separate confirmation text.
+    Livewire::test(Manage::class)
+        ->set('combinedDeliveryMessage', true)
+        ->set($smsField, 'عزيزي {name}، تم تسليم إعانتكم. لتأكيد الاستلام: {link}')
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(app(Settings::class)->get('combined_delivery_message'))->toBe('1');
+});
+
+it('also requires {link} in the WhatsApp AidDelivered template when combined mode is on and WhatsApp is enabled', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    $smsField = 'templates.'.NotificationEvent::AidDelivered->value.'.'.MessageChannel::Sms->value.'.body';
+    $waField = 'templates.'.NotificationEvent::AidDelivered->value.'.'.MessageChannel::WhatsApp->value.'.body';
+
+    Livewire::test(Manage::class)
+        ->set('combinedDeliveryMessage', true)
+        ->set('whatsappEnabled', true)
+        ->set($smsField, 'عزيزي {name}، تم تسليم إعانتكم. لتأكيد الاستلام: {link}')
+        ->call('save')
+        ->assertHasErrors([$waField]);
+
+    expect(app(Settings::class)->get('combined_delivery_message'))->not->toBe('1');
+});
+
 it('saves the Taqnyat API key encrypted, resets the input, and never leaks it back to the browser', function () {
     (new NotificationTemplateSeeder)->run();
     asAdmin();

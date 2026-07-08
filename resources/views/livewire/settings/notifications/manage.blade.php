@@ -89,6 +89,10 @@
                                     @error('templates.'.$event->value.'.'.$channel->value.'.body')
                                         <p class="text-xs text-status-rejected">{{ $message }}</p>
                                     @enderror
+
+                                    @if ($combinedDeliveryMessage && $event === \App\Enums\NotificationEvent::AidDelivered)
+                                        <p class="text-xs text-secondary-700 dark:text-secondary-300">{{ __('notifications.settings.combined_template_link_hint') }}</p>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
@@ -97,6 +101,25 @@
             </div>
         </x-ui.card>
 
+        {{-- Governs whether the confirmation link is a separate message
+             (below) or lives directly inside the "تسليم الإعانة" template
+             above — kept live so toggling it instantly shows/hides the
+             right editor without needing to save first. --}}
+        <x-ui.card>
+            <label class="flex cursor-pointer items-start gap-3 select-none">
+                <span class="relative mt-0.5 inline-block h-6 w-11 shrink-0">
+                    <input type="checkbox" wire:model.live="combinedDeliveryMessage" class="peer sr-only" />
+                    <span class="absolute inset-0 rounded-full bg-gray-200 transition-colors duration-200 ease-out peer-checked:bg-primary dark:bg-white/10"></span>
+                    <span class="absolute start-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-out peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5"></span>
+                </span>
+                <span class="min-w-0">
+                    <span class="block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('notifications.settings.field_combined_delivery_message') }}</span>
+                    <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.field_combined_delivery_message_hint') }}</span>
+                </span>
+            </label>
+        </x-ui.card>
+
+        @unless ($combinedDeliveryMessage)
         <x-ui.card>
             <x-slot:header>
                 <div>
@@ -121,6 +144,7 @@
                 <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.field_confirmation_body_hint') }}</p>
             </div>
         </x-ui.card>
+        @endunless
         </div>{{-- /messages tab --}}
 
         <div x-show="tab === 'connections'" x-cloak class="space-y-6">
@@ -152,19 +176,6 @@
                 </label>
             </div>
 
-            <div class="mt-6 border-t border-gray-200 pt-5 dark:border-white/10">
-                <label class="flex cursor-pointer items-start gap-3 select-none">
-                    <span class="relative mt-0.5 inline-block h-6 w-11 shrink-0">
-                        <input type="checkbox" wire:model="combinedDeliveryMessage" class="peer sr-only" />
-                        <span class="absolute inset-0 rounded-full bg-gray-200 transition-colors duration-200 ease-out peer-checked:bg-primary dark:bg-white/10"></span>
-                        <span class="absolute start-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-out peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5"></span>
-                    </span>
-                    <span class="min-w-0">
-                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('notifications.settings.field_combined_delivery_message') }}</span>
-                        <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.field_combined_delivery_message_hint') }}</span>
-                    </span>
-                </label>
-            </div>
         </x-ui.card>
 
         <x-ui.card>
@@ -457,11 +468,6 @@
         </div>
     </form>
 
-    {{-- Teleported to <body> so the fixed overlay always covers the whole
-         viewport: rendered in place it sits inside the scrolling <main>
-         (and any transformed ancestor traps `position: fixed`), which left
-         the backdrop short of full-page and introduced a stray scrollbar. --}}
-    @teleport('body')
     @if ($whatsappQrModalOpen)
         <div class="fixed inset-0 z-[70] overflow-y-auto" role="dialog" aria-modal="true">
             <div class="absolute inset-0 bg-primary-950/60 backdrop-blur-sm" wire:click="closeWhatsappQrPairing"></div>
@@ -528,7 +534,6 @@
             </div>
         </div>
     @endif
-    @endteleport
 
     <script src="{{ asset('vendor/qrcode-generator/qrcode.js') }}"></script>
     <script>

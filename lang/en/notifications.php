@@ -61,7 +61,9 @@ return [
         'field_sms_enabled' => 'Enable SMS',
         'field_whatsapp_enabled' => 'Enable WhatsApp',
         'field_combined_delivery_message' => 'Combine the delivery notice and confirmation link into one message',
-        'field_combined_delivery_message_hint' => 'When on, on delivery the beneficiary receives a single message combining the delivery notice and the receipt-confirmation link instead of two separate messages.',
+        'field_combined_delivery_message_hint' => 'When on, the separate "Confirmation message" section is removed, and the "Aid delivered" template above becomes the only message sent — add {link} directly inside it to carry the confirmation link.',
+        'combined_template_link_hint' => 'On: this template is sent alone as the receipt-confirmation message — it must contain {link}.',
+        'combined_template_link_required' => 'To enable combined messages, the "Aid delivered" template must contain the {link} placeholder (for WhatsApp too, if enabled).',
 
         'section_confirmation_title' => 'Confirmation message',
         'section_confirmation_description' => 'The message sent to the beneficiary with the receipt-confirmation link. Placeholders: {name} beneficiary name, {link} confirmation link.',

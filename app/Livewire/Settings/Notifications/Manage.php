@@ -157,6 +157,15 @@ class Manage extends Component
     {
         Gate::authorize('notifications.settings.manage');
 
+        // When combined mode is on, there is no separate confirmation text
+        // at all (the AidDelivered template carries {link} directly — see
+        // combinedTemplatesContainLink()), so confirmationBody is unused
+        // and not required; its previously-saved value is otherwise left
+        // untouched so switching combined mode back off restores it.
+        $confirmationBodyRules = $this->combinedDeliveryMessage
+            ? ['nullable', 'string', 'max:480']
+            : ['required', 'string', 'max:480', 'regex:/\{link\}/'];
+
         $this->validate([
             'templates.*.*.body' => ['required', 'string', 'max:480'],
             'templates.*.*.is_active' => ['boolean'],
@@ -164,10 +173,7 @@ class Manage extends Component
             'smsEnabled' => ['boolean'],
             'whatsappEnabled' => ['boolean'],
             'combinedDeliveryMessage' => ['boolean'],
-            // The confirmation message must always keep the {link} placeholder,
-            // otherwise the beneficiary would get a message with no way to
-            // confirm receipt.
-            'confirmationBody' => ['required', 'string', 'max:480', 'regex:/\{link\}/'],
+            'confirmationBody' => $confirmationBodyRules,
             'taqnyatApiKeyInput' => ['nullable', 'string', 'max:255'],
             'oktaBaseUrl' => ['nullable', 'string', 'max:255'],
             'oktaChannelId' => ['nullable', 'string', 'max:255'],
@@ -175,6 +181,10 @@ class Manage extends Component
         ], [
             'confirmationBody.regex' => __('notifications.settings.confirmation_body_link_required'),
         ]);
+
+        if ($this->combinedDeliveryMessage && ! $this->combinedTemplatesContainLink()) {
+            return;
+        }
 
         foreach ($this->templates as $eventValue => $channels) {
             foreach ($channels as $channelValue => $data) {
@@ -217,6 +227,43 @@ class Manage extends Component
         $this->resetWhatsappQrState();
 
         $this->dispatch('toast', type: 'success', message: __('notifications.settings.saved'));
+    }
+
+    /**
+     * When combined_delivery_message is on, the AidDelivered per-channel
+     * template *is* the confirmation message and must contain {link} — the
+     * SMS body always (SMS is always sent), and the WhatsApp body too when
+     * that channel is enabled. Adds field errors and returns false without
+     * persisting anything when the requirement isn't met.
+     */
+    private function combinedTemplatesContainLink(): bool
+    {
+        $event = NotificationEvent::AidDelivered->value;
+        $ok = true;
+
+        $smsBody = $this->templates[$event][MessageChannel::Sms->value]['body'] ?? '';
+
+        if (! str_contains($smsBody, '{link}')) {
+            $this->addError(
+                "templates.{$event}.".MessageChannel::Sms->value.'.body',
+                __('notifications.settings.combined_template_link_required'),
+            );
+            $ok = false;
+        }
+
+        if ($this->whatsappEnabled) {
+            $waBody = $this->templates[$event][MessageChannel::WhatsApp->value]['body'] ?? '';
+
+            if (! str_contains($waBody, '{link}')) {
+                $this->addError(
+                    "templates.{$event}.".MessageChannel::WhatsApp->value.'.body',
+                    __('notifications.settings.combined_template_link_required'),
+                );
+                $ok = false;
+            }
+        }
+
+        return $ok;
     }
 
     public function clearTaqnyatApiKey(): void

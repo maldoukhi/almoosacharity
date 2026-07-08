@@ -48,11 +48,16 @@ class NotifyBeneficiary
      * Render the active {@see NotificationTemplate} body for a given
      * event/channel pair with all placeholders substituted, or null when no
      * active template exists (or the aid has no beneficiary). Used by the
-     * combined delivery-message flow to fold the "aid delivered" notice into
-     * the confirmation message — it does not itself send anything and does
-     * not consult the channel-enabled toggles.
+     * combined delivery-message flow, where the "aid delivered" template
+     * *is* the confirmation message (it carries `{link}` directly) — this
+     * does not itself send anything and does not consult the
+     * channel-enabled toggles.
+     *
+     * @param  array<string, string>  $extra  Extra placeholder values merged
+     *                                        in on top of the usual aid/beneficiary vars — e.g. `['link' => $url]`
+     *                                        so a template can reference `{link}`.
      */
-    public function renderBody(Aid $aid, NotificationEvent $event, MessageChannel $channel): ?string
+    public function renderBody(Aid $aid, NotificationEvent $event, MessageChannel $channel, array $extra = []): ?string
     {
         $beneficiary = $aid->beneficiary;
 
@@ -66,7 +71,7 @@ class NotifyBeneficiary
             return null;
         }
 
-        return $this->render($template->body, $this->buildVars($aid, $beneficiary));
+        return $this->render($template->body, $this->buildVars($aid, $beneficiary) + $extra);
     }
 
     /**
@@ -95,6 +100,7 @@ class NotifyBeneficiary
             '{short_name}' => $vars['short_name'],
             '{amount}' => $vars['amount'],
             '{program}' => $vars['program'],
+            '{link}' => $vars['link'] ?? '',
         ]);
     }
 

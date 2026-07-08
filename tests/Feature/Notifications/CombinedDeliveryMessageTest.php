@@ -127,3 +127,30 @@ it('sends a single combined message on delivery when combined mode is on', funct
     expect($body)->toContain('تم تسليم');
     expect($body)->toContain('http');
 });
+
+it('embeds the confirmation link directly inside the AidDelivered template when it already contains {link}', function () {
+    (new NotificationTemplateSeeder)->run();
+
+    // The realistic admin-configured scenario: one single template, edited
+    // directly, carrying {link} itself — no separate confirmation text.
+    NotificationTemplate::query()->updateOrCreate(
+        ['event' => NotificationEvent::AidDelivered->value, 'channel' => MessageChannel::Sms->value],
+        ['body' => 'عزيزي/عزيزتي {name}، تم تسليم إعانتكم بنجاح. لتأكيد الاستلام: {link}', 'is_active' => true],
+    );
+
+    app(Settings::class)->set('combined_delivery_message', '1');
+
+    deliverCashAid();
+
+    $logs = MessageLog::query()->where('recipient', '0501112222')->get();
+
+    expect($logs)->toHaveCount(1);
+
+    $body = $logs->first()->body;
+
+    expect($body)->toContain('تم تسليم');
+    expect($body)->not->toContain('{link}');
+    // The link appears exactly once — embedded inline by the template
+    // itself, not duplicated by the no-link safety-net fallback.
+    expect(substr_count($body, 'http'))->toBe(1);
+});
