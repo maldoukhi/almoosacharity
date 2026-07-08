@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\DisbursementMethod;
 use App\Enums\DisbursementStatus;
+use App\Models\Concerns\HasHashid;
 use Database\Factories\DisbursementFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -23,7 +24,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Disbursement extends Model implements HasMedia
 {
     /** @use HasFactory<DisbursementFactory> */
-    use HasFactory, InteractsWithMedia, LogsActivity;
+    use HasFactory, HasHashid, InteractsWithMedia, LogsActivity;
 
     /**
      * @return array<string, string>

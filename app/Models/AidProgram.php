@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\AidProgramType;
+use App\Models\Concerns\HasHashid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable(['name', 'slug', 'type', 'approval_flow_id', 'is_active', 'sort_order', 'description'])]
 class AidProgram extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, HasHashid, LogsActivity, SoftDeletes;
 
     /**
      * @return array<string, string>

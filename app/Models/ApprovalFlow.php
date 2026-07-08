@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasHashid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable(['name', 'slug', 'is_default', 'is_active', 'description'])]
 class ApprovalFlow extends Model
 {
-    use HasFactory, LogsActivity;
+    use HasFactory, HasHashid, LogsActivity;
 
     /**
      * @return array<string, string>

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\SurveyScope;
+use App\Models\Concerns\HasHashid;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +21,7 @@ use Spatie\Activitylog\Support\LogOptions;
 ])]
 class Survey extends Model
 {
-    use HasFactory, LogsActivity, SoftDeletes;
+    use HasFactory, HasHashid, LogsActivity, SoftDeletes;
 
     /**
      * @return array<string, string>
