@@ -209,7 +209,7 @@
                 </div>
             </x-slot:header>
 
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <x-ui.input
                     :label="__('notifications.settings.field_okta_base_url')"
                     name="oktaBaseUrl"
@@ -217,15 +217,6 @@
                     maxlength="255"
                     dir="ltr"
                     :hint="__('notifications.settings.field_okta_base_url_hint')"
-                />
-
-                <x-ui.input
-                    :label="__('notifications.settings.field_okta_channel_id')"
-                    name="oktaChannelId"
-                    wire:model="oktaChannelId"
-                    maxlength="255"
-                    dir="ltr"
-                    :hint="__('notifications.settings.field_okta_channel_id_hint')"
                 />
 
                 <div>
@@ -306,6 +297,35 @@
                             <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_waiting') }}</p>
                         </div>
                     @endif
+
+                    {{-- The Channel ID is not entered by hand: it is produced by a
+                         successful QR pairing (or taken from .env). Shown read-only
+                         so the operator sees which channel is linked. --}}
+                    <div class="mt-5 max-w-md">
+                        <label for="oktaChannelId" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                            {{ __('notifications.settings.field_okta_channel_id') }}
+                        </label>
+
+                        @if (filled($oktaChannelId))
+                            <div class="flex items-center gap-2">
+                                <input
+                                    id="oktaChannelId"
+                                    type="text"
+                                    readonly
+                                    dir="ltr"
+                                    value="{{ $oktaChannelId }}"
+                                    class="block w-full rounded-(--radius-brand) border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-200"
+                                />
+                                <x-ui.badge color="approved">{{ __('notifications.settings.okta_channel_linked') }}</x-ui.badge>
+                            </div>
+                        @else
+                            <div class="rounded-(--radius-brand) border border-dashed border-gray-300 bg-gray-50/60 px-3.5 py-3 text-sm text-gray-500 dark:border-white/10 dark:bg-white/5 dark:text-gray-400">
+                                {{ __('notifications.settings.okta_channel_not_linked') }}
+                            </div>
+                        @endif
+
+                        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.field_okta_channel_id_hint') }}</p>
+                    </div>
                 @else
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_not_supported') }}</p>
                 @endif
