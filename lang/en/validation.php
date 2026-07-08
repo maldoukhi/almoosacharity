@@ -37,6 +37,7 @@ return [
         'approval_flow' => [
             'at_least_one_stage' => 'The approval flow must have at least one stage.',
             'stage_role_required' => 'Each stage must have a valid role.',
+            'stage_assignee_required' => 'Each stage must have a role or at least one assigned person.',
             'stage_action_required' => 'Each stage must allow at least one action.',
             'stages_in_use' => 'This flow\'s stages cannot be edited while aids are currently under review within it.',
         ],

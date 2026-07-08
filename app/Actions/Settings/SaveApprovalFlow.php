@@ -57,10 +57,13 @@ class SaveApprovalFlow
             $flow->stages()->delete();
 
             foreach ($stages as $index => $stageData) {
+                $assigneeIds = array_values(array_unique(array_map('intval', $stageData['assignee_user_ids'] ?? [])));
+
                 $flow->stages()->create([
                     'name' => $stageData['name'],
                     'order' => $index + 1,
-                    'role' => $stageData['role'],
+                    'role' => ($stageData['role'] ?? '') !== '' ? $stageData['role'] : null,
+                    'assignee_user_ids' => $assigneeIds !== [] ? $assigneeIds : null,
                     'allowed_actions' => array_values($stageData['allowed_actions']),
                 ]);
             }
@@ -70,7 +73,7 @@ class SaveApprovalFlow
     }
 
     /**
-     * @param  array<int, array{name: string, role: string, allowed_actions: array<int, string>}>  $stages
+     * @param  array<int, array{name: string, role?: ?string, assignee_user_ids?: array<int, int>, allowed_actions: array<int, string>}>  $stages
      *
      * @throws InvalidArgumentException
      */
@@ -84,8 +87,18 @@ class SaveApprovalFlow
         $validActions = array_column(ApprovalAction::cases(), 'value');
 
         foreach ($stages as $stage) {
-            if (empty($stage['role']) || ! in_array($stage['role'], $validRoles, true)) {
-                throw new InvalidArgumentException(__('validation.custom.approval_flow.stage_role_required'));
+            $hasRole = ! empty($stage['role']) && in_array($stage['role'], $validRoles, true);
+            $hasUsers = ! empty($stage['assignee_user_ids']);
+
+            // A stage must target a valid role, at least one specific user,
+            // or both — otherwise no one could ever act on it.
+            if (! $hasRole && ! $hasUsers) {
+                throw new InvalidArgumentException(__('validation.custom.approval_flow.stage_assignee_required'));
+            }
+
+            // If a role was supplied it must be a real one.
+            if (! empty($stage['role']) && ! $hasRole) {
+                throw new InvalidArgumentException(__('validation.custom.approval_flow.stage_assignee_required'));
             }
 
             if (empty($stage['allowed_actions']) || count(array_intersect($stage['allowed_actions'], $validActions)) < 1) {

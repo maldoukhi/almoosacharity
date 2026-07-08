@@ -63,13 +63,14 @@ class AidPolicy
 
     /**
      * Take an approval action (approve/reject/return) on the aid's
-     * current stage: requires approvals.act and that the actor holds the
-     * role assigned to that stage.
+     * current stage: requires approvals.act and that the actor is eligible
+     * for that stage — i.e. holds its role or is one of its
+     * specifically-assigned users (see {@see ApprovalFlowStage::allowsUser()}).
      */
     public function act(User $user, Aid $aid): bool
     {
         return $user->can('approvals.act')
             && $aid->currentStage !== null
-            && $user->hasRole($aid->currentStage->role);
+            && $aid->currentStage->allowsUser($user);
     }
 }

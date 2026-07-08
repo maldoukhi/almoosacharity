@@ -203,9 +203,35 @@
                                         :label="__('approval_flows.field_stage_role')"
                                         name="stages.{{ $index }}.role"
                                         wire:model="stages.{{ $index }}.role"
-                                        :placeholder="__('aids.select_placeholder')"
+                                        :placeholder="__('approval_flows.stage_role_none')"
                                         :options="$roleOptions"
+                                        :hint="__('approval_flows.field_stage_role_hint')"
                                     />
+
+                                    <div class="sm:col-span-2">
+                                        <p class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('approval_flows.field_stage_users') }}</p>
+                                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">{{ __('approval_flows.field_stage_users_hint') }}</p>
+
+                                        <div class="max-h-40 space-y-1.5 overflow-y-auto rounded-(--radius-brand) border border-gray-200 p-3 dark:border-white/10">
+                                            @forelse ($this->users as $user)
+                                                <label wire:key="stage-{{ $index }}-user-{{ $user->id }}" class="flex cursor-pointer items-center gap-2 text-sm text-gray-700 select-none dark:text-gray-200">
+                                                    <input
+                                                        type="checkbox"
+                                                        wire:model="stages.{{ $index }}.assignee_user_ids"
+                                                        value="{{ $user->id }}"
+                                                        class="rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary-500/30 dark:border-white/20 dark:bg-transparent"
+                                                    />
+                                                    {{ $user->name }}
+                                                </label>
+                                            @empty
+                                                <p class="text-xs text-gray-400 dark:text-gray-500">{{ __('approval_flows.no_users') }}</p>
+                                            @endforelse
+                                        </div>
+
+                                        @error("stages.{$index}.role")
+                                            <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                                        @enderror
+                                    </div>
 
                                     <div class="sm:col-span-2">
                                         <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('approval_flows.field_stage_actions') }}</p>

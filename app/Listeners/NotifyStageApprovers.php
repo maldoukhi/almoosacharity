@@ -2,7 +2,6 @@
 
 namespace App\Listeners;
 
-use App\Enums\UserStatus;
 use App\Events\Approvals\AidEnteredStage;
 use App\Models\User;
 use App\Notifications\AidAwaitingReviewNotification;
@@ -18,9 +17,9 @@ class NotifyStageApprovers implements ShouldQueue
 {
     public function handle(AidEnteredStage $event): void
     {
-        $recipients = User::role($event->stage->role)
-            ->where('status', UserStatus::Active)
-            ->get();
+        // Everyone eligible for the stage: its role's holders unioned with
+        // any specifically-assigned users (both active only).
+        $recipients = $event->stage->eligibleUsers();
 
         if ($recipients->isEmpty()) {
             return;

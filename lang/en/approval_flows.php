@@ -15,6 +15,11 @@ return [
 
     'field_stage_name' => 'Stage Name',
     'field_stage_role' => 'Responsible Role',
+    'field_stage_role_hint' => 'Optional — assign a role, specific people, or both.',
+    'stage_role_none' => 'No role (specific people only)',
+    'field_stage_users' => 'Specific people (optional)',
+    'field_stage_users_hint' => 'Pick specific users who may act on this stage, in addition to or instead of the role holders.',
+    'no_users' => 'No active users.',
     'field_stage_actions' => 'Allowed Actions',
 
     'stages_title' => 'Stages',

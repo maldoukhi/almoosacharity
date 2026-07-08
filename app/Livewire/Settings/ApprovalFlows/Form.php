@@ -4,8 +4,10 @@ namespace App\Livewire\Settings\ApprovalFlows;
 
 use App\Actions\Settings\SaveApprovalFlow;
 use App\Enums\ApprovalAction;
+use App\Enums\UserStatus;
 use App\Models\ApprovalFlow;
 use App\Models\ApprovalFlowStage;
+use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
@@ -28,7 +30,7 @@ class Form extends Component
 
     public bool $is_active = true;
 
-    /** @var array<int, array{name: string, order: int, role: string, allowed_actions: array<int, string>}> */
+    /** @var array<int, array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>}> */
     public array $stages = [];
 
     public function mount(?ApprovalFlow $flow = null): void
@@ -47,7 +49,8 @@ class Form extends Component
                 ->map(fn (ApprovalFlowStage $stage): array => [
                     'name' => $stage->name,
                     'order' => $stage->order,
-                    'role' => $stage->role,
+                    'role' => (string) $stage->role,
+                    'assignee_user_ids' => $stage->assigneeUserIds(),
                     'allowed_actions' => $stage->allowed_actions ?? [],
                 ])
                 ->all();
@@ -67,6 +70,20 @@ class Form extends Component
     public function roles(): Collection
     {
         return Role::query()->orderBy('name')->get();
+    }
+
+    /**
+     * Active users selectable as specific stage approvers.
+     *
+     * @return Collection<int, User>
+     */
+    #[Computed]
+    public function users(): Collection
+    {
+        return User::query()
+            ->where('status', UserStatus::Active)
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 
     /**
@@ -126,10 +143,21 @@ class Form extends Component
             'is_active' => ['boolean'],
             'stages' => ['array', 'min:1'],
             'stages.*.name' => ['required', 'string', 'max:255'],
-            'stages.*.role' => ['required', 'string', 'exists:roles,name'],
+            'stages.*.role' => ['nullable', 'string', 'exists:roles,name'],
+            'stages.*.assignee_user_ids' => ['array'],
+            'stages.*.assignee_user_ids.*' => ['integer', 'exists:users,id'],
             'stages.*.allowed_actions' => ['array', 'min:1'],
             'stages.*.allowed_actions.*' => [Rule::enum(ApprovalAction::class)],
         ]);
+
+        // Each stage must target a role, at least one user, or both.
+        foreach ($this->stages as $index => $stage) {
+            if (($stage['role'] ?? '') === '' && empty($stage['assignee_user_ids'])) {
+                $this->addError("stages.{$index}.role", __('validation.custom.approval_flow.stage_assignee_required'));
+
+                return;
+            }
+        }
 
         $data = [
             'name' => $this->name,
@@ -138,7 +166,8 @@ class Form extends Component
             'stages' => collect($this->stages)
                 ->map(fn (array $stage): array => [
                     'name' => $stage['name'],
-                    'role' => $stage['role'],
+                    'role' => $stage['role'] ?? '',
+                    'assignee_user_ids' => array_map('intval', $stage['assignee_user_ids'] ?? []),
                     'allowed_actions' => array_values($stage['allowed_actions']),
                 ])
                 ->all(),
@@ -158,7 +187,7 @@ class Form extends Component
     }
 
     /**
-     * @return array{name: string, order: int, role: string, allowed_actions: array<int, string>}
+     * @return array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>}
      */
     private function blankStage(): array
     {
@@ -166,6 +195,7 @@ class Form extends Component
             'name' => '',
             'order' => count($this->stages) + 1,
             'role' => '',
+            'assignee_user_ids' => [],
             'allowed_actions' => [],
         ];
     }
