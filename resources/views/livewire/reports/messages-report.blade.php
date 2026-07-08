@@ -7,7 +7,7 @@
     ]);
 @endphp
 
-<div class="space-y-6">
+<div class="space-y-6" x-data="{ reasonOpen: false, reasonText: '' }">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ __('reports.messages.title') }}</h1>
@@ -111,7 +111,16 @@
                             </x-ui.table.td>
                             <x-ui.table.td>
                                 @if ($row->status === \App\Enums\MessageStatus::Failed && filled($row->error))
-                                    <span class="text-xs text-status-rejected" title="{{ $row->error }}">{{ Illuminate\Support\Str::limit($row->error, 80) }}</span>
+                                    <button
+                                        type="button"
+                                        @click="reasonText = @js($row->error); reasonOpen = true"
+                                        class="inline-flex max-w-[16rem] items-center gap-1 rounded-full bg-status-rejected/10 px-2.5 py-1 text-xs font-medium text-status-rejected transition hover:bg-status-rejected/20"
+                                    >
+                                        <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                                        </svg>
+                                        <span class="truncate">{{ Illuminate\Support\Str::limit($row->error, 40) }}</span>
+                                    </button>
                                 @else
                                     <span class="text-gray-400 dark:text-gray-500">{{ __('common.dash') }}</span>
                                 @endif
@@ -133,4 +142,39 @@
             <div>{{ $this->rows->links() }}</div>
         </div>
     </x-ui.card>
+
+    {{-- Full failure reason (opened by clicking a failed row's badge) --}}
+    <div
+        x-show="reasonOpen"
+        x-cloak
+        class="fixed inset-0 z-[70] overflow-y-auto"
+        role="dialog"
+        aria-modal="true"
+        x-on:keydown.escape.window="reasonOpen = false"
+    >
+        <div class="absolute inset-0 bg-primary-950/60 backdrop-blur-sm" @click="reasonOpen = false"></div>
+
+        <div class="flex min-h-dvh items-center justify-center p-4">
+            <div class="relative w-full max-w-lg overflow-hidden rounded-(--radius-brand) bg-white shadow-xl dark:bg-primary-950 dark:ring-1 dark:ring-white/10">
+                <div class="flex items-center gap-2.5 border-b border-gray-100 px-6 py-4 dark:border-white/10">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-status-rejected/10 text-status-rejected">
+                        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                        </svg>
+                    </span>
+                    <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('reports.messages.column_reason') }}</h3>
+                </div>
+
+                <div class="px-6 py-5">
+                    <p class="rounded-(--radius-brand) bg-gray-50 p-4 text-sm leading-6 break-words whitespace-pre-line text-gray-800 dark:bg-white/5 dark:text-gray-100" dir="ltr" x-text="reasonText"></p>
+                </div>
+
+                <div class="flex items-center justify-end border-t border-gray-100 px-6 py-4 dark:border-white/10">
+                    <x-ui.button type="button" variant="ghost" size="sm" @click="reasonOpen = false">
+                        {{ __('common.close') }}
+                    </x-ui.button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
