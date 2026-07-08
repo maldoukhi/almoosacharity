@@ -83,6 +83,7 @@
                         <x-ui.table.th>{{ __('reports.messages.column_recipient') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_channel') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_status') }}</x-ui.table.th>
+                        <x-ui.table.th>{{ __('reports.messages.column_reason') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_source') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_sender') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_excerpt') }}</x-ui.table.th>
@@ -108,13 +109,20 @@
                             <x-ui.table.td>
                                 <x-ui.badge :color="$row->status->color()">{{ $row->status->label() }}</x-ui.badge>
                             </x-ui.table.td>
+                            <x-ui.table.td>
+                                @if ($row->status === \App\Enums\MessageStatus::Failed && filled($row->error))
+                                    <span class="text-xs text-status-rejected" title="{{ $row->error }}">{{ Illuminate\Support\Str::limit($row->error, 80) }}</span>
+                                @else
+                                    <span class="text-gray-400 dark:text-gray-500">{{ __('common.dash') }}</span>
+                                @endif
+                            </x-ui.table.td>
                             <x-ui.table.td>{{ $this->report->sourceLabel($row) }}</x-ui.table.td>
                             <x-ui.table.td>{{ $this->report->senderName($row) }}</x-ui.table.td>
                             <x-ui.table.td>{{ Illuminate\Support\Str::limit($row->body, 60) }}</x-ui.table.td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                            <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                                 {{ __('reports.pdf.no_data') }}
                             </td>
                         </tr>

@@ -131,6 +131,7 @@ return [
         'column_name' => 'Name',
         'column_channel' => 'Channel',
         'column_status' => 'Status',
+        'column_reason' => 'Failure reason',
         'column_source' => 'Source',
         'column_sender' => 'Sent by',
         'column_excerpt' => 'Excerpt',

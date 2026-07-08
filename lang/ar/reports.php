@@ -131,6 +131,7 @@ return [
         'column_name' => 'الاسم',
         'column_channel' => 'القناة',
         'column_status' => 'الحالة',
+        'column_reason' => 'سبب الفشل',
         'column_source' => 'المصدر',
         'column_sender' => 'من أرسلها',
         'column_excerpt' => 'مقتطف النص',
