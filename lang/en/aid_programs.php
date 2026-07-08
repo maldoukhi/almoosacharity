@@ -22,8 +22,12 @@ return [
 
     'search_placeholder' => 'Search by program name...',
 
+    'count_label' => '{0} No programs|{1} 1 program|[2,*] :count programs',
+
     'empty_title' => 'No Aid Programs',
     'empty_description' => 'Start by creating a new aid program',
+    'empty_search_title' => 'No Matching Results',
+    'empty_search_description' => 'Try different search terms',
 
     'confirm_delete' => 'Are you sure you want to delete this program?',
 

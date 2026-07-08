@@ -22,8 +22,12 @@ return [
 
     'search_placeholder' => 'ابحث باسم البرنامج...',
 
+    'count_label' => '{0} لا توجد برامج|{1} برنامج واحد|[2,*] :count برامج',
+
     'empty_title' => 'لا توجد برامج إعانات',
     'empty_description' => 'ابدأ بإنشاء برنامج إعانة جديد',
+    'empty_search_title' => 'لا توجد نتائج مطابقة',
+    'empty_search_description' => 'جرّب كلمات بحث مختلفة',
 
     'confirm_delete' => 'هل أنت متأكد من رغبتك في حذف هذا البرنامج؟',
 
