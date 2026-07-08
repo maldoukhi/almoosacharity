@@ -5,6 +5,7 @@ use App\Enums\AidProgramType;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
 use App\Livewire\Aids\Form;
+use App\Models\Aid;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
 use Livewire\Exceptions\PublicPropertyNotFoundException;
@@ -53,7 +54,7 @@ it('cannot change an aid\'s status via a raw Livewire set() on the create form',
     $beneficiary = Beneficiary::factory()->create();
 
     $component = Livewire::test(Form::class)
-        ->set('beneficiary_id', $beneficiary->id)
+        ->set('beneficiary_ids', [$beneficiary->id])
         ->set('aid_program_id', $program->id)
         ->set('type', AidType::Cash->value)
         ->set('amount', 650)
@@ -67,7 +68,7 @@ it('cannot change an aid\'s status via a raw Livewire set() on the create form',
 
     $component->call('save');
 
-    $created = \App\Models\Aid::query()->where('purpose', 'اختبار الحماية')->firstOrFail();
+    $created = Aid::query()->where('purpose', 'اختبار الحماية')->firstOrFail();
 
     expect($created->status)->toBe(AidStatus::Draft);
 });

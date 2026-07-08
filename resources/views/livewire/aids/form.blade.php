@@ -24,13 +24,83 @@
     <x-ui.card>
         <form wire:submit="save" class="space-y-6">
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <x-ui.select
-                    :label="__('aids.field_beneficiary')"
-                    name="beneficiary_id"
-                    wire:model="beneficiary_id"
-                    :placeholder="__('aids.select_placeholder')"
-                    :options="$beneficiaryOptions"
-                />
+                @if ($isEdit)
+                    <x-ui.select
+                        :label="__('aids.field_beneficiary')"
+                        name="beneficiary_id"
+                        wire:model="beneficiary_id"
+                        :placeholder="__('aids.select_placeholder')"
+                        :options="$beneficiaryOptions"
+                    />
+                @else
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                            {{ __('aids.field_beneficiaries') }}
+                        </label>
+
+                        @if ($this->selectedBeneficiaries->isNotEmpty())
+                            <div class="mb-2.5 flex flex-wrap gap-2">
+                                @foreach ($this->selectedBeneficiaries as $beneficiary)
+                                    <span
+                                        wire:key="beneficiary-chip-{{ $beneficiary->id }}"
+                                        style="animation: fade-in-up 0.2s ease-out both"
+                                        class="inline-flex items-center gap-1.5 rounded-full bg-primary-50 py-1.5 ps-3 pe-2 text-xs font-medium text-primary-700 dark:bg-primary-500/20 dark:text-primary-200"
+                                    >
+                                        {{ $beneficiary->full_name }}
+                                        <button
+                                            type="button"
+                                            wire:click="removeBeneficiary({{ $beneficiary->id }})"
+                                            class="rounded-full p-0.5 text-primary-500 transition duration-150 ease-out hover:bg-primary-100 hover:text-primary-700 dark:text-primary-300 dark:hover:bg-primary-500/30"
+                                        >
+                                            <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                            <span class="sr-only">{{ __('common.delete') }}</span>
+                                        </button>
+                                    </span>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        <x-ui.input
+                            type="search"
+                            name="beneficiarySearch"
+                            wire:model.live.debounce.300ms="beneficiarySearch"
+                            :placeholder="__('aids.beneficiary_search_placeholder')"
+                        />
+
+                        @if ($beneficiarySearch !== '')
+                            <div class="mt-2 max-h-56 divide-y divide-gray-100 overflow-y-auto rounded-(--radius-brand) border border-gray-200 dark:divide-white/10 dark:border-white/10">
+                                @forelse ($this->beneficiaries as $beneficiary)
+                                    @php $alreadySelected = in_array($beneficiary->id, $beneficiary_ids, true); @endphp
+                                    <button
+                                        type="button"
+                                        wire:key="beneficiary-option-{{ $beneficiary->id }}"
+                                        wire:click="addBeneficiary({{ $beneficiary->id }})"
+                                        @disabled($alreadySelected)
+                                        class="flex w-full items-center justify-between px-3.5 py-2.5 text-start text-sm text-gray-700 transition duration-150 ease-out hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 dark:text-gray-200 dark:hover:bg-white/5 dark:disabled:bg-white/5 dark:disabled:text-gray-500"
+                                    >
+                                        <span>{{ $beneficiary->full_name }}</span>
+
+                                        @if ($alreadySelected)
+                                            <span class="text-xs text-secondary-600 dark:text-secondary-400">{{ __('aids.already_selected') }}</span>
+                                        @endif
+                                    </button>
+                                @empty
+                                    <p class="px-3.5 py-2.5 text-sm text-gray-500 dark:text-gray-400">{{ __('aids.no_beneficiaries_found') }}</p>
+                                @endforelse
+                            </div>
+                        @endif
+
+                        <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                            {{ trans_choice('aids.selected_count', count($beneficiary_ids), ['count' => count($beneficiary_ids)]) }}
+                        </p>
+
+                        @error('beneficiary_ids')
+                            <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                        @enderror
+                    </div>
+                @endif
 
                 <x-ui.select
                     :label="__('aids.field_program')"
@@ -151,6 +221,12 @@
                     <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
                 @enderror
             </div>
+
+            @if (! $isEdit && count($beneficiary_ids) > 1)
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                    {{ __('aids.bulk_create_hint', ['count' => count($beneficiary_ids)]) }}
+                </p>
+            @endif
 
             <div class="flex flex-col-reverse items-stretch justify-end gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center dark:border-white/10">
                 <x-ui.button href="{{ route('aids.index') }}" variant="ghost">

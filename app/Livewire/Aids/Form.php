@@ -32,7 +32,20 @@ class Form extends Component
 {
     public ?Aid $aid = null;
 
+    /**
+     * Single beneficiary, used only in edit mode (an existing aid always
+     * belongs to exactly one beneficiary).
+     */
     public ?int $beneficiary_id = null;
+
+    /**
+     * Selected beneficiary ids, used only in create mode: submitting the
+     * form raises one independent aid per id, all sharing the same
+     * program/type/amount-or-items/notes entered below.
+     *
+     * @var array<int, int>
+     */
+    public array $beneficiary_ids = [];
 
     public ?int $aid_program_id = null;
 
@@ -96,8 +109,10 @@ class Form extends Component
 
     /**
      * The first 20 beneficiaries matching {@see $beneficiarySearch} by name
-     * or national ID, always including the currently selected beneficiary
-     * (if any) so it never disappears from the picker once chosen.
+     * or national ID, always including every currently selected beneficiary
+     * (the single {@see $beneficiary_id} in edit mode, or the whole
+     * {@see $beneficiary_ids} list in create mode) so none of them ever
+     * disappears from the picker once chosen.
      *
      * @return Collection<int, Beneficiary>
      */
@@ -121,17 +136,67 @@ class Form extends Component
             ->limit(20)
             ->get();
 
-        if ($this->beneficiary_id && ! $matches->contains('id', $this->beneficiary_id)) {
-            $selected = Beneficiary::query()
-                ->select(['id', 'first_name', 'second_name', 'third_name', 'last_name', 'national_id'])
-                ->find($this->beneficiary_id);
+        $selectedIds = array_unique(array_merge(
+            $this->beneficiary_id ? [$this->beneficiary_id] : [],
+            $this->beneficiary_ids,
+        ));
 
-            if ($selected) {
-                $matches->prepend($selected);
-            }
+        $missingIds = array_diff($selectedIds, $matches->pluck('id')->all());
+
+        if ($missingIds !== []) {
+            $missing = Beneficiary::query()
+                ->select(['id', 'first_name', 'second_name', 'third_name', 'last_name', 'national_id'])
+                ->whereIn('id', $missingIds)
+                ->get();
+
+            $matches = $missing->concat($matches);
         }
 
         return $matches;
+    }
+
+    /**
+     * The full beneficiary models behind {@see $beneficiary_ids}, in
+     * selection order, for rendering them as removable chips in the
+     * create-mode picker.
+     *
+     * @return Collection<int, Beneficiary>
+     */
+    #[Computed]
+    public function selectedBeneficiaries(): Collection
+    {
+        if ($this->beneficiary_ids === []) {
+            return collect();
+        }
+
+        $byId = Beneficiary::query()
+            ->select(['id', 'first_name', 'second_name', 'third_name', 'last_name', 'national_id'])
+            ->whereIn('id', $this->beneficiary_ids)
+            ->get()
+            ->keyBy('id');
+
+        return collect($this->beneficiary_ids)
+            ->map(fn (int $id): ?Beneficiary => $byId->get($id))
+            ->filter()
+            ->values();
+    }
+
+    /**
+     * Add a beneficiary to the create-mode multi-select, ignoring
+     * duplicates. The search box and its results list are deliberately
+     * left untouched (rather than cleared) so several beneficiaries can be
+     * added one after another from the same search without retyping.
+     */
+    public function addBeneficiary(int $id): void
+    {
+        if (! in_array($id, $this->beneficiary_ids, true)) {
+            $this->beneficiary_ids[] = $id;
+        }
+    }
+
+    public function removeBeneficiary(int $id): void
+    {
+        $this->beneficiary_ids = array_values(array_diff($this->beneficiary_ids, [$id]));
     }
 
     #[Computed]
@@ -204,41 +269,82 @@ class Form extends Component
 
     public function save(): void
     {
-        $aid = $this->persist();
+        $result = $this->persist();
 
-        if (! $aid) {
+        if ($result === null) {
             return;
         }
 
-        $this->redirectRoute('aids.show', ['aid' => $aid->id], navigate: true);
+        if ($result instanceof Aid) {
+            $this->redirectRoute('aids.show', ['aid' => $result->id], navigate: true);
+
+            return;
+        }
+
+        $this->redirectRoute('aids.index', navigate: true);
     }
 
     public function saveAndSubmit(): void
     {
-        $aid = $this->persist();
+        $result = $this->persist();
 
-        if (! $aid) {
+        if ($result === null) {
             return;
         }
 
-        try {
-            app(SubmitAid::class)->handle($aid, Auth::user());
+        if ($result instanceof Aid) {
+            try {
+                app(SubmitAid::class)->handle($result, Auth::user());
 
-            $this->dispatch('toast', type: 'success', message: __('aids.messages.submitted'));
-        } catch (InvalidAidTransitionException|AuthorizationException $exception) {
-            $this->dispatch('toast', type: 'error', message: $exception->getMessage());
+                $this->dispatch('toast', type: 'success', message: __('aids.messages.submitted'));
+            } catch (InvalidAidTransitionException|AuthorizationException $exception) {
+                $this->dispatch('toast', type: 'error', message: $exception->getMessage());
+            }
+
+            $this->redirectRoute('aids.show', ['aid' => $result->id], navigate: true);
+
+            return;
         }
 
-        $this->redirectRoute('aids.show', ['aid' => $aid->id], navigate: true);
+        // Bulk create: submit every aid independently, one exception at a
+        // time, so one beneficiary's failure doesn't block the rest.
+        $submittedCount = 0;
+
+        foreach ($result as $aid) {
+            try {
+                app(SubmitAid::class)->handle($aid, Auth::user());
+
+                $submittedCount++;
+            } catch (InvalidAidTransitionException|AuthorizationException $exception) {
+                $this->dispatch('toast', type: 'error', message: $exception->getMessage());
+            }
+        }
+
+        if ($submittedCount > 0) {
+            $this->dispatch('toast', type: 'success', message: __('aids.messages.bulk_submitted', ['count' => $submittedCount]));
+        }
+
+        $this->redirectRoute('aids.index', navigate: true);
     }
 
     /**
-     * Validate, save (create or update) the aid, and redirect to its show
-     * page with a success toast. Returns null (without redirecting) if
-     * validation or the type/program compatibility check fails, so
-     * {@see saveAndSubmit()} can bail out early too.
+     * Validate, save the aid(s), and dispatch a success toast.
+     *
+     * In edit mode (a single, existing aid) this returns the updated Aid,
+     * unchanged from before multi-beneficiary create was added. In create
+     * mode it raises one independent aid per selected beneficiary — all
+     * sharing the same program/type/amount-or-items/notes — and returns
+     * them as a Collection (even when only one beneficiary was picked, so
+     * {@see save()}/{@see saveAndSubmit()} tell single- and multi-create
+     * apart by checking whether more than one aid came back).
+     *
+     * Returns null (without persisting anything) if validation or the
+     * type/program compatibility check fails, so both callers can bail out
+     * early.
+     *
+     * @return Aid|Collection<int, Aid>|null
      */
-    private function persist(): ?Aid
+    private function persist(): Aid|Collection|null
     {
         $isUpdate = $this->aid?->exists ?? false;
 
@@ -246,12 +352,7 @@ class Form extends Component
 
         $isInKind = $this->type === AidType::InKind->value;
 
-        $validated = $this->validate([
-            'beneficiary_id' => [
-                'required',
-                'integer',
-                Rule::exists('beneficiaries', 'id')->whereNull('deleted_at'),
-            ],
+        $rules = [
             'aid_program_id' => [
                 'required',
                 'integer',
@@ -266,7 +367,23 @@ class Form extends Component
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.estimated_value' => ['nullable', 'numeric', 'min:0'],
             'items.*.description' => ['nullable', 'string'],
-        ]);
+        ];
+
+        if ($isUpdate) {
+            $rules['beneficiary_id'] = [
+                'required',
+                'integer',
+                Rule::exists('beneficiaries', 'id')->whereNull('deleted_at'),
+            ];
+        } else {
+            $rules['beneficiary_ids'] = ['required', 'array', 'min:1'];
+            $rules['beneficiary_ids.*'] = [
+                'integer',
+                Rule::exists('beneficiaries', 'id')->whereNull('deleted_at'),
+            ];
+        }
+
+        $validated = $this->validate($rules);
 
         $program = AidProgram::findOrFail($validated['aid_program_id']);
 
@@ -278,21 +395,44 @@ class Form extends Component
             return null;
         }
 
-        try {
-            $aid = $isUpdate
-                ? app(UpdateAid::class)->handle($this->aid, $validated)
-                : app(CreateAid::class)->handle($validated, Auth::user());
-        } catch (InvalidAidTransitionException $exception) {
-            $this->dispatch('toast', type: 'error', message: $exception->getMessage());
+        if ($isUpdate) {
+            try {
+                $aid = app(UpdateAid::class)->handle($this->aid, $validated);
+            } catch (InvalidAidTransitionException $exception) {
+                $this->dispatch('toast', type: 'error', message: $exception->getMessage());
 
-            return null;
+                return null;
+            }
+
+            $this->aid = $aid;
+
+            $this->dispatch('toast', type: 'success', message: __('aids.messages.saved'));
+
+            return $aid;
         }
 
-        $this->aid = $aid;
+        $beneficiaryIds = $validated['beneficiary_ids'];
+        unset($validated['beneficiary_ids']);
 
-        $this->dispatch('toast', type: 'success', message: __('aids.messages.saved'));
+        $createdAids = collect($beneficiaryIds)
+            ->map(fn (int $beneficiaryId): Aid => app(CreateAid::class)->handle(
+                [...$validated, 'beneficiary_id' => $beneficiaryId],
+                Auth::user(),
+            ));
 
-        return $aid;
+        if ($createdAids->count() === 1) {
+            $aid = $createdAids->first();
+
+            $this->aid = $aid;
+
+            $this->dispatch('toast', type: 'success', message: __('aids.messages.saved'));
+
+            return $aid;
+        }
+
+        $this->dispatch('toast', type: 'success', message: __('aids.messages.bulk_created', ['count' => $createdAids->count()]));
+
+        return $createdAids;
     }
 
     public function render()

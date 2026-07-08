@@ -10,6 +10,7 @@ return [
     'create_button' => 'New Aid',
 
     'field_beneficiary' => 'Beneficiary',
+    'field_beneficiaries' => 'Beneficiaries',
     'field_program' => 'Program',
     'field_type' => 'Aid Type',
     'field_amount' => 'Amount',
@@ -30,6 +31,11 @@ return [
 
     'select_placeholder' => 'Select from the list',
     'search_placeholder' => 'Search by reference or beneficiary name...',
+    'beneficiary_search_placeholder' => 'Search by name or national ID to add a beneficiary...',
+    'no_beneficiaries_found' => 'No beneficiaries match your search',
+    'already_selected' => 'Already added',
+    'selected_count' => '{0} No beneficiary selected yet|{1} 1 beneficiary selected|[2,*] :count beneficiaries selected',
+    'bulk_create_hint' => 'An independent aid will be created for each of the :count selected beneficiaries, using the same data entered above.',
 
     'type_cash' => 'Cash Aid',
     'type_cash_hint' => 'Provide a specific amount in Saudi Riyals',
@@ -97,6 +103,8 @@ return [
         'saved' => 'Aid saved successfully',
         'deleted' => 'Aid deleted successfully',
         'cancelled' => 'Aid cancelled successfully',
+        'bulk_created' => ':count aids created successfully, one independent aid per beneficiary',
+        'bulk_submitted' => ':count aids submitted successfully for approval',
     ],
 
     'programs' => [

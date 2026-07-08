@@ -10,6 +10,7 @@ return [
     'create_button' => 'إعانة جديدة',
 
     'field_beneficiary' => 'المستفيد',
+    'field_beneficiaries' => 'المستفيدون',
     'field_program' => 'البرنامج',
     'field_type' => 'نوع الإعانة',
     'field_amount' => 'المبلغ',
@@ -30,6 +31,11 @@ return [
 
     'select_placeholder' => 'اختر من القائمة',
     'search_placeholder' => 'ابحث بالمرجع أو اسم المستفيد...',
+    'beneficiary_search_placeholder' => 'ابحث بالاسم أو رقم الهوية لإضافة مستفيد...',
+    'no_beneficiaries_found' => 'لا يوجد مستفيدون مطابقون للبحث',
+    'already_selected' => 'مُضاف مسبقًا',
+    'selected_count' => '{0} لم يُختر أي مستفيد بعد|{1} تم اختيار مستفيد واحد|[2,*] تم اختيار :count مستفيدين',
+    'bulk_create_hint' => 'سيتم إنشاء إعانة مستقلة لكل مستفيد من المستفيدين الـ :count المختارين، بنفس البيانات المُدخلة أعلاه.',
 
     'type_cash' => 'إعانة نقدية',
     'type_cash_hint' => 'دفع مبلغ محدد بالريال السعودي',
@@ -97,6 +103,8 @@ return [
         'saved' => 'تم حفظ الإعانة بنجاح',
         'deleted' => 'تم حذف الإعانة بنجاح',
         'cancelled' => 'تم إلغاء الإعانة بنجاح',
+        'bulk_created' => 'تم إنشاء :count إعانة بنجاح، إعانة مستقلة لكل مستفيد',
+        'bulk_submitted' => 'تم تقديم :count إعانة بنجاح للموافقة',
     ],
 
     'programs' => [
