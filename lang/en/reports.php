@@ -137,7 +137,7 @@ return [
         'reason_provider_label' => 'Provider message',
         'reason_hint_label' => 'What does this mean?',
         // Friendly explanations for recognized provider error messages.
-        'hint_invalid_credentials' => 'The Taqnyat API key is wrong or expired, so the provider rejected the request. Open Notification settings → Connection settings, enter a valid API key from your Taqnyat dashboard, then click "Verify connection" before saving.',
+        'hint_invalid_credentials' => 'The provider rejected the request because the Taqnyat API key was not valid at the time this message was sent. This is a historical record of that moment and is not updated automatically. If "Verify connection" now succeeds, your current key is valid — just press "Resend" and it will go out with the correct key. If a brand-new message keeps failing with the same reason, open Notification settings → Connection settings and enter a valid API key from your Taqnyat dashboard.',
         'hint_insufficient_balance' => 'The Taqnyat account balance is not enough to send the message. Top up the account from your Taqnyat dashboard, then resend.',
         'hint_invalid_sender' => 'The sender name is not approved by Taqnyat. Make sure the sender name is approved on your account, then pick it from "Fetch available names" in the connection settings.',
         'hint_rate_limited' => 'The provider rate limit was exceeded. Wait a moment, then resend.',
