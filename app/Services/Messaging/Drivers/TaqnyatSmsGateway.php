@@ -124,6 +124,147 @@ class TaqnyatSmsGateway implements SmsGatewayInterface
         return GatewayResponse::success(null, $raw);
     }
 
+    /**
+     * List the account's registered sender names.
+     *
+     * Confirmed by reading github.com/taqnyat/php (`TaqnyatSms::senders()`
+     * in TaqnyatSms.php): `GET {base}/v1/messages/senders` — same `/v1`
+     * prefix as `/v1/messages`, same `Authorization: Bearer` header. As
+     * with {@see verify()}, the package only forwards the raw decoded
+     * response body — there is no documented response schema anywhere
+     * (no sample JSON in the README, no public API reference describing
+     * it), so {@see normalizeSenders()} is deliberately tolerant of
+     * several plausible shapes rather than assuming one.
+     */
+    public function senders(): GatewayResponse
+    {
+        $apiKey = app(Settings::class)->getSecret('taqnyat_api_key') ?: $this->apiKey;
+
+        if ($apiKey === '') {
+            return GatewayResponse::failure('Taqnyat API key is not configured.');
+        }
+
+        $response = Http::withToken($apiKey)
+            ->acceptJson()
+            ->get(rtrim($this->baseUrl, '/').'/v1/messages/senders');
+
+        $raw = (array) ($response->json() ?? []);
+
+        if ($response->failed()) {
+            $error = is_string($raw['message'] ?? null)
+                ? $raw['message']
+                : 'Taqnyat request failed with status '.$response->status().'.';
+
+            return GatewayResponse::failure($error, $raw);
+        }
+
+        return GatewayResponse::success(null, $raw + ['normalizedSenders' => $this->normalizeSenders($raw)]);
+    }
+
+    /**
+     * Normalize an arbitrarily-shaped "senders" response body into a flat
+     * list of *accepted* sender names, tolerating several possible
+     * response shapes (see {@see senders()} for why the exact shape isn't
+     * known):
+     *
+     * - The list itself may be wrapped under one of several plausible
+     *   keys (`senders`, `data`, `result`, `results`, `senderNames`), or
+     *   the decoded body may already *be* the list at its root.
+     * - Each entry may be a bare string (just the name), or an object
+     *   whose name is under one of `name`/`senderName`/`sender_name`/
+     *   `sender`/`title`, and whose status (if any) is under one of
+     *   `status`/`state`/`approval_status`/`approved`.
+     *
+     * Only entries resolved as accepted/approved are kept — per this
+     * class's contract, this list feeds the settings screen's sender
+     * pick-list, which must only ever offer names that actually work.
+     * An entry with no status field at all carries nothing to filter on,
+     * so it is kept (status `null`, no badge shown by the UI) rather than
+     * dropped.
+     *
+     * @param  array<string, mixed>  $raw
+     * @return list<array{name: string, status: ?string}>
+     */
+    protected function normalizeSenders(array $raw): array
+    {
+        $list = null;
+
+        foreach (['senders', 'data', 'result', 'results', 'senderNames'] as $key) {
+            if (isset($raw[$key]) && is_array($raw[$key])) {
+                $list = $raw[$key];
+                break;
+            }
+        }
+
+        if ($list === null && array_is_list($raw)) {
+            $list = $raw;
+        }
+
+        if ($list === null) {
+            return [];
+        }
+
+        $accepted = [];
+
+        foreach ($list as $item) {
+            if (is_string($item)) {
+                // A bare string entry carries no status info to filter on.
+                $accepted[] = ['name' => $item, 'status' => null];
+
+                continue;
+            }
+
+            if (! is_array($item)) {
+                continue;
+            }
+
+            $name = null;
+
+            foreach (['name', 'senderName', 'sender_name', 'sender', 'title'] as $nameKey) {
+                if (is_string($item[$nameKey] ?? null) && $item[$nameKey] !== '') {
+                    $name = $item[$nameKey];
+                    break;
+                }
+            }
+
+            if ($name === null) {
+                continue;
+            }
+
+            $statusRaw = null;
+
+            foreach (['status', 'state', 'approval_status', 'approved'] as $statusKey) {
+                if (array_key_exists($statusKey, $item)) {
+                    $statusRaw = $item[$statusKey];
+                    break;
+                }
+            }
+
+            if ($statusRaw === null) {
+                $accepted[] = ['name' => $name, 'status' => null];
+
+                continue;
+            }
+
+            $normalizedStatus = match (true) {
+                is_bool($statusRaw) => $statusRaw ? 'accepted' : 'rejected',
+                is_int($statusRaw) => $statusRaw === 1 ? 'accepted' : 'rejected',
+                is_string($statusRaw) => strtolower(trim($statusRaw)),
+                default => null,
+            };
+
+            $isAccepted = $normalizedStatus !== null && in_array($normalizedStatus, [
+                'accepted', 'approved', 'active', 'ok', 'confirmed', 'success', '1', 'true',
+            ], true);
+
+            if ($isAccepted) {
+                $accepted[] = ['name' => $name, 'status' => 'accepted'];
+            }
+        }
+
+        return $accepted;
+    }
+
     protected function parseRetryAfter(?string $header): ?int
     {
         if ($header === null || $header === '') {

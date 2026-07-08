@@ -58,6 +58,26 @@ class Manage extends Component
     /** @var array{success: bool, message: ?string, balance: ?string}|null */
     public ?array $taqnyatVerifyResult = null;
 
+    /**
+     * Sender names fetched from the connected Taqnyat account (accepted
+     * only — see {@see TaqnyatSmsGateway::normalizeSenders()}), populated
+     * on demand by {@see fetchSenders()}. Empty/unfetched by default, in
+     * which case the view keeps showing the free-text sender field only.
+     *
+     * @var list<array{name: string, status: ?string}>
+     */
+    public array $availableSenders = [];
+
+    /** Whether {@see fetchSenders()} has been called at least once (even if it came back empty), so the view can tell "not fetched yet" apart from "fetched, none found". */
+    public bool $sendersLoaded = false;
+
+    /**
+     * Bound to the sender pick-list. The sentinel value `__manual` means
+     * "keep using the free-text {@see $senderName} field as-is" rather
+     * than a fetched name.
+     */
+    public string $senderSelection = '__manual';
+
     /** @var array{success: bool, message: ?string, status: ?string}|null */
     public ?array $oktaVerifyResult = null;
 
@@ -252,6 +272,63 @@ class Manage extends Component
             'message' => $response->error,
             'balance' => is_scalar($balance) ? (string) $balance : null,
         ];
+    }
+
+    /**
+     * Pulls the accepted sender names off the currently effective Taqnyat
+     * account (same "typed-but-unsaved, else saved, else .env" precedence
+     * as {@see verifyTaqnyat()}) so the sender field can offer a pick-list
+     * instead of pure free text.
+     */
+    public function fetchSenders(): void
+    {
+        Gate::authorize('notifications.settings.manage');
+
+        $settings = app(Settings::class);
+        $typed = trim($this->taqnyatApiKeyInput);
+        $apiKey = $typed !== '' ? $typed : ($settings->getSecret('taqnyat_api_key') ?: (string) config('services.taqnyat.api_key'));
+        $sender = $settings->get('taqnyat_sender') ?: (string) config('services.taqnyat.sender');
+
+        if ($apiKey === '') {
+            $this->dispatch('toast', type: 'error', message: __('notifications.settings.taqnyat_verify_missing_config'));
+
+            return;
+        }
+
+        $response = (new TaqnyatSmsGateway(apiKey: $apiKey, sender: $sender))->senders();
+
+        if (! $response->success) {
+            $this->dispatch('toast', type: 'error', message: __('notifications.settings.senders_fetch_failed', ['message' => $response->error ?? '']));
+
+            return;
+        }
+
+        /** @var list<array{name: string, status: ?string}> $normalized */
+        $normalized = $response->raw['normalizedSenders'] ?? [];
+
+        $this->availableSenders = $normalized;
+        $this->sendersLoaded = true;
+        $this->senderSelection = '__manual';
+
+        if ($normalized === []) {
+            $this->dispatch('toast', type: 'error', message: __('notifications.settings.senders_fetch_empty'));
+
+            return;
+        }
+
+        $this->dispatch('toast', type: 'success', message: __('notifications.settings.senders_fetch_success'));
+    }
+
+    /**
+     * Picking a fetched sender name fills the free-text {@see $senderName}
+     * field with it; picking the "manual entry" sentinel leaves whatever
+     * is already typed there untouched.
+     */
+    public function updatedSenderSelection(string $value): void
+    {
+        if ($value !== '__manual' && $value !== '') {
+            $this->senderName = $value;
+        }
     }
 
     public function verifyOkta(): void

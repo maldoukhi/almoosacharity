@@ -49,6 +49,25 @@ class FakeSmsGateway implements SmsGatewayInterface
     }
 
     /**
+     * A fixed, always-accepted fake sender list, so local dev/tests can
+     * exercise the settings screen's "fetch available senders" action
+     * without real Taqnyat credentials.
+     */
+    public function senders(): GatewayResponse
+    {
+        if (static::$shouldFail) {
+            return GatewayResponse::failure(static::$failureMessage ?? 'Fake SMS gateway forced failure.');
+        }
+
+        $normalized = [
+            ['name' => 'Almoosa', 'status' => 'accepted'],
+            ['name' => 'Charity', 'status' => 'accepted'],
+        ];
+
+        return GatewayResponse::success(null, ['senders' => $normalized, 'normalizedSenders' => $normalized]);
+    }
+
+    /**
      * Force every subsequent call to fail, for testing the retry/failure path.
      */
     public static function failNext(?string $message = null): void

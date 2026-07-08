@@ -65,6 +65,15 @@ return [
         'field_api_key_placeholder' => 'أدخل مفتاح Taqnyat',
         'field_api_key_hint' => 'يُترك فارغًا عند الحفظ للإبقاء على المفتاح الحالي',
 
+        'action_fetch_senders' => 'سحب الأسماء المتاحة',
+        'senders_fetch_success' => 'تم سحب أسماء المرسل المتاحة بنجاح',
+        'senders_fetch_failed' => 'تعذّر سحب أسماء المرسل: :message',
+        'senders_fetch_empty' => 'لم يتم العثور على أسماء مرسل مقبولة في هذا الحساب',
+        'field_sender_select_label' => 'اختيار من الأسماء المسحوبة',
+        'field_sender_manual_option' => 'إدخال يدوي',
+        'sender_status_accepted' => 'مقبول',
+        'sender_status_pending' => 'قيد المراجعة',
+
         'action_clear' => 'مسح',
         'confirm_clear_secret' => 'هل تريد حذف هذا المفتاح المحفوظ؟ لن يعمل الإرسال عبر هذا المزود حتى إدخال مفتاح جديد.',
         'action_verify' => 'تحقق من الاتصال',

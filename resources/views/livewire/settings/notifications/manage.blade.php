@@ -108,13 +108,51 @@
             </x-slot:header>
 
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                <x-ui.input
-                    :label="__('notifications.settings.field_sender_name')"
-                    name="senderName"
-                    wire:model="senderName"
-                    maxlength="11"
-                    :hint="__('notifications.settings.field_sender_name_hint')"
-                />
+                <div>
+                    <x-ui.input
+                        :label="__('notifications.settings.field_sender_name')"
+                        name="senderName"
+                        wire:model="senderName"
+                        maxlength="11"
+                        :hint="__('notifications.settings.field_sender_name_hint')"
+                    />
+
+                    <div class="mt-3 flex flex-wrap items-center gap-3">
+                        <x-ui.button type="button" variant="ghost" size="sm" wire:click="fetchSenders">
+                            {{ __('notifications.settings.action_fetch_senders') }}
+                        </x-ui.button>
+                    </div>
+
+                    @if ($sendersLoaded)
+                        @if (count($availableSenders) > 0)
+                            <div class="mt-3">
+                                <x-ui.select
+                                    :label="__('notifications.settings.field_sender_select_label')"
+                                    name="senderSelection"
+                                    wire:model="senderSelection"
+                                >
+                                    <option value="__manual">{{ __('notifications.settings.field_sender_manual_option') }}</option>
+                                    @foreach ($availableSenders as $sender)
+                                        <option value="{{ $sender['name'] }}">{{ $sender['name'] }}</option>
+                                    @endforeach
+                                </x-ui.select>
+
+                                <div class="mt-2 flex flex-wrap items-center gap-1.5">
+                                    @foreach ($availableSenders as $sender)
+                                        <x-ui.badge color="approved">
+                                            {{ $sender['name'] }}
+                                            @if ($sender['status'])
+                                                — {{ __('notifications.settings.sender_status_'.$sender['status']) }}
+                                            @endif
+                                        </x-ui.badge>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.senders_fetch_empty') }}</p>
+                        @endif
+                    @endif
+                </div>
 
                 <div>
                     <x-ui.input

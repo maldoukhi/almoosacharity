@@ -65,6 +65,15 @@ return [
         'field_api_key_placeholder' => 'Enter the Taqnyat API key',
         'field_api_key_hint' => 'Leave empty when saving to keep the current key',
 
+        'action_fetch_senders' => 'Fetch available senders',
+        'senders_fetch_success' => 'Available sender names fetched successfully',
+        'senders_fetch_failed' => 'Could not fetch sender names: :message',
+        'senders_fetch_empty' => 'No accepted sender names were found on this account',
+        'field_sender_select_label' => 'Pick from the fetched names',
+        'field_sender_manual_option' => 'Manual entry',
+        'sender_status_accepted' => 'Accepted',
+        'sender_status_pending' => 'Pending review',
+
         'action_clear' => 'Clear',
         'confirm_clear_secret' => 'Delete this saved key? Sending through this provider will stop working until a new key is entered.',
         'action_verify' => 'Verify connection',

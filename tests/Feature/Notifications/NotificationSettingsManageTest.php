@@ -62,7 +62,7 @@ it('forbids a user without notifications.settings.manage from calling any provid
 
     foreach ([
         'verifyTaqnyat', 'verifyOkta', 'clearTaqnyatApiKey', 'clearOktaToken',
-        'startWhatsappQrPairing', 'pollWhatsappQrStatus',
+        'startWhatsappQrPairing', 'pollWhatsappQrStatus', 'fetchSenders',
     ] as $action) {
         expect(fn () => $component->{$action}())
             ->toThrow(AuthorizationException::class);
@@ -196,6 +196,49 @@ it('verifies the Taqnyat connection and shows the balance on success', function 
         'success' => true,
         'balance' => '75.00',
     ]);
+});
+
+it('fetches the available Taqnyat sender names and offers them for selection', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    Http::fake([
+        'api.taqnyat.sa/v1/messages/senders' => Http::response([
+            'senders' => [
+                ['name' => 'ALMOOSA', 'status' => 'accepted'],
+                ['name' => 'PENDINGNAME', 'status' => 'pending'],
+            ],
+        ], 200),
+    ]);
+
+    $component = Livewire::test(Manage::class)
+        ->set('taqnyatApiKeyInput', 'typed-not-yet-saved-key')
+        ->call('fetchSenders');
+
+    expect($component->get('sendersLoaded'))->toBeTrue()
+        ->and($component->get('availableSenders'))->toBe([
+            ['name' => 'ALMOOSA', 'status' => 'accepted'],
+        ]);
+
+    $component
+        ->set('senderSelection', 'ALMOOSA')
+        ->assertSet('senderName', 'ALMOOSA');
+});
+
+it('shows an error toast and leaves the sender list empty when fetchSenders fails', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    Http::fake([
+        'api.taqnyat.sa/v1/messages/senders' => Http::response(['message' => 'Invalid token.'], 401),
+    ]);
+
+    $component = Livewire::test(Manage::class)
+        ->set('taqnyatApiKeyInput', 'a-key')
+        ->call('fetchSenders');
+
+    expect($component->get('sendersLoaded'))->toBeFalse()
+        ->and($component->get('availableSenders'))->toBe([]);
 });
 
 it('shows a friendly failure badge when Taqnyat verify fails', function () {

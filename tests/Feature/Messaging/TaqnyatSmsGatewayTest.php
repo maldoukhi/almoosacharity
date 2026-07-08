@@ -111,3 +111,87 @@ it('prefers a Settings-stored API key over the constructor default for verify()'
 
     Http::assertSent(fn (Request $request): bool => $request->hasHeader('Authorization', 'Bearer settings-token'));
 });
+
+it('lists accepted sender names from the v1/messages/senders endpoint', function () {
+    Http::fake([
+        'api.taqnyat.sa/v1/messages/senders' => Http::response([
+            'senders' => [
+                ['name' => 'ALMOOSA', 'status' => 'accepted'],
+                ['name' => 'PENDING1', 'status' => 'pending'],
+            ],
+        ], 200),
+    ]);
+
+    $gateway = new TaqnyatSmsGateway(apiKey: 'test-bearer-token', sender: 'ALMOOSA');
+
+    $response = $gateway->senders();
+
+    expect($response->success)->toBeTrue()
+        ->and($response->raw['normalizedSenders'])->toBe([
+            ['name' => 'ALMOOSA', 'status' => 'accepted'],
+        ]);
+
+    Http::assertSent(function (Request $request): bool {
+        return $request->url() === 'https://api.taqnyat.sa/v1/messages/senders'
+            && $request->method() === 'GET'
+            && $request->hasHeader('Authorization', 'Bearer test-bearer-token');
+    });
+});
+
+it('tolerates a bare-string sender list and a root-level array with no wrapper key', function () {
+    Http::fake([
+        'api.taqnyat.sa/v1/messages/senders' => Http::response(['ALMOOSA', 'CHARITY'], 200),
+    ]);
+
+    $gateway = new TaqnyatSmsGateway(apiKey: 'test-bearer-token', sender: 'ALMOOSA');
+
+    $response = $gateway->senders();
+
+    expect($response->raw['normalizedSenders'])->toBe([
+        ['name' => 'ALMOOSA', 'status' => null],
+        ['name' => 'CHARITY', 'status' => null],
+    ]);
+});
+
+it('tolerates alternate field names for the sender list wrapper, name, and status', function () {
+    Http::fake([
+        'api.taqnyat.sa/v1/messages/senders' => Http::response([
+            'data' => [
+                ['senderName' => 'ALTNAME', 'state' => 'APPROVED'],
+                ['sender_name' => 'REJECTEDNAME', 'approval_status' => 'rejected'],
+            ],
+        ], 200),
+    ]);
+
+    $gateway = new TaqnyatSmsGateway(apiKey: 'test-bearer-token', sender: 'ALMOOSA');
+
+    $response = $gateway->senders();
+
+    expect($response->raw['normalizedSenders'])->toBe([
+        ['name' => 'ALTNAME', 'status' => 'accepted'],
+    ]);
+});
+
+it('maps a failed senders() response to a failure with the provider message', function () {
+    Http::fake([
+        'api.taqnyat.sa/v1/messages/senders' => Http::response(['message' => 'Invalid token.'], 401),
+    ]);
+
+    $gateway = new TaqnyatSmsGateway(apiKey: 'bad-token', sender: 'ALMOOSA');
+
+    $response = $gateway->senders();
+
+    expect($response->success)->toBeFalse()
+        ->and($response->error)->toBe('Invalid token.');
+});
+
+it('short-circuits senders() without an HTTP call when no API key is configured', function () {
+    Http::fake();
+
+    $gateway = new TaqnyatSmsGateway(apiKey: '', sender: 'ALMOOSA');
+
+    $response = $gateway->senders();
+
+    expect($response->success)->toBeFalse();
+    Http::assertNothingSent();
+});
