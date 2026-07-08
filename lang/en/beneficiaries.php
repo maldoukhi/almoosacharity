@@ -49,6 +49,8 @@ return [
     'field_iban' => 'IBAN',
     'field_categories' => 'Categories',
     'field_status' => 'Beneficiary Status',
+    'field_notes' => 'Notes',
+    'field_created_by' => 'Created By',
 
     'select_placeholder' => 'Select from list',
 
@@ -94,6 +96,8 @@ return [
         'empty_title' => 'No family members',
         'empty_description' => 'No family members have been added yet',
         'confirm_delete' => 'Are you sure you want to delete this member?',
+        'form_title_create' => 'Add Family Member',
+        'form_title_edit' => 'Edit Family Member',
     ],
 
     'income' => [
@@ -142,6 +146,17 @@ return [
         'empty_description' => 'No changes have been recorded for this beneficiary',
         'by' => '— by :actor',
         'system_actor' => 'System',
+        'details_button' => 'Details',
+        'modal_title' => 'Activity Details',
+        'changes_title' => 'Changed Fields',
+        'no_changes' => 'No change details to show for this event.',
+        'event' => [
+            'created' => 'Record Created',
+            'updated' => 'Data Updated',
+            'deleted' => 'Record Deleted',
+            'restored' => 'Record Restored',
+            'bank_data_revealed' => 'Bank Data Revealed',
+        ],
     ],
 
     'categories' => [

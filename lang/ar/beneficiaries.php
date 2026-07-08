@@ -49,6 +49,8 @@ return [
     'field_iban' => 'الآيبان (IBAN)',
     'field_categories' => 'التصنيفات',
     'field_status' => 'حالة المستفيد',
+    'field_notes' => 'ملاحظات',
+    'field_created_by' => 'أنشئ بواسطة',
 
     'select_placeholder' => 'اختر من القائمة',
 
@@ -94,6 +96,8 @@ return [
         'empty_title' => 'لا يوجد أفراد أسرة',
         'empty_description' => 'لم يتم إضافة أفراد أسرة بعد',
         'confirm_delete' => 'هل أنت متأكد من حذف هذا الفرد؟',
+        'form_title_create' => 'إضافة فرد من الأسرة',
+        'form_title_edit' => 'تعديل بيانات الفرد',
     ],
 
     'income' => [
@@ -142,6 +146,17 @@ return [
         'empty_description' => 'لم يتم تسجيل أي تغييرات على بيانات هذا المستفيد',
         'by' => '— بواسطة :actor',
         'system_actor' => 'النظام',
+        'details_button' => 'التفاصيل',
+        'modal_title' => 'تفاصيل النشاط',
+        'changes_title' => 'الحقول التي تغيّرت',
+        'no_changes' => 'لا توجد تفاصيل تغييرات لعرضها لهذا الحدث.',
+        'event' => [
+            'created' => 'إنشاء الملف',
+            'updated' => 'تحديث البيانات',
+            'deleted' => 'حذف الملف',
+            'restored' => 'استرجاع الملف',
+            'bank_data_revealed' => 'كشف بيانات بنكية',
+        ],
     ],
 
     'categories' => [

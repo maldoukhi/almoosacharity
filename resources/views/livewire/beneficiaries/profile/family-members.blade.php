@@ -1,49 +1,23 @@
-@php
-    $relationOptions = collect(\App\Enums\RelationKind::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]);
-@endphp
-
 <div class="space-y-5">
     <div class="flex items-center justify-between">
         <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('beneficiaries.family.title') }}</h2>
 
         @can('update', $beneficiary)
-            @if (! $showForm)
-                <x-ui.button type="button" variant="secondary" size="sm" wire:click="addNew">
-                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                    </svg>
-                    {{ __('beneficiaries.family.add_button') }}
-                </x-ui.button>
-            @endif
+            <x-ui.button
+                type="button"
+                variant="secondary"
+                size="sm"
+                x-on:click="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-modal', arguments: { beneficiary: {{ $beneficiary->id }} } })"
+            >
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                {{ __('beneficiaries.family.add_button') }}
+            </x-ui.button>
         @endcan
     </div>
 
-    @if ($showForm)
-        <div class="rounded-(--radius-brand) border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
-            <form wire:submit="save" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <x-ui.input :label="__('beneficiaries.family.field_name')" name="name" wire:model="name" />
-
-                <x-ui.select
-                    :label="__('beneficiaries.family.field_relation')"
-                    name="relation"
-                    wire:model="relation"
-                    :placeholder="__('beneficiaries.select_placeholder')"
-                    :options="$relationOptions"
-                />
-
-                <x-ui.input :label="__('beneficiaries.family.field_birth_date')" name="birth_date" type="date" wire:model="birth_date" />
-                <x-ui.input :label="__('beneficiaries.family.field_health_status')" name="health_status" wire:model="health_status" />
-                <x-ui.input :label="__('beneficiaries.family.field_education_status')" name="education_status" wire:model="education_status" />
-
-                <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-1">
-                    <x-ui.button type="submit" variant="primary" wire:target="save">{{ __('common.save') }}</x-ui.button>
-                    <x-ui.button type="button" variant="ghost" wire:click="cancel">{{ __('common.cancel') }}</x-ui.button>
-                </div>
-            </form>
-        </div>
-    @endif
-
-    @if ($beneficiary->familyMembers->isEmpty())
+    @if ($this->members->isEmpty())
         <x-ui.empty-state :title="__('beneficiaries.family.empty_title')" :description="__('beneficiaries.family.empty_description')" />
     @else
         <x-ui.table>
@@ -60,7 +34,7 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-100 dark:divide-white/10">
-                @foreach ($beneficiary->familyMembers as $member)
+                @foreach ($this->members as $member)
                     <tr wire:key="family-member-{{ $member->id }}" class="transition duration-150 hover:bg-gray-50 dark:hover:bg-white/5">
                         <x-ui.table.td class="font-medium text-gray-900 dark:text-white">{{ $member->name }}</x-ui.table.td>
                         <x-ui.table.td>{{ $member->relation?->label() }}</x-ui.table.td>
@@ -70,7 +44,12 @@
                         @can('update', $beneficiary)
                             <x-ui.table.td align="end">
                                 <div class="flex items-center justify-end gap-1">
-                                    <x-ui.button type="button" variant="ghost" size="sm" wire:click="edit({{ $member->id }})">
+                                    <x-ui.button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        x-on:click="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-modal', arguments: { beneficiary: {{ $beneficiary->id }}, memberId: {{ $member->id }} } })"
+                                    >
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
                                         </svg>

@@ -7,6 +7,7 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryFamilyMember;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 
@@ -44,6 +45,18 @@ class Show extends Component
         if (in_array($tab, self::TABS, true)) {
             $this->activeTab = $tab;
         }
+    }
+
+    /**
+     * Keep the family-tree visual in sync with FamilyMemberModal (add/
+     * edit): reload the relation and drop the cached tree-node computed
+     * so it is rebuilt from the fresh data on the next render.
+     */
+    #[On('family-member-saved')]
+    public function refreshFamily(): void
+    {
+        $this->beneficiary->load('familyMembers');
+        unset($this->familyTreeNodes);
     }
 
     /**
