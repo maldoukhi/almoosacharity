@@ -55,7 +55,11 @@
                 tooltip: { theme: dark ? 'dark' : 'light' },
             };
         },
-        init() {
+        render() {
+            if (this.chart || typeof window.ApexCharts === 'undefined' || ! this.$refs.canvas) {
+                return;
+            }
+
             this.chart = new window.ApexCharts(this.$refs.canvas, this.buildOptions());
             this.chart.render();
 
@@ -64,12 +68,32 @@
             // rather than editing that button, watch for the class change
             // directly and re-theme the chart in place.
             this.observer = new MutationObserver(() => {
-                this.chart.updateOptions(this.buildOptions(), false, true);
+                this.chart && this.chart.updateOptions(this.buildOptions(), false, true);
             });
             this.observer.observe(document.documentElement, {
                 attributes: true,
                 attributeFilter: ['class'],
             });
+        },
+        teardown() {
+            if (this.observer) { this.observer.disconnect(); this.observer = null; }
+            if (this.chart) { this.chart.destroy(); this.chart = null; }
+        },
+        init() {
+            // Defer to the next frame so the container has its real width
+            // when arriving via wire:navigate — ApexCharts renders an empty
+            // chart into a zero-width element otherwise.
+            requestAnimationFrame(() => this.render());
+
+            // Livewire's SPA navigation swaps the page without unmounting
+            // Alpine cleanly, so tear the chart down before leaving to avoid
+            // a leaked instance/observer that leaves the canvas blank.
+            this._onNavigating = () => this.teardown();
+            document.addEventListener('livewire:navigating', this._onNavigating);
+        },
+        destroy() {
+            this.teardown();
+            document.removeEventListener('livewire:navigating', this._onNavigating);
         },
     }"
     x-init="init()"
