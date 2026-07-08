@@ -31,9 +31,12 @@ return [
 
     'select_placeholder' => 'Select from the list',
     'search_placeholder' => 'Search by reference or beneficiary name...',
-    'beneficiary_search_placeholder' => 'Search by name or national ID to add a beneficiary...',
-    'no_beneficiaries_found' => 'No beneficiaries match your search',
-    'already_selected' => 'Already added',
+    'beneficiary_search_placeholder' => 'Search by name or national ID...',
+    'picker_placeholder' => 'Search and select beneficiaries',
+    'no_results' => 'No beneficiaries match your search',
+    'select_all' => 'Select All',
+    'clear_selection' => 'Clear Selection',
+    'select_all_capped' => 'Only the first :count beneficiaries in the current search results were selected (the maximum for a single bulk selection). Narrow your search to select the rest.',
     'selected_count' => '{0} No beneficiary selected yet|{1} 1 beneficiary selected|[2,*] :count beneficiaries selected',
     'bulk_create_hint' => 'An independent aid will be created for each of the :count selected beneficiaries, using the same data entered above.',
 

@@ -33,7 +33,31 @@
                         :options="$beneficiaryOptions"
                     />
                 @else
-                    <div>
+                    <div
+                        x-data="{
+                            open: false,
+                            highlighted: 0,
+                            get options() {
+                                return Array.from(this.$refs.list?.querySelectorAll('[role=option]') ?? []);
+                            },
+                            openList() {
+                                this.open = true;
+                                this.highlighted = 0;
+                                this.$nextTick(() => this.$refs.search?.focus());
+                            },
+                            move(delta) {
+                                const max = this.options.length - 1;
+                                if (max < 0) return;
+                                this.highlighted = Math.min(Math.max(this.highlighted + delta, 0), max);
+                                this.options[this.highlighted]?.scrollIntoView({ block: 'nearest' });
+                            },
+                            chooseHighlighted() {
+                                this.options[this.highlighted]?.click();
+                            },
+                        }"
+                        x-on:click.outside="open = false"
+                        class="relative"
+                    >
                         <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
                             {{ __('aids.field_beneficiaries') }}
                         </label>
@@ -62,35 +86,106 @@
                             </div>
                         @endif
 
-                        <x-ui.input
-                            type="search"
-                            name="beneficiarySearch"
-                            wire:model.live.debounce.300ms="beneficiarySearch"
-                            :placeholder="__('aids.beneficiary_search_placeholder')"
-                        />
+                        <button
+                            type="button"
+                            x-on:click="open ? (open = false) : openList()"
+                            x-on:keydown.down.prevent="open ? move(1) : openList()"
+                            x-on:keydown.up.prevent="open ? move(-1) : openList()"
+                            x-on:keydown.enter.prevent="open ? chooseHighlighted() : openList()"
+                            x-on:keydown.escape="open = false"
+                            :aria-expanded="open.toString()"
+                            aria-haspopup="listbox"
+                            @class([
+                                'flex w-full items-center justify-between gap-2 rounded-(--radius-brand) border bg-white ps-3.5 pe-3 py-2.5 text-start text-sm shadow-sm transition duration-200 ease-out focus:outline-none focus:ring-2 focus:ring-offset-0 dark:bg-primary-950/30',
+                                'border-status-rejected focus:border-status-rejected focus:ring-status-rejected/30' => $errors->has('beneficiary_ids'),
+                                'border-gray-300 focus:border-primary-500 focus:ring-primary-500/30 dark:border-white/10' => ! $errors->has('beneficiary_ids'),
+                            ])
+                        >
+                            <span class="truncate text-gray-400 dark:text-gray-500">
+                                {{ __('aids.picker_placeholder') }}
+                            </span>
 
-                        @if ($beneficiarySearch !== '')
-                            <div class="mt-2 max-h-56 divide-y divide-gray-100 overflow-y-auto rounded-(--radius-brand) border border-gray-200 dark:divide-white/10 dark:border-white/10">
-                                @forelse ($this->beneficiaries as $beneficiary)
+                            <svg
+                                class="h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200 ease-out"
+                                :class="{ 'rotate-180': open }"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                                aria-hidden="true"
+                            >
+                                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.168l3.71-3.938a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+
+                        <div
+                            x-show="open"
+                            x-transition:enter="transition ease-out duration-150"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-100"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            style="display: none"
+                            role="listbox"
+                            aria-multiselectable="true"
+                            class="absolute z-30 mt-1.5 w-full rounded-(--radius-brand) bg-white p-1.5 shadow-(--shadow-card) ring-1 ring-gray-100 dark:bg-primary-950 dark:ring-white/10"
+                        >
+                            <input
+                                type="search"
+                                x-ref="search"
+                                wire:model.live.debounce.300ms="beneficiarySearch"
+                                x-on:keydown.down.prevent="move(1)"
+                                x-on:keydown.up.prevent="move(-1)"
+                                x-on:keydown.enter.prevent="chooseHighlighted()"
+                                x-on:keydown.escape="open = false"
+                                placeholder="{{ __('aids.beneficiary_search_placeholder') }}"
+                                class="mb-1.5 block w-full rounded-(--radius-brand) border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-white/5 dark:text-gray-100"
+                            />
+
+                            <div class="mb-1.5 flex items-center justify-between gap-2 px-1">
+                                <button
+                                    type="button"
+                                    wire:click="selectAllMatching"
+                                    class="text-xs font-medium text-primary-600 transition duration-150 ease-out hover:text-primary-700 hover:underline dark:text-primary-300 dark:hover:text-primary-200"
+                                >
+                                    {{ __('aids.select_all') }}
+                                </button>
+
+                                <button
+                                    type="button"
+                                    wire:click="clearSelection"
+                                    class="text-xs font-medium text-gray-500 transition duration-150 ease-out hover:text-gray-700 hover:underline dark:text-gray-400 dark:hover:text-gray-200"
+                                >
+                                    {{ __('aids.clear_selection') }}
+                                </button>
+                            </div>
+
+                            <ul x-ref="list" class="max-h-56 space-y-0.5 overflow-y-auto" wire:loading.class="opacity-50" wire:target="beneficiarySearch">
+                                @forelse ($this->beneficiaries as $index => $beneficiary)
                                     @php $alreadySelected = in_array($beneficiary->id, $beneficiary_ids, true); @endphp
-                                    <button
-                                        type="button"
+                                    <li
                                         wire:key="beneficiary-option-{{ $beneficiary->id }}"
-                                        wire:click="addBeneficiary({{ $beneficiary->id }})"
-                                        @disabled($alreadySelected)
-                                        class="flex w-full items-center justify-between px-3.5 py-2.5 text-start text-sm text-gray-700 transition duration-150 ease-out hover:bg-gray-50 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-400 dark:text-gray-200 dark:hover:bg-white/5 dark:disabled:bg-white/5 dark:disabled:text-gray-500"
+                                        wire:click="{{ $alreadySelected ? 'removeBeneficiary' : 'addBeneficiary' }}({{ $beneficiary->id }})"
+                                        x-on:mouseenter="highlighted = {{ $index }}"
+                                        :class="{ 'bg-primary-50 dark:bg-primary-900/30': highlighted === {{ $index }} }"
+                                        class="flex cursor-pointer items-center justify-between gap-2 rounded-(--radius-brand) px-3 py-2 text-sm text-gray-700 dark:text-gray-200"
+                                        role="option"
+                                        aria-selected="{{ $alreadySelected ? 'true' : 'false' }}"
                                     >
-                                        <span>{{ $beneficiary->full_name }}</span>
+                                        <span @class(['truncate', 'font-medium text-primary-700 dark:text-primary-200' => $alreadySelected])>
+                                            {{ $beneficiary->full_name }}
+                                        </span>
 
                                         @if ($alreadySelected)
-                                            <span class="text-xs text-secondary-600 dark:text-secondary-400">{{ __('aids.already_selected') }}</span>
+                                            <svg class="h-4 w-4 shrink-0 text-secondary-600 dark:text-secondary-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z" clip-rule="evenodd" />
+                                            </svg>
                                         @endif
-                                    </button>
+                                    </li>
                                 @empty
-                                    <p class="px-3.5 py-2.5 text-sm text-gray-500 dark:text-gray-400">{{ __('aids.no_beneficiaries_found') }}</p>
+                                    <p class="px-3 py-2 text-sm text-gray-400 dark:text-gray-500">{{ __('aids.no_results') }}</p>
                                 @endforelse
-                            </div>
-                        @endif
+                            </ul>
+                        </div>
 
                         <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
                             {{ trans_choice('aids.selected_count', count($beneficiary_ids), ['count' => count($beneficiary_ids)]) }}

@@ -143,6 +143,59 @@ it('adds and removes beneficiaries via the chip picker actions, only creating ai
         ->toEqual(collect([$keep1->id, $keep2->id])->sort()->values()->all());
 });
 
+it('selects every beneficiary matching the current search via selectAllMatching, merging with the existing selection', function () {
+    seedAidCatalog();
+    asDataEntry();
+
+    $matching = Beneficiary::factory()->count(3)->create(['first_name' => 'سلمى']);
+    $other = Beneficiary::factory()->create(['first_name' => 'نورة']);
+
+    Livewire::test(Form::class)
+        ->call('addBeneficiary', $other->id)
+        ->set('beneficiarySearch', 'سلمى')
+        ->call('selectAllMatching')
+        ->assertSet('beneficiary_ids', fn (array $ids) => count($ids) === 4
+            && in_array($other->id, $ids, true)
+            && $matching->pluck('id')->every(fn (int $id) => in_array($id, $ids, true)));
+});
+
+it('selects every beneficiary in the table when selectAllMatching runs with an empty search box', function () {
+    seedAidCatalog();
+    asDataEntry();
+
+    $beneficiaries = Beneficiary::factory()->count(5)->create();
+
+    Livewire::test(Form::class)
+        ->set('beneficiarySearch', '')
+        ->call('selectAllMatching')
+        ->assertSet('beneficiary_ids', fn (array $ids) => count($ids) === Beneficiary::query()->count()
+            && $beneficiaries->pluck('id')->every(fn (int $id) => in_array($id, $ids, true)));
+});
+
+it('caps selectAllMatching at 200 beneficiaries and warns the user via toast', function () {
+    seedAidCatalog();
+    asDataEntry();
+
+    Beneficiary::factory()->count(205)->create();
+
+    Livewire::test(Form::class)
+        ->call('selectAllMatching')
+        ->assertSet('beneficiary_ids', fn (array $ids) => count($ids) === 200)
+        ->assertDispatched('toast', type: 'info', message: __('aids.select_all_capped', ['count' => 200]));
+});
+
+it('clears the entire selection via clearSelection', function () {
+    seedAidCatalog();
+    asDataEntry();
+
+    $beneficiaries = Beneficiary::factory()->count(3)->create();
+
+    Livewire::test(Form::class)
+        ->set('beneficiary_ids', $beneficiaries->pluck('id')->all())
+        ->call('clearSelection')
+        ->assertSet('beneficiary_ids', []);
+});
+
 it('single-beneficiary create still redirects straight to the aid show page, not the index', function () {
     seedAidCatalog();
     asDataEntry();

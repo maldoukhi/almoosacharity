@@ -30,6 +30,16 @@ use Livewire\Component;
  */
 class Form extends Component
 {
+    /**
+     * Safety cap for {@see selectAllMatching()}: the maximum number of
+     * beneficiaries a single "select all" click can add to
+     * {@see $beneficiary_ids} at once, whether the search box is empty
+     * (matches the whole beneficiary table) or filled in. Chosen well above
+     * any realistic single bulk-aid batch while still keeping the request
+     * and the resulting confirmation/chip list bounded.
+     */
+    private const int MAX_SELECT_ALL = 200;
+
     public ?Aid $aid = null;
 
     /**
@@ -119,19 +129,8 @@ class Form extends Component
     #[Computed]
     public function beneficiaries(): Collection
     {
-        $matches = Beneficiary::query()
+        $matches = $this->matchingBeneficiariesQuery()
             ->select(['id', 'first_name', 'second_name', 'third_name', 'last_name', 'national_id'])
-            ->when($this->beneficiarySearch !== '', function (Builder $query): void {
-                $term = "%{$this->beneficiarySearch}%";
-
-                $query->where(function (Builder $query) use ($term): void {
-                    $query->where('first_name', 'like', $term)
-                        ->orWhere('second_name', 'like', $term)
-                        ->orWhere('third_name', 'like', $term)
-                        ->orWhere('last_name', 'like', $term)
-                        ->orWhere('national_id', 'like', $term);
-                });
-            })
             ->orderBy('first_name')
             ->limit(20)
             ->get();
@@ -153,6 +152,29 @@ class Form extends Component
         }
 
         return $matches;
+    }
+
+    /**
+     * Beneficiaries matching {@see $beneficiarySearch} by name or national
+     * ID (unfiltered/unlimited base query), shared by {@see beneficiaries()}
+     * (which layers its own column selection, ordering and 20-row page
+     * limit on top) and {@see selectAllMatching()} (which layers its own
+     * {@see MAX_SELECT_ALL} cap instead).
+     */
+    private function matchingBeneficiariesQuery(): Builder
+    {
+        return Beneficiary::query()
+            ->when($this->beneficiarySearch !== '', function (Builder $query): void {
+                $term = "%{$this->beneficiarySearch}%";
+
+                $query->where(function (Builder $query) use ($term): void {
+                    $query->where('first_name', 'like', $term)
+                        ->orWhere('second_name', 'like', $term)
+                        ->orWhere('third_name', 'like', $term)
+                        ->orWhere('last_name', 'like', $term)
+                        ->orWhere('national_id', 'like', $term);
+                });
+            });
     }
 
     /**
@@ -197,6 +219,45 @@ class Form extends Component
     public function removeBeneficiary(int $id): void
     {
         $this->beneficiary_ids = array_values(array_diff($this->beneficiary_ids, [$id]));
+    }
+
+    /**
+     * Add every beneficiary matching {@see $beneficiarySearch} (or, when the
+     * search box is empty, every beneficiary) to the create-mode
+     * multi-select in one go, merging with whatever was already selected
+     * and never adding a duplicate. Capped at {@see MAX_SELECT_ALL} rows per
+     * click for safety; a toast tells the user when the match count exceeds
+     * that cap so the picker never silently drops the tail of a very large
+     * result set.
+     */
+    public function selectAllMatching(): void
+    {
+        $query = $this->matchingBeneficiariesQuery();
+
+        $totalMatching = (clone $query)->count();
+
+        $matchingIds = (clone $query)
+            ->orderBy('first_name')
+            ->limit(self::MAX_SELECT_ALL)
+            ->pluck('id')
+            ->all();
+
+        $this->beneficiary_ids = array_values(array_unique([
+            ...$this->beneficiary_ids,
+            ...$matchingIds,
+        ]));
+
+        if ($totalMatching > self::MAX_SELECT_ALL) {
+            $this->dispatch('toast', type: 'info', message: __('aids.select_all_capped', ['count' => self::MAX_SELECT_ALL]));
+        }
+    }
+
+    /**
+     * Empty the create-mode multi-select entirely.
+     */
+    public function clearSelection(): void
+    {
+        $this->beneficiary_ids = [];
     }
 
     #[Computed]
