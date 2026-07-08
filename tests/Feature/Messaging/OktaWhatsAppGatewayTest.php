@@ -61,10 +61,10 @@ it('sends a text message to /api/v1/messages with the idempotency header', funct
     expect($body)->toBe([
         'channel_id' => 'ch_1',
         // The recipient goes out as wa_id in international form (no +), even
-        // though it was passed in the local/plus form.
+        // though it was passed in the local/plus form; the body is flat.
         'wa_id' => '966500000000',
         'type' => 'text',
-        'text' => ['body' => 'مرحباً'],
+        'body' => 'مرحباً',
     ]);
 });
 

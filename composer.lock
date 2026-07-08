@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "4380ab5a66d0f1e3db519640f61a6220",
+    "content-hash": "dc57169bef8612369c34241a2edd6cc3",
     "packages": [
         {
             "name": "barryvdh/laravel-dompdf",
@@ -1026,16 +1026,16 @@
         },
         {
             "name": "getokta/okta-connect-sdk",
-            "version": "v0.6.0",
+            "version": "v0.7.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/getokta/okta-connect-sdk.git",
-                "reference": "de6cdf2fc036055e194c23fa34f06b5792126159"
+                "reference": "911d354a695e9c67429b3521a9acd4f5b7b505af"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/getokta/okta-connect-sdk/zipball/de6cdf2fc036055e194c23fa34f06b5792126159",
-                "reference": "de6cdf2fc036055e194c23fa34f06b5792126159",
+                "url": "https://api.github.com/repos/getokta/okta-connect-sdk/zipball/911d354a695e9c67429b3521a9acd4f5b7b505af",
+                "reference": "911d354a695e9c67429b3521a9acd4f5b7b505af",
                 "shasum": ""
             },
             "require": {
@@ -1075,9 +1075,9 @@
             ],
             "support": {
                 "issues": "https://github.com/getokta/okta-connect-sdk/issues",
-                "source": "https://github.com/getokta/okta-connect-sdk/tree/v0.6.0"
+                "source": "https://github.com/getokta/okta-connect-sdk/tree/v0.7.0"
             },
-            "time": "2026-06-03T08:10:34+00:00"
+            "time": "2026-07-08T16:17:42+00:00"
         },
         {
             "name": "graham-campbell/result-type",
