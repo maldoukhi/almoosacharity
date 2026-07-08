@@ -13,8 +13,9 @@
     wire:ignore
     x-data="{
         chart: null,
-        observer: null,
-        raf: null,
+        sizeObserver: null,
+        themeObserver: null,
+        lastDark: false,
         isPie: {{ in_array($type, ['donut', 'pie'], true) ? 'true' : 'false' }},
         isDark() {
             return document.documentElement.classList.contains('dark');
@@ -56,65 +57,94 @@
                 tooltip: { theme: dark ? 'dark' : 'light' },
             };
         },
-        render() {
+        build() {
             if (this.chart || typeof window.ApexCharts === 'undefined' || ! this.$refs.canvas) {
                 return;
             }
 
-            // Arriving via wire:navigate, the flex layout / collapsible
-            // sidebar can leave this container at zero width for a frame or
-            // two. Rendering then yields a zero-size 'sliver' that collapses
-            // to nothing — so keep deferring until the element has a real
-            // width instead of drawing into an unsized box.
+            // Only build once the container actually has a width. Arriving
+            // via wire:navigate, the flex layout / collapsible sidebar can
+            // leave it at zero width for a beat; the ResizeObserver below
+            // calls build() again the moment it gains a real width, so we
+            // never draw into an unsized box (which renders an empty chart).
             if (this.$refs.canvas.offsetWidth === 0) {
-                this.raf = requestAnimationFrame(() => this.render());
-
                 return;
             }
 
-            this.chart = new window.ApexCharts(this.$refs.canvas, this.buildOptions());
-            this.chart.render();
+            try {
+                this.chart = new window.ApexCharts(this.$refs.canvas, this.buildOptions());
+                this.chart.render();
+            } catch (e) {
+                this.chart = null;
+            }
+        },
+        destroyChart() {
+            if (this.chart) {
+                // ApexCharts can throw from its own teardown when destroyed
+                // mid-animation (e.g. a wire:navigate fires while the line
+                // chart is still animating in) — swallow it so a leaving page
+                // never aborts cleanup and strands a half-dead instance.
+                try { this.chart.destroy(); } catch (e) {}
+                this.chart = null;
+            }
+        },
+        cleanup() {
+            if (this.sizeObserver) { this.sizeObserver.disconnect(); this.sizeObserver = null; }
+            if (this.themeObserver) { this.themeObserver.disconnect(); this.themeObserver = null; }
+            this.destroyChart();
+            document.removeEventListener('livewire:navigating', this._onNavigating);
+        },
+        init() {
+            // A ResizeObserver fires an initial callback on observe AND on
+            // every subsequent size change, so it renders the chart the
+            // instant the canvas has a real width — on first load, after a
+            // wire:navigate visit (fresh element, 0 -> real width), and when
+            // the sidebar collapses. This replaces the previous rAF-polling +
+            // global livewire:navigated wiring, whose timing/order fragility
+            // was leaving charts blank after sidebar navigation.
+            this.sizeObserver = new ResizeObserver(() => {
+                if (! this.chart && this.$refs.canvas && this.$refs.canvas.offsetWidth > 0) {
+                    this.build();
+                }
+            });
+            this.sizeObserver.observe(this.$refs.canvas);
 
             // Dark mode is toggled by adding/removing the `.dark` class on
-            // <html> (see resources/views/components/layouts/topbar.blade.php);
-            // rather than editing that button, watch for the class change
-            // directly and re-theme the chart in place.
-            this.observer = new MutationObserver(() => {
-                this.chart && this.chart.updateOptions(this.buildOptions(), false, true);
+            // <html> (see resources/views/components/layouts/topbar.blade.php).
+            // Only react to an actual light<->dark change: the class attribute
+            // also gets touched during a wire:navigate morph, and reacting to
+            // those no-op mutations was firing updateOptions() at the wrong
+            // time — that call empties a donut's SVG and throws on a line
+            // chart, which is what left charts blank after sidebar navigation.
+            // On a real theme change, rebuild fresh (updateOptions with
+            // redrawPaths corrupts donuts) rather than updating in place.
+            this.lastDark = this.isDark();
+            this.themeObserver = new MutationObserver(() => {
+                const dark = this.isDark();
+
+                if (dark === this.lastDark) {
+                    return;
+                }
+
+                this.lastDark = dark;
+
+                if (this.chart) {
+                    this.destroyChart();
+                    this.build();
+                }
             });
-            this.observer.observe(document.documentElement, {
+            this.themeObserver.observe(document.documentElement, {
                 attributes: true,
                 attributeFilter: ['class'],
             });
-        },
-        teardown() {
-            if (this.raf) { cancelAnimationFrame(this.raf); this.raf = null; }
-            if (this.observer) { this.observer.disconnect(); this.observer = null; }
-            if (this.chart) { this.chart.destroy(); this.chart = null; }
-        },
-        init() {
-            this._onNavigated = () => this.render();
-            this._onNavigating = () => this.teardown();
 
-            // Render on the first (non-SPA) page load...
-            this.raf = requestAnimationFrame(() => this.render());
-
-            // ...and re-render after every wire:navigate visit completes.
-            // livewire:navigated fires once the destination DOM is fully
-            // committed (container properly sized): if the chart was torn
-            // down on the way out this rebuilds it, and if it is still alive
-            // render() is a no-op.
-            document.addEventListener('livewire:navigated', this._onNavigated);
-
-            // Livewire's SPA navigation swaps the page without unmounting
-            // Alpine cleanly, so tear the chart down before leaving to avoid
-            // a leaked instance/observer that leaves the canvas blank.
+            // Destroy cleanly *before* a wire:navigate swaps the DOM, so the
+            // instance is never torn down on a detached node mid-animation.
+            this._onNavigating = () => this.cleanup();
             document.addEventListener('livewire:navigating', this._onNavigating);
         },
         destroy() {
-            this.teardown();
-            document.removeEventListener('livewire:navigated', this._onNavigated);
-            document.removeEventListener('livewire:navigating', this._onNavigating);
+            this.cleanup();
         },
     }"
     x-init="init()"
