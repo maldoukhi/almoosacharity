@@ -10,7 +10,9 @@ use App\Models\ApprovalDecision;
 use App\Models\ApprovalFlow;
 use App\Models\Beneficiary;
 use Database\Factories\AidFactory;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Livewire\Livewire;
+use LivewireUI\Modal\Modal;
 
 /**
  * Builds a cash aid under_review, pinned at the given 1-based stage order
@@ -37,6 +39,31 @@ function underReviewAidAtStage(int $stageOrder, array $overrides = []): Aid
         'decided_at' => null,
     ], $overrides));
 }
+
+/**
+ * Regression guard for the "approve/reject gives 404" bug. The openModal
+ * dispatch in aids/show.blade.php sends a scalar `aid` argument through
+ * wire-elements/modal's own Modal::openModal() → resolveParameter(), which
+ * resolves the `Aid $aid` mount parameter by calling
+ * Aid::resolveRouteBinding($value) directly (bypassing Livewire's normal
+ * hydration entirely — see vendor/wire-elements/modal/src/Modal.php). Aid
+ * uses HasHashid, so resolveRouteBinding() decodes $value as a hashid: the
+ * raw numeric id fails to decode and resolves to nothing (ModelNotFound),
+ * which is exactly the 404 that shipped once before this was caught; only
+ * the hashid (what the fixed blade now sends) resolves correctly.
+ */
+it('resolves the aid via its hashid through the real openModal() dispatch path, and fails on the raw numeric id', function () {
+    $researcher = asResearcher();
+    $aid = underReviewAidAtStage(1, ['created_by' => $researcher->id]);
+
+    Livewire::test(Modal::class)
+        ->call('openModal', 'aids.approval-decision-modal', ['aid' => $aid->getRouteKey(), 'action' => 'approve'])
+        ->assertOk();
+
+    expect(fn () => Livewire::test(Modal::class)
+        ->call('openModal', 'aids.approval-decision-modal', ['aid' => (string) $aid->id, 'action' => 'approve']))
+        ->toThrow(ModelNotFoundException::class);
+});
 
 it('advances a researcher approval at stage 1 to stage 2, keeping the aid under_review', function () {
     $researcher = asResearcher();

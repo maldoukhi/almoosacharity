@@ -125,7 +125,7 @@
                                         @can('update', $user)
                                             <x-ui.button
                                                 type="button"
-                                                x-on:click="$dispatch('openModal', { component: 'admin.users.form-modal', arguments: { user: {{ $user->id }} } })"
+                                                x-on:click="$dispatch('openModal', { component: 'admin.users.form-modal', arguments: { user: '{{ $user->hashid }}' } })"
                                                 variant="ghost"
                                                 size="sm"
                                             >

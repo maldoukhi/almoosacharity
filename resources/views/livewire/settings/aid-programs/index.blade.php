@@ -145,7 +145,7 @@
                                             @can('manage', $program)
                                                 <x-ui.button
                                                     type="button"
-                                                    x-on:click="$dispatch('openModal', { component: 'settings.aid-programs.form-modal', arguments: { program: {{ $program->id }} } })"
+                                                    x-on:click="$dispatch('openModal', { component: 'settings.aid-programs.form-modal', arguments: { program: '{{ $program->hashid }}' } })"
                                                     variant="ghost"
                                                     size="sm"
                                                     title="{{ __('common.edit') }}"

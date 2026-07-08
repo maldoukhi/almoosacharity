@@ -101,6 +101,43 @@ it('hides the submit button for a system-admin on an already-under-review aid', 
         ->and($component->instance()->canAct())->toBeTrue();
 });
 
+/**
+ * Regression guard: every openModal(...) dispatch in aids/show.blade.php
+ * (submit / approve-reject-return / cancel) must pass the aid's *hashid*,
+ * never its raw numeric id. These modal components type-hint `Aid $aid`
+ * in mount(), and Aid uses HasHashid — Livewire resolves that scalar
+ * argument the same way route-model-binding does, via
+ * Aid::resolveRouteBinding(), which decodes it as a hashid. A raw id fails
+ * to decode, resolveRouteBinding() returns null, and the modal 404s the
+ * instant it's opened (exactly what shipped once before being caught).
+ */
+it('dispatches every aid modal with the hashid, never the raw numeric id', function () {
+    asAdmin();
+
+    seedAidCatalog();
+    $flow = ApprovalFlow::query()->default()->where('is_active', true)->firstOrFail();
+    $stage = $flow->stages()->where('order', 1)->firstOrFail();
+    $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
+    $beneficiary = Beneficiary::factory()->create();
+
+    $aid = AidFactory::new()->create([
+        'beneficiary_id' => $beneficiary->id,
+        'aid_program_id' => $program->id,
+        'type' => AidType::Cash,
+        'status' => AidStatus::UnderReview,
+        'approval_flow_id' => $flow->id,
+        'current_stage_id' => $stage->id,
+        'amount' => 1000,
+        'submitted_at' => now(),
+    ]);
+
+    $html = Livewire::test(Show::class, ['aid' => $aid])->html();
+
+    expect($html)->toContain("aid: '{$aid->hashid}'");
+    expect($html)->not->toContain("aid: {$aid->id} ");
+    expect($html)->not->toContain("aid: {$aid->id},");
+});
+
 it('cancels a draft aid through the cancel modal', function () {
     $researcher = asResearcher();
     $aid = draftCashAid($researcher->id);

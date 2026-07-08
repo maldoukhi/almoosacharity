@@ -151,7 +151,7 @@
                             type="button"
                             variant="primary"
                             class="w-full"
-                            wire:click="$dispatch('openModal', { component: 'aids.submit-aid-modal', arguments: { aid: {{ $aid->id }} } })"
+                            wire:click="$dispatch('openModal', { component: 'aids.submit-aid-modal', arguments: { aid: '{{ $aid->hashid }}' } })"
                         >
                             {{ __('aids.submit_button') }}
                         </x-ui.button>
@@ -168,7 +168,7 @@
                                         default => 'ghost',
                                     } }}"
                                     class="w-full"
-                                    wire:click="$dispatch('openModal', { component: 'aids.approval-decision-modal', arguments: { aid: {{ $aid->id }}, action: '{{ $action->value }}' } })"
+                                    wire:click="$dispatch('openModal', { component: 'aids.approval-decision-modal', arguments: { aid: '{{ $aid->hashid }}', action: '{{ $action->value }}' } })"
                                 >
                                     {{ $action->label() }}
                                 </x-ui.button>
@@ -181,7 +181,7 @@
                             type="button"
                             variant="ghost"
                             class="w-full"
-                            wire:click="$dispatch('openModal', { component: 'aids.cancel-aid-modal', arguments: { aid: {{ $aid->id }} } })"
+                            wire:click="$dispatch('openModal', { component: 'aids.cancel-aid-modal', arguments: { aid: '{{ $aid->hashid }}' } })"
                         >
                             {{ __('common.cancel') }}
                         </x-ui.button>

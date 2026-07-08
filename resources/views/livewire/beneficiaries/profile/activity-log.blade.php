@@ -33,7 +33,7 @@
                             type="button"
                             variant="ghost"
                             size="sm"
-                            x-on:click="$dispatch('openModal', { component: 'beneficiaries.profile.activity-detail-modal', arguments: { beneficiary: {{ $beneficiary->id }}, activityId: {{ $activity->id }} } })"
+                            x-on:click="$dispatch('openModal', { component: 'beneficiaries.profile.activity-detail-modal', arguments: { beneficiary: '{{ $beneficiary->hashid }}', activityId: {{ $activity->id }} } })"
                         >
                             {{ __('beneficiaries.activity.details_button') }}
                         </x-ui.button>

@@ -141,7 +141,7 @@
                                         type="button"
                                         variant="secondary"
                                         size="sm"
-                                        x-on:click="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-modal', arguments: { beneficiary: {{ $beneficiary->id }} } })"
+                                        x-on:click="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-modal', arguments: { beneficiary: '{{ $beneficiary->hashid }}' } })"
                                     >
                                         <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -240,8 +240,8 @@
                                             tabindex="0"
                                             title="{{ $node['name'] }}"
                                             @pointerdown.stop
-                                            @click.stop="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-detail-modal', arguments: { beneficiary: {{ $beneficiary->id }}, memberId: {{ $node['id'] }} } })"
-                                            @keydown.enter.prevent="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-detail-modal', arguments: { beneficiary: {{ $beneficiary->id }}, memberId: {{ $node['id'] }} } })"
+                                            @click.stop="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-detail-modal', arguments: { beneficiary: '{{ $beneficiary->hashid }}', memberId: {{ $node['id'] }} } })"
+                                            @keydown.enter.prevent="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-detail-modal', arguments: { beneficiary: '{{ $beneficiary->hashid }}', memberId: {{ $node['id'] }} } })"
                                             class="group absolute flex w-24 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center gap-1 rounded-(--radius-brand) p-1 text-center transition duration-150 ease-out hover:bg-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 dark:hover:bg-white/5"
                                             style="left: {{ $node['x'] }}%; top: {{ $node['y'] }}%; animation: fade-in-up .3s ease-out both; animation-delay: {{ min($index + 1, 10) * 60 }}ms"
                                         >
