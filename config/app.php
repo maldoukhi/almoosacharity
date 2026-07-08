@@ -17,6 +17,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Initial Admin Password (seeding)
+    |--------------------------------------------------------------------------
+    |
+    | Read via config() (not env()) by AdminUserSeeder so it keeps working
+    | when the configuration is cached (php artisan config:cache).
+    |
+    */
+
+    'admin_initial_password' => env('ADMIN_INITIAL_PASSWORD'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

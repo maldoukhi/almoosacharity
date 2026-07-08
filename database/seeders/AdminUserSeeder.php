@@ -21,7 +21,7 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        $password = env('ADMIN_INITIAL_PASSWORD')
+        $password = config('app.admin_initial_password')
             ?: (app()->environment('local', 'testing') ? 'password' : null);
 
         if (blank($password)) {
