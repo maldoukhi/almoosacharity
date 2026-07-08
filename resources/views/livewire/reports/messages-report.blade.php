@@ -83,7 +83,6 @@
                         <x-ui.table.th>{{ __('reports.messages.column_recipient') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_channel') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_status') }}</x-ui.table.th>
-                        <x-ui.table.th>{{ __('reports.messages.column_reason') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_source') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_sender') }}</x-ui.table.th>
                         <x-ui.table.th>{{ __('reports.messages.column_excerpt') }}</x-ui.table.th>
@@ -107,22 +106,22 @@
                                 <x-ui.badge color="secondary">{{ $row->channel->label() }}</x-ui.badge>
                             </x-ui.table.td>
                             <x-ui.table.td>
-                                <x-ui.badge :color="$row->status->color()">{{ $row->status->label() }}</x-ui.badge>
-                            </x-ui.table.td>
-                            <x-ui.table.td>
                                 @if ($row->status === \App\Enums\MessageStatus::Failed && filled($row->error))
                                     <button
                                         type="button"
                                         @click="reasonText = @js($row->error); reasonOpen = true"
-                                        class="inline-flex max-w-[16rem] items-center gap-1 rounded-full bg-status-rejected/10 px-2.5 py-1 text-xs font-medium text-status-rejected transition hover:bg-status-rejected/20"
+                                        title="{{ __('reports.messages.view_reason') }}"
+                                        class="inline-flex items-center gap-1"
                                     >
-                                        <svg class="size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
-                                        </svg>
-                                        <span class="truncate">{{ Illuminate\Support\Str::limit($row->error, 40) }}</span>
+                                        <x-ui.badge :color="$row->status->color()">
+                                            {{ $row->status->label() }}
+                                            <svg class="ms-0.5 size-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                                            </svg>
+                                        </x-ui.badge>
                                     </button>
                                 @else
-                                    <span class="text-gray-400 dark:text-gray-500">{{ __('common.dash') }}</span>
+                                    <x-ui.badge :color="$row->status->color()">{{ $row->status->label() }}</x-ui.badge>
                                 @endif
                             </x-ui.table.td>
                             <x-ui.table.td>{{ $this->report->sourceLabel($row) }}</x-ui.table.td>
@@ -131,7 +130,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                            <td colspan="7" class="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                                 {{ __('reports.pdf.no_data') }}
                             </td>
                         </tr>

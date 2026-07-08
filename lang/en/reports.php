@@ -132,6 +132,7 @@ return [
         'column_channel' => 'Channel',
         'column_status' => 'Status',
         'column_reason' => 'Failure reason',
+        'view_reason' => 'Click to view the failure reason',
         'column_source' => 'Source',
         'column_sender' => 'Sent by',
         'column_excerpt' => 'Excerpt',

@@ -132,6 +132,7 @@ return [
         'column_channel' => 'القناة',
         'column_status' => 'الحالة',
         'column_reason' => 'سبب الفشل',
+        'view_reason' => 'اضغط لعرض سبب الفشل',
         'column_source' => 'المصدر',
         'column_sender' => 'من أرسلها',
         'column_excerpt' => 'مقتطف النص',
