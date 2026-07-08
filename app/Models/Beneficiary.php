@@ -140,6 +140,20 @@ class Beneficiary extends Model implements HasMedia
     }
 
     /**
+     * A short, friendly name — first + last only — for greetings in SMS /
+     * WhatsApp messages where the full four-part name is too long. Falls
+     * back to whichever single part is present.
+     */
+    protected function shortName(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => collect([$this->first_name, $this->last_name])
+                ->filter()
+                ->implode(' '),
+        );
+    }
+
+    /**
      * A masked representation of the IBAN safe to display outside of the
      * beneficiaries.bank-data.view permission: reveals only the last 4
      * digits, never the decrypted value in full.

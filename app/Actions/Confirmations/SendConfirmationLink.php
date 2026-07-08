@@ -4,9 +4,9 @@ namespace App\Actions\Confirmations;
 
 use App\Models\AidConfirmation;
 use App\Services\Messaging\Messenger;
+use App\Support\ConfirmationLink;
 use App\Support\Settings;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\URL;
 
 /**
  * Builds the signed, single-purpose confirmation URL for an
@@ -19,6 +19,7 @@ class SendConfirmationLink
     public function __construct(
         private readonly Messenger $messenger,
         private readonly Settings $settings,
+        private readonly ConfirmationLink $confirmationLink,
     ) {}
 
     /**
@@ -40,11 +41,7 @@ class SendConfirmationLink
             return;
         }
 
-        $link = URL::temporarySignedRoute(
-            'public.confirm',
-            $confirmation->expires_at,
-            ['confirmation' => $confirmation->id, 'token' => $rawToken],
-        );
+        $link = $this->confirmationLink->url($confirmation, $rawToken);
 
         // The body is admin-editable from the notifications settings screen
         // (validated to always contain the {link} placeholder); fall back to
