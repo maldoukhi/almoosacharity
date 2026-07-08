@@ -36,6 +36,8 @@ return [
     'toggle_status' => 'Toggle Status',
     'confirm_delete' => 'Are you sure you want to delete this user?',
     'messages' => [
+        'created' => 'User created successfully.',
+        'updated' => 'User updated successfully.',
         'status_updated' => 'User status updated successfully.',
         'deleted' => 'User deleted successfully.',
         'cannot_assign_admin' => 'You cannot assign the system-admin role.',

@@ -10,6 +10,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -31,6 +32,15 @@ class Index extends Component
     public function mount(): void
     {
         Gate::authorize('viewAny', User::class);
+    }
+
+    /**
+     * Refresh the list after the create/edit modal saves a user.
+     */
+    #[On('user-saved')]
+    public function refreshList(): void
+    {
+        unset($this->users);
     }
 
     public function updatingSearch(): void
