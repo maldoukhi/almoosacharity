@@ -107,7 +107,7 @@
                 </div>
             </x-slot:header>
 
-            <div class="max-w-xs">
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <x-ui.input
                     :label="__('notifications.settings.field_sender_name')"
                     name="senderName"
@@ -115,6 +115,162 @@
                     maxlength="11"
                     :hint="__('notifications.settings.field_sender_name_hint')"
                 />
+
+                <div>
+                    <x-ui.input
+                        :label="__('notifications.settings.field_api_key')"
+                        name="taqnyatApiKeyInput"
+                        type="password"
+                        autocomplete="off"
+                        wire:model="taqnyatApiKeyInput"
+                        maxlength="255"
+                        dir="ltr"
+                        :placeholder="$this->taqnyatHasKey ? $this->taqnyatKeyMasked : __('notifications.settings.field_api_key_placeholder')"
+                        :hint="__('notifications.settings.field_api_key_hint')"
+                    />
+
+                    @if ($this->taqnyatHasKey)
+                        <button
+                            type="button"
+                            wire:click="clearTaqnyatApiKey"
+                            wire:confirm="{{ __('notifications.settings.confirm_clear_secret') }}"
+                            class="mt-1.5 text-xs font-medium text-status-rejected hover:underline"
+                        >
+                            {{ __('notifications.settings.action_clear') }}
+                        </button>
+                    @endif
+                </div>
+            </div>
+
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+                <x-ui.button type="button" variant="ghost" size="sm" wire:click="verifyTaqnyat">
+                    {{ __('notifications.settings.action_verify') }}
+                </x-ui.button>
+
+                @if ($taqnyatVerifyResult)
+                    @if ($taqnyatVerifyResult['success'])
+                        <x-ui.badge color="approved">
+                            {{ $taqnyatVerifyResult['balance']
+                                ? __('notifications.settings.verify_success_with_balance', ['balance' => $taqnyatVerifyResult['balance']])
+                                : __('notifications.settings.verify_success') }}
+                        </x-ui.badge>
+                    @else
+                        <x-ui.badge color="rejected">
+                            {{ __('notifications.settings.verify_failed', ['message' => $taqnyatVerifyResult['message'] ?? '']) }}
+                        </x-ui.badge>
+                    @endif
+                @endif
+            </div>
+        </x-ui.card>
+
+        <x-ui.card>
+            <x-slot:header>
+                <div>
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_okta_title') }}</h2>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('notifications.settings.section_okta_description') }}</p>
+                </div>
+            </x-slot:header>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <x-ui.input
+                    :label="__('notifications.settings.field_okta_base_url')"
+                    name="oktaBaseUrl"
+                    wire:model="oktaBaseUrl"
+                    maxlength="255"
+                    dir="ltr"
+                    :hint="__('notifications.settings.field_okta_base_url_hint')"
+                />
+
+                <x-ui.input
+                    :label="__('notifications.settings.field_okta_channel_id')"
+                    name="oktaChannelId"
+                    wire:model="oktaChannelId"
+                    maxlength="255"
+                    dir="ltr"
+                    :hint="__('notifications.settings.field_okta_channel_id_hint')"
+                />
+
+                <div>
+                    <x-ui.input
+                        :label="__('notifications.settings.field_okta_token')"
+                        name="oktaTokenInput"
+                        type="password"
+                        autocomplete="off"
+                        wire:model="oktaTokenInput"
+                        maxlength="255"
+                        dir="ltr"
+                        :placeholder="$this->oktaHasToken ? $this->oktaTokenMasked : __('notifications.settings.field_okta_token_placeholder')"
+                        :hint="__('notifications.settings.field_okta_token_hint')"
+                    />
+
+                    @if ($this->oktaHasToken)
+                        <button
+                            type="button"
+                            wire:click="clearOktaToken"
+                            wire:confirm="{{ __('notifications.settings.confirm_clear_secret') }}"
+                            class="mt-1.5 text-xs font-medium text-status-rejected hover:underline"
+                        >
+                            {{ __('notifications.settings.action_clear') }}
+                        </button>
+                    @endif
+                </div>
+            </div>
+
+            <div class="mt-5 flex flex-wrap items-center gap-3">
+                <x-ui.button type="button" variant="ghost" size="sm" wire:click="verifyOkta">
+                    {{ __('notifications.settings.action_verify') }}
+                </x-ui.button>
+
+                @if ($oktaVerifyResult)
+                    @if ($oktaVerifyResult['success'])
+                        <x-ui.badge color="approved">
+                            {{ $oktaVerifyResult['status']
+                                ? __('notifications.settings.okta_verify_status', ['status' => $oktaVerifyResult['status']])
+                                : __('notifications.settings.verify_success') }}
+                        </x-ui.badge>
+                    @else
+                        <x-ui.badge color="rejected">
+                            {{ __('notifications.settings.verify_failed', ['message' => $oktaVerifyResult['message'] ?? '']) }}
+                        </x-ui.badge>
+                    @endif
+                @endif
+            </div>
+
+            <div class="mt-6 border-t border-gray-200 pt-5 dark:border-white/10">
+                <h3 class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_okta_qr_title') }}</h3>
+
+                @if ($this->whatsappPairingSupported)
+                    <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_scanning_hint') }}</p>
+
+                    <div class="flex flex-wrap items-center gap-3">
+                        <x-ui.button type="button" variant="secondary" size="sm" wire:click="startWhatsappQrPairing">
+                            {{ __('notifications.settings.action_connect_whatsapp') }}
+                        </x-ui.button>
+
+                        @if ($whatsappQrStatus)
+                            <x-ui.badge :color="$whatsappQrStatus === 'connected' ? 'approved' : ($whatsappQrStatus === 'pending' ? 'review' : 'rejected')">
+                                {{ __('notifications.settings.qr_status_'.$whatsappQrStatus) }}
+                            </x-ui.badge>
+                        @endif
+                    </div>
+
+                    @if ($whatsappQrMessage)
+                        <p class="mt-2 text-xs text-status-rejected">{{ $whatsappQrMessage }}</p>
+                    @endif
+
+                    @if ($whatsappQrText)
+                        <div
+                            wire:key="whatsapp-qr-poll"
+                            wire:poll.5s.keep-alive="pollWhatsappQrStatus"
+                            class="mt-4 inline-flex flex-col items-center gap-2 rounded-(--radius-brand) border border-gray-200 p-4 dark:border-white/10"
+                        >
+                            <div id="whatsapp-qr-svg" wire:ignore class="h-48 w-48 [&_svg]:h-full [&_svg]:w-full"></div>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_waiting') }}</p>
+                        </div>
+                    @endif
+                @else
+                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_not_supported') }}</p>
+                @endif
             </div>
         </x-ui.card>
 
@@ -124,4 +280,29 @@
             </x-ui.button>
         </div>
     </form>
+
+    <script src="{{ asset('vendor/qrcode-generator/qrcode.js') }}"></script>
+    <script>
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('whatsapp-qr-updated', ({ text }) => {
+                const el = document.getElementById('whatsapp-qr-svg');
+
+                if (! el) {
+                    return;
+                }
+
+                if (! text) {
+                    el.innerHTML = '';
+
+                    return;
+                }
+
+                const qr = qrcode(0, 'L');
+                qr.addData(text);
+                qr.make();
+
+                el.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2 });
+            });
+        });
+    </script>
 </div>

@@ -104,3 +104,93 @@ it('surfaces RateLimitException::retryAfter() as GatewayResponse::retryAfter', f
     expect($response->success)->toBeFalse()
         ->and($response->retryAfter)->toBe(20);
 });
+
+it('verifies the connection by fetching the configured channel', function () {
+    $history = [];
+    $gateway = makeOktaGateway([
+        new Psr7Response(200, ['Content-Type' => 'application/json'], json_encode([
+            'data' => ['id' => 'ch_1', 'display_name' => 'Main', 'status' => 'connected'],
+        ])),
+    ], $history);
+
+    $response = $gateway->verify();
+
+    expect($response->success)->toBeTrue()
+        ->and($response->providerMessageId)->toBe('ch_1')
+        ->and($response->raw)->toMatchArray(['status' => 'connected']);
+
+    $request = $history[0]['request'];
+    expect($request->getMethod())->toBe('GET')
+        ->and($request->getUri()->getPath())->toBe('/api/v1/channels/ch_1');
+});
+
+it('maps a 401 on verify() to a failure via the typed AuthenticationException', function () {
+    $history = [];
+    $gateway = makeOktaGateway([
+        new Psr7Response(401, [], json_encode(['message' => 'Invalid token'])),
+    ], $history);
+
+    $response = $gateway->verify();
+
+    expect($response->success)->toBeFalse()
+        ->and($response->error)->toBe('Invalid token');
+});
+
+it('starts a QR pairing session against /api/integrations/qr/sessions', function () {
+    $history = [];
+    $gateway = makeOktaGateway([
+        new Psr7Response(201, ['Content-Type' => 'application/json'], json_encode([
+            'channel' => ['id' => 'ch_new', 'display_name' => 'Almoosa WhatsApp', 'status' => 'pending'],
+            'qr' => 'RAW-QR-PAYLOAD',
+            'qr_ttl_seconds' => 60,
+        ])),
+    ], $history);
+
+    $session = $gateway->startQrPairing('Almoosa WhatsApp');
+
+    expect($session->channelId)->toBe('ch_new')
+        ->and($session->status)->toBe('pending')
+        ->and($session->qr)->toBe('RAW-QR-PAYLOAD')
+        ->and($session->qrTtlSeconds)->toBe(60)
+        ->and($session->isConnected())->toBeFalse()
+        ->and($session->isTerminal())->toBeFalse();
+
+    $request = $history[0]['request'];
+    expect($request->getMethod())->toBe('POST')
+        ->and($request->getUri()->getPath())->toBe('/api/integrations/qr/sessions');
+
+    $body = json_decode((string) $request->getBody(), true);
+    expect($body)->toBe(['display_name' => 'Almoosa WhatsApp']);
+});
+
+it('polls QR pairing status until the channel is connected', function () {
+    $history = [];
+    $gateway = makeOktaGateway([
+        new Psr7Response(200, ['Content-Type' => 'application/json'], json_encode([
+            'channel' => ['id' => 'ch_new', 'display_name' => 'Almoosa WhatsApp', 'status' => 'connected'],
+            'qr' => null,
+            'qr_ttl_seconds' => null,
+        ])),
+    ], $history);
+
+    $session = $gateway->qrPairingStatus('ch_new');
+
+    expect($session->status)->toBe('connected')
+        ->and($session->qr)->toBeNull()
+        ->and($session->isConnected())->toBeTrue()
+        ->and($session->isTerminal())->toBeTrue();
+
+    $request = $history[0]['request'];
+    expect($request->getMethod())->toBe('GET')
+        ->and($request->getUri()->getPath())->toBe('/api/integrations/qr/sessions/ch_new');
+});
+
+it('wraps a failed QR pairing call in a plain RuntimeException, not a vendor exception', function () {
+    $history = [];
+    $gateway = makeOktaGateway([
+        new Psr7Response(404, [], json_encode(['message' => 'Session not found'])),
+    ], $history);
+
+    expect(fn () => $gateway->qrPairingStatus('missing'))
+        ->toThrow(RuntimeException::class, 'Session not found');
+});

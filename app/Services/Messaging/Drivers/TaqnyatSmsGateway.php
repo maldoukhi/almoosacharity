@@ -41,13 +41,19 @@ class TaqnyatSmsGateway implements SmsGatewayInterface
 
     public function send(string $to, string $message): GatewayResponse
     {
-        // Sender name is admin-editable at runtime from the notifications
-        // settings screen (App\Support\Settings), falling back to the
-        // constructor-configured default (config('services.taqnyat.sender')
-        // in the bound singleton) when no override has been saved yet.
-        $sender = app(Settings::class)->get('taqnyat_sender') ?: $this->sender;
+        // The API key and sender name are both admin-editable at runtime
+        // from the notifications settings screen (App\Support\Settings —
+        // the key is encrypted at rest), falling back to the
+        // constructor-configured defaults (config('services.taqnyat.*'),
+        // i.e. .env) when no override has been saved yet. Read fresh on
+        // every send rather than cached on the instance, so a saved
+        // credential change is picked up immediately even by a
+        // long-running queue worker holding onto this gateway object.
+        $settings = app(Settings::class);
+        $apiKey = $settings->getSecret('taqnyat_api_key') ?: $this->apiKey;
+        $sender = $settings->get('taqnyat_sender') ?: $this->sender;
 
-        $response = Http::withToken($this->apiKey)
+        $response = Http::withToken($apiKey)
             ->acceptJson()
             ->post(rtrim($this->baseUrl, '/').'/v1/messages', [
                 'recipients' => [$to],
@@ -79,6 +85,43 @@ class TaqnyatSmsGateway implements SmsGatewayInterface
         $messageId = $raw['messageId'] ?? ($raw['messages'][0]['id'] ?? null);
 
         return GatewayResponse::success(is_string($messageId) ? $messageId : null, $raw);
+    }
+
+    /**
+     * Lightweight credential check: Taqnyat's account balance endpoint.
+     *
+     * Confirmed by reading github.com/taqnyat/php (`TaqnyatSms::balance()`
+     * in TaqnyatSms.php): `GET {base}/account/balance` — note *no* `/v1`
+     * prefix, unlike `/v1/messages` — with the same `Authorization: Bearer`
+     * header. The response schema isn't documented beyond the package
+     * source (no sample JSON in the README either), so we don't assume a
+     * specific field name for the balance figure; the whole decoded body
+     * is kept in GatewayResponse::$raw for the settings screen / auditing
+     * to read whatever the account happens to return.
+     */
+    public function verify(): GatewayResponse
+    {
+        $apiKey = app(Settings::class)->getSecret('taqnyat_api_key') ?: $this->apiKey;
+
+        if ($apiKey === '') {
+            return GatewayResponse::failure('Taqnyat API key is not configured.');
+        }
+
+        $response = Http::withToken($apiKey)
+            ->acceptJson()
+            ->get(rtrim($this->baseUrl, '/').'/account/balance');
+
+        $raw = (array) ($response->json() ?? []);
+
+        if ($response->failed()) {
+            $error = is_string($raw['message'] ?? null)
+                ? $raw['message']
+                : 'Taqnyat request failed with status '.$response->status().'.';
+
+            return GatewayResponse::failure($error, $raw);
+        }
+
+        return GatewayResponse::success(null, $raw);
     }
 
     protected function parseRetryAfter(?string $header): ?int

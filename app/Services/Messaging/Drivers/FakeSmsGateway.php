@@ -34,6 +34,21 @@ class FakeSmsGateway implements SmsGatewayInterface
     }
 
     /**
+     * Always "succeeds" (mirroring a healthy Taqnyat account) unless
+     * {@see failNext()} was called, so local dev/tests can exercise the
+     * settings screen's "verify connection" action without real
+     * credentials.
+     */
+    public function verify(): GatewayResponse
+    {
+        if (static::$shouldFail) {
+            return GatewayResponse::failure(static::$failureMessage ?? 'Fake SMS gateway forced failure.');
+        }
+
+        return GatewayResponse::success(null, ['balance' => '100.00', 'currency' => 'SAR']);
+    }
+
+    /**
      * Force every subsequent call to fail, for testing the retry/failure path.
      */
     public static function failNext(?string $message = null): void

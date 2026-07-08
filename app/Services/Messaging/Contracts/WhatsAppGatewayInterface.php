@@ -23,4 +23,12 @@ interface WhatsAppGatewayInterface
         string $language = 'ar',
         ?string $idempotencyKey = null,
     ): GatewayResponse;
+
+    /**
+     * Lightweight, side-effect-free connectivity/credential check against
+     * the provider (e.g. confirming the token and configured channel id
+     * both resolve) — backs the "verify connection" action on the
+     * notifications settings screen. Must never send an actual message.
+     */
+    public function verify(): GatewayResponse;
 }

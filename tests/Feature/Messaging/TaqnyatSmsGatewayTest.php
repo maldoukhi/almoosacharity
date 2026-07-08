@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\Messaging\Drivers\TaqnyatSmsGateway;
+use App\Support\Settings;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -53,4 +54,60 @@ it('captures the Retry-After header as retryAfter on a 429 response', function (
 
     expect($response->success)->toBeFalse()
         ->and($response->retryAfter)->toBe(45);
+});
+
+it('verifies the connection against the account balance endpoint (no /v1 prefix)', function () {
+    Http::fake([
+        'api.taqnyat.sa/account/balance' => Http::response(['balance' => '42.50'], 200),
+    ]);
+
+    $gateway = new TaqnyatSmsGateway(apiKey: 'test-bearer-token', sender: 'ALMOOSA');
+
+    $response = $gateway->verify();
+
+    expect($response->success)->toBeTrue()
+        ->and($response->raw)->toMatchArray(['balance' => '42.50']);
+
+    Http::assertSent(function (Request $request): bool {
+        return $request->url() === 'https://api.taqnyat.sa/account/balance'
+            && $request->method() === 'GET'
+            && $request->hasHeader('Authorization', 'Bearer test-bearer-token');
+    });
+});
+
+it('maps a failed verify() response to a failure with the provider message', function () {
+    Http::fake([
+        'api.taqnyat.sa/account/balance' => Http::response(['message' => 'Invalid token.'], 401),
+    ]);
+
+    $gateway = new TaqnyatSmsGateway(apiKey: 'bad-token', sender: 'ALMOOSA');
+
+    $response = $gateway->verify();
+
+    expect($response->success)->toBeFalse()
+        ->and($response->error)->toBe('Invalid token.');
+});
+
+it('short-circuits verify() without an HTTP call when no API key is configured', function () {
+    Http::fake();
+
+    $gateway = new TaqnyatSmsGateway(apiKey: '', sender: 'ALMOOSA');
+
+    $response = $gateway->verify();
+
+    expect($response->success)->toBeFalse();
+    Http::assertNothingSent();
+});
+
+it('prefers a Settings-stored API key over the constructor default for verify()', function () {
+    Http::fake([
+        'api.taqnyat.sa/account/balance' => Http::response(['balance' => '10.00'], 200),
+    ]);
+
+    app(Settings::class)->setSecret('taqnyat_api_key', 'settings-token');
+
+    $gateway = new TaqnyatSmsGateway(apiKey: 'constructor-token', sender: 'ALMOOSA');
+    $gateway->verify();
+
+    Http::assertSent(fn (Request $request): bool => $request->hasHeader('Authorization', 'Bearer settings-token'));
 });
