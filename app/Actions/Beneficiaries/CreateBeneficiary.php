@@ -30,6 +30,12 @@ class CreateBeneficiary
     {
         $this->guardBankFields($data, $actor);
 
+        // Optional fields arrive from the form as '' when left blank; MySQL
+        // in strict mode rejects '' for date/numeric columns (birth_date,
+        // rent_amount, ...), so normalize blanks to null. Required fields
+        // are validated non-empty, so this never nulls a mandatory value.
+        $data = array_map(fn ($value) => $value === '' ? null : $value, $data);
+
         return DB::transaction(function () use ($data, $categoryIds, $actor): Beneficiary {
             $beneficiary = Beneficiary::create([
                 ...$data,

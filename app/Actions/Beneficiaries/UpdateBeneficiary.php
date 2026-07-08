@@ -36,6 +36,12 @@ class UpdateBeneficiary
     {
         $data = $this->resolveBankFields($data, $actor);
 
+        // Blank optional fields (e.g. a cleared birth_date) must be stored as
+        // null, not '' — MySQL strict mode rejects '' for date/numeric
+        // columns. Bank fields were already unset above when left blank, so
+        // this only affects genuinely cleared optional values.
+        $data = array_map(fn ($value) => $value === '' ? null : $value, $data);
+
         return DB::transaction(function () use ($beneficiary, $data, $categoryIds): Beneficiary {
             $beneficiary->update($data);
 

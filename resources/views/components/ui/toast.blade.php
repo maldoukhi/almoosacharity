@@ -13,19 +13,19 @@
         },
     }"
     x-on:toast.window="add(Array.isArray($event.detail) ? $event.detail[0] : $event.detail)"
-    class="pointer-events-none fixed bottom-4 start-4 z-[100] flex w-full max-w-sm flex-col gap-2"
+    class="pointer-events-none fixed inset-x-0 top-5 z-[100] mx-auto flex w-full max-w-sm flex-col items-center gap-2 px-4"
     aria-live="polite"
 >
     <template x-for="toast in toasts" :key="toast.id">
         <div
             x-show="true"
-            x-transition:enter="transition ease-out duration-200"
-            x-transition:enter-start="opacity-0 translate-y-2"
-            x-transition:enter-end="opacity-100 translate-y-0"
-            x-transition:leave="transition ease-in duration-150"
-            x-transition:leave-start="opacity-100"
-            x-transition:leave-end="opacity-0"
-            class="pointer-events-auto flex w-full items-start gap-3 rounded-(--radius-brand) bg-white p-4 shadow-(--shadow-card) ring-1 dark:bg-primary-950 dark:text-gray-100"
+            x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 -translate-y-4 scale-95"
+            x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+            x-transition:leave="transition ease-in duration-200"
+            x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+            x-transition:leave-end="opacity-0 -translate-y-3 scale-95"
+            class="pointer-events-auto flex w-full items-start gap-3 rounded-(--radius-brand) bg-white p-4 shadow-lg ring-1 dark:bg-primary-950 dark:text-gray-100"
             :class="{
                 'ring-status-approved/30': toast.type === 'success',
                 'ring-status-rejected/30': toast.type === 'error',
