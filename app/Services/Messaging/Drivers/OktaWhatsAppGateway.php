@@ -83,7 +83,10 @@ class OktaWhatsAppGateway implements WhatsAppChannelPairingInterface, WhatsAppGa
         return $this->attempt(function () use ($to, $message, $idempotencyKey, $config) {
             return $this->client($config)->messages()->send([
                 'channel_id' => $config['channelId'],
-                'to' => MobileNumber::toInternational($to),
+                // The Connect API requires `wa_id` (the international number,
+                // no +) on outbound sends when there is no conversation id —
+                // sending `to` instead fails validation.
+                'wa_id' => MobileNumber::toInternational($to),
                 'type' => 'text',
                 'text' => ['body' => $message],
             ], $idempotencyKey);

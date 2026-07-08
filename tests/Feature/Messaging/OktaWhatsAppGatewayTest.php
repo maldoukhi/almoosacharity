@@ -60,9 +60,9 @@ it('sends a text message to /api/v1/messages with the idempotency header', funct
     $body = json_decode((string) $request->getBody(), true);
     expect($body)->toBe([
         'channel_id' => 'ch_1',
-        // The recipient goes out in international wa_id form (no +), even
+        // The recipient goes out as wa_id in international form (no +), even
         // though it was passed in the local/plus form.
-        'to' => '966500000000',
+        'wa_id' => '966500000000',
         'type' => 'text',
         'text' => ['body' => 'مرحباً'],
     ]);
@@ -79,7 +79,7 @@ it('sends a WhatsApp text to a local 05… number as an international wa_id', fu
     $gateway->sendText('0560249160', 'مرحباً');
 
     $body = json_decode((string) $history[0]['request']->getBody(), true);
-    expect($body['to'])->toBe('966560249160');
+    expect($body['wa_id'])->toBe('966560249160');
 });
 
 it('sends a template message to /api/v1/templates/send', function () {
