@@ -151,48 +151,28 @@
                             type="button"
                             variant="primary"
                             class="w-full"
-                            wire:click="submit"
-                            wire:confirm="{{ __('aids.confirm_submit') }}"
+                            wire:click="$dispatch('openModal', { component: 'aids.submit-aid-modal', arguments: { aid: {{ $aid->id }} } })"
                         >
                             {{ __('aids.submit_button') }}
                         </x-ui.button>
                     @endif
 
                     @if ($this->canAct)
-                        <div class="space-y-3">
-                            <div>
-                                <label for="decisionNote" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                                    {{ __('aids.field_decision_note') }}
-                                </label>
-                                <textarea
-                                    id="decisionNote"
-                                    wire:model="decisionNote"
-                                    rows="3"
-                                    class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition duration-200 ease-out focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
-                                ></textarea>
-                                @error('decisionNote')
-                                    <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
-                                @enderror
-                                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.decision_note_hint') }}</p>
-                            </div>
-
-                            <div class="flex flex-col gap-2">
-                                @foreach ($this->allowedActions as $action)
-                                    <x-ui.button
-                                        type="button"
-                                        variant="{{ match ($action->value) {
-                                            'approve' => 'secondary',
-                                            'reject' => 'danger',
-                                            default => 'ghost',
-                                        } }}"
-                                        class="w-full"
-                                        wire:click="decide('{{ $action->value }}')"
-                                        wire:confirm="{{ __('aids.confirm_decision') }}"
-                                    >
-                                        {{ $action->label() }}
-                                    </x-ui.button>
-                                @endforeach
-                            </div>
+                        <div class="flex flex-col gap-2">
+                            @foreach ($this->allowedActions as $action)
+                                <x-ui.button
+                                    type="button"
+                                    variant="{{ match ($action->value) {
+                                        'approve' => 'secondary',
+                                        'reject' => 'danger',
+                                        default => 'ghost',
+                                    } }}"
+                                    class="w-full"
+                                    wire:click="$dispatch('openModal', { component: 'aids.approval-decision-modal', arguments: { aid: {{ $aid->id }}, action: '{{ $action->value }}' } })"
+                                >
+                                    {{ $action->label() }}
+                                </x-ui.button>
+                            @endforeach
                         </div>
                     @endif
 
@@ -201,8 +181,7 @@
                             type="button"
                             variant="ghost"
                             class="w-full"
-                            wire:click="cancel"
-                            wire:confirm="{{ __('aids.confirm_cancel') }}"
+                            wire:click="$dispatch('openModal', { component: 'aids.cancel-aid-modal', arguments: { aid: {{ $aid->id }} } })"
                         >
                             {{ __('common.cancel') }}
                         </x-ui.button>

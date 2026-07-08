@@ -59,6 +59,34 @@ return [
     'confirm_delete' => 'Are you sure you want to delete this aid?',
     'confirm_decision' => 'Are you sure about this decision?',
 
+    'submit_modal' => [
+        'title' => 'Submit Aid for Approval',
+        'subtitle' => 'Review the summary below before sending this aid into the approval workflow.',
+        'notify_title' => 'What happens on submission',
+        'notify_stage' => 'The aid moves to the "‎:stage‎" stage for review by the :role.',
+        'notify_recipients' => '{1} One active reviewer will be notified.|[2,*] :count active reviewers will be notified.',
+        'notify_none' => 'No active user holds this role yet — no one will be notified until the role is assigned.',
+        'channel_bell' => 'In-app notification',
+        'channel_email' => 'Email',
+        'no_flow' => 'No active approval flow applies to this aid; it cannot be submitted until stages are configured.',
+    ],
+
+    'decision_modal' => [
+        'title' => 'Confirm decision: :action',
+        'subtitle' => 'Review the effect of this decision before confirming.',
+        'effect_title' => 'Effect of this decision',
+        'approve_next' => 'The aid moves to the "‎:stage‎" stage for review by the :role.',
+        'approve_final' => 'The aid is finally approved and the beneficiary is notified by SMS/WhatsApp.',
+        'reject_effect' => 'The aid is rejected and moves to the final "Rejected" status. No notification is sent.',
+        'return_effect' => 'The aid returns to "Draft" for its creator to revise and resubmit. No notification is sent.',
+    ],
+
+    'cancel_modal' => [
+        'title' => 'Cancel Aid',
+        'subtitle' => 'This aid will be cancelled and cannot be undone. No notification is sent.',
+        'confirm_button' => 'Confirm Cancellation',
+    ],
+
     'no_actions_available' => 'No actions available at this time',
 
     'returned_notice_title' => 'This aid was returned for revision',

@@ -2,15 +2,11 @@
 
 namespace App\Livewire\Aids;
 
-use App\Actions\Aids\CancelAid;
-use App\Actions\Aids\SubmitAid;
-use App\Actions\Approvals\RecordApprovalDecision;
 use App\Actions\Confirmations\ResendConfirmationLink;
 use App\Enums\AidStatus;
 use App\Enums\ApprovalAction;
 use App\Enums\RoleName;
 use App\Exceptions\Confirmations\AidConfirmationException;
-use App\Exceptions\InvalidAidTransitionException;
 use App\Models\Aid;
 use App\Models\AidConfirmation;
 use App\Models\ApprovalDecision;
@@ -20,20 +16,19 @@ use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use InvalidArgumentException;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
- * Aid detail screen: timeline, decisions, items and the approval decision
- * form for whoever holds the current stage's role.
+ * Aid detail screen: timeline, decisions, items and the approval action
+ * buttons. Submit, approve/reject/return and cancel each open their own
+ * confirmation modal (SubmitAidModal / ApprovalDecisionModal /
+ * CancelAidModal), which dispatch `aid-submitted` back here to refresh.
  */
 class Show extends Component
 {
     public Aid $aid;
-
-    public string $decisionNote = '';
 
     public function mount(Aid $aid): void
     {
@@ -163,65 +158,6 @@ class Show extends Component
             ?->note;
     }
 
-    public function submit(): void
-    {
-        Gate::authorize('submit', $this->aid);
-
-        try {
-            app(SubmitAid::class)->handle($this->aid, Auth::user());
-
-            $this->dispatch('toast', type: 'success', message: __('aids.messages.submitted'));
-        } catch (InvalidAidTransitionException|AuthorizationException $exception) {
-            $this->dispatch('toast', type: 'error', message: $exception->getMessage());
-
-            return;
-        }
-
-        $this->refreshAid();
-    }
-
-    public function decide(string $action): void
-    {
-        Gate::authorize('act', $this->aid);
-
-        $approvalAction = ApprovalAction::tryFrom($action);
-
-        if (! $approvalAction) {
-            abort(404);
-        }
-
-        if ($approvalAction->requiresNote()) {
-            $this->validate([
-                'decisionNote' => ['required', 'string', 'max:2000'],
-            ], [
-                'decisionNote.required' => __('validation.custom.approval.note_required'),
-            ]);
-        }
-
-        try {
-            app(RecordApprovalDecision::class)->handle(
-                $this->aid,
-                Auth::user(),
-                $approvalAction,
-                $this->decisionNote !== '' ? $this->decisionNote : null,
-            );
-        } catch (InvalidAidTransitionException|InvalidArgumentException|AuthorizationException $exception) {
-            $this->dispatch('toast', type: 'error', message: $exception->getMessage());
-
-            return;
-        }
-
-        $this->decisionNote = '';
-
-        $this->refreshAid();
-
-        $this->dispatch('toast', type: 'success', message: __(match ($approvalAction) {
-            ApprovalAction::Approve => 'approvals.messages.approved',
-            ApprovalAction::Reject => 'approvals.messages.rejected',
-            ApprovalAction::Return => 'approvals.messages.returned',
-        }));
-    }
-
     /**
      * The aid's single delivery-confirmation-link record, once its
      * disbursement has been recorded as delivered (phase 6b) — null
@@ -262,23 +198,6 @@ class Show extends Component
         $this->refreshAid();
     }
 
-    public function cancel(): void
-    {
-        Gate::authorize('cancel', $this->aid);
-
-        try {
-            app(CancelAid::class)->handle($this->aid);
-        } catch (InvalidAidTransitionException $exception) {
-            $this->dispatch('toast', type: 'error', message: $exception->getMessage());
-
-            return;
-        }
-
-        $this->dispatch('toast', type: 'success', message: __('aids.messages.cancelled'));
-
-        $this->refreshAid();
-    }
-
     private function eagerLoad(): void
     {
         $this->aid->load([
@@ -296,9 +215,11 @@ class Show extends Component
     /**
      * Also listens for 'disbursement-updated', dispatched by the nested
      * Disbursements\Panel component whenever it starts/records/confirms a
-     * disbursement, since that changes this aid's own status.
+     * disbursement, and 'aid-submitted', dispatched by SubmitAidModal on a
+     * successful submission — both change this aid's own status.
      */
     #[On('disbursement-updated')]
+    #[On('aid-submitted')]
     public function refreshAid(): void
     {
         $this->aid->refresh();

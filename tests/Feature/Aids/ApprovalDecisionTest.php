@@ -3,7 +3,7 @@
 use App\Enums\AidProgramType;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
-use App\Livewire\Aids\Show;
+use App\Livewire\Aids\ApprovalDecisionModal;
 use App\Models\Aid;
 use App\Models\AidProgram;
 use App\Models\ApprovalDecision;
@@ -42,8 +42,8 @@ it('advances a researcher approval at stage 1 to stage 2, keeping the aid under_
     $researcher = asResearcher();
     $aid = underReviewAidAtStage(1, ['created_by' => $researcher->id]);
 
-    Livewire::test(Show::class, ['aid' => $aid])
-        ->call('decide', 'approve');
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'approve'])
+        ->call('confirm');
 
     $aid->refresh();
     $flow = ApprovalFlow::query()->default()->where('is_active', true)->firstOrFail();
@@ -57,8 +57,8 @@ it('lets the manager approve at the final stage, moving the aid to approved with
     $manager = asManager();
     $aid = underReviewAidAtStage(2);
 
-    Livewire::test(Show::class, ['aid' => $aid])
-        ->call('decide', 'approve');
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'approve'])
+        ->call('confirm');
 
     $aid->refresh();
 
@@ -71,9 +71,9 @@ it('rejects an aid, with a note, into the final rejected status', function () {
     $manager = asManager();
     $aid = underReviewAidAtStage(2);
 
-    Livewire::test(Show::class, ['aid' => $aid])
-        ->set('decisionNote', 'المستندات غير مكتملة')
-        ->call('decide', 'reject');
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'reject'])
+        ->set('note', 'المستندات غير مكتملة')
+        ->call('confirm');
 
     $aid->refresh();
 
@@ -89,10 +89,10 @@ it('fails validation when rejecting without a note', function () {
     $manager = asManager();
     $aid = underReviewAidAtStage(2);
 
-    Livewire::test(Show::class, ['aid' => $aid])
-        ->set('decisionNote', '')
-        ->call('decide', 'reject')
-        ->assertHasErrors(['decisionNote']);
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'reject'])
+        ->set('note', '')
+        ->call('confirm')
+        ->assertHasErrors(['note']);
 
     expect($aid->fresh()->status)->toBe(AidStatus::UnderReview);
 });
@@ -102,9 +102,9 @@ it('returns an aid to draft on a "return" decision, keeping the decision record 
     $aid = underReviewAidAtStage(1, ['created_by' => $researcher->id]);
     $flowId = $aid->approval_flow_id;
 
-    Livewire::test(Show::class, ['aid' => $aid])
-        ->set('decisionNote', 'الرجاء إرفاق تعريف بالراتب')
-        ->call('decide', 'return');
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'return'])
+        ->set('note', 'الرجاء إرفاق تعريف بالراتب')
+        ->call('confirm');
 
     $aid->refresh();
 
@@ -122,8 +122,7 @@ it('forbids a data-entry user (no approvals.act) from deciding on an aid at the 
     $dataEntry = asDataEntry();
     $aid = underReviewAidAtStage(1);
 
-    Livewire::test(Show::class, ['aid' => $aid])
-        ->call('decide', 'approve')
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'approve'])
         ->assertForbidden();
 
     expect($aid->fresh()->status)->toBe(AidStatus::UnderReview);
@@ -133,8 +132,7 @@ it('forbids a manager (wrong role for the stage) from deciding on an aid still a
     asManager();
     $aid = underReviewAidAtStage(1);
 
-    Livewire::test(Show::class, ['aid' => $aid])
-        ->call('decide', 'approve')
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'approve'])
         ->assertForbidden();
 
     expect($aid->fresh()->status)->toBe(AidStatus::UnderReview);
@@ -155,8 +153,7 @@ it('forbids deciding on a draft aid that has no current stage', function () {
         'created_by' => $researcher->id,
     ]);
 
-    Livewire::test(Show::class, ['aid' => $aid])
-        ->call('decide', 'approve')
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'approve'])
         ->assertForbidden();
 
     expect($aid->fresh()->status)->toBe(AidStatus::Draft);
