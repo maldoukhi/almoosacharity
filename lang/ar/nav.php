@@ -17,4 +17,5 @@ return [
     'surveys' => 'الاستبيانات',
     'notification_settings' => 'إعدادات الإشعارات',
     'reports' => 'التقارير',
+    'broadcast' => 'رسالة جماعية',
 ];

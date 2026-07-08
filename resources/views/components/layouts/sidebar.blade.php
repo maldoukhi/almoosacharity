@@ -21,15 +21,8 @@
     ]"
     class="fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e border-gray-100 bg-white transition-all duration-200 ease-out max-lg:rtl:translate-x-full max-lg:ltr:-translate-x-full lg:static dark:border-white/10 dark:bg-primary-950"
 >
-    <div class="flex h-16 shrink-0 items-center gap-3 border-b border-gray-100 px-4 dark:border-white/10">
-        <img src="{{ asset('images/brand/logo.svg') }}" alt="{{ config('app.name') }}" class="h-8 w-auto shrink-0">
-        <span
-            x-show="! sidebarCollapsed"
-            x-transition.opacity.duration.150ms
-            class="truncate text-sm font-semibold text-primary-800 dark:text-white"
-        >
-            {{ config('app.name') }}
-        </span>
+    <div class="flex h-16 shrink-0 items-center justify-center border-b border-gray-100 px-4 dark:border-white/10">
+        <img src="{{ asset('images/brand/logo.svg') }}" alt="{{ config('app.name') }}" class="h-9 w-auto shrink-0">
     </div>
 
     <nav class="flex-1 space-y-1 overflow-y-auto overflow-x-hidden px-3 py-4">
@@ -90,6 +83,27 @@
                 </svg>
                 <span x-show="! sidebarCollapsed" x-transition.opacity.duration.150ms class="truncate">
                     {{ __('nav.aids') }}
+                </span>
+            </a>
+        @endcan
+
+        @can('messages.broadcast')
+            <a
+                href="{{ route('admin.messaging.broadcast') }}"
+                wire:navigate
+                title="{{ __('nav.broadcast') }}"
+                style="animation: fade-in-up 0.3s ease-out both; animation-delay: 95ms"
+                @class([
+                    'group flex items-center gap-3 rounded-(--radius-brand) border-s-4 px-3 py-2.5 text-sm font-medium transition duration-150 ease-out',
+                    'border-transparent bg-primary text-white shadow-sm dark:bg-primary-600' => request()->routeIs('admin.messaging.*'),
+                    'border-transparent text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white' => ! request()->routeIs('admin.messaging.*'),
+                ])
+            >
+                <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 10.5h7.5m-7.5 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 0 1 .865-.501 48.172 48.172 0 0 0 3.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                </svg>
+                <span x-show="! sidebarCollapsed" x-transition.opacity.duration.150ms class="truncate">
+                    {{ __('nav.broadcast') }}
                 </span>
             </a>
         @endcan

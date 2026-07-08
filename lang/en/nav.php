@@ -17,4 +17,5 @@ return [
     'surveys' => 'Surveys',
     'notification_settings' => 'Notification Settings',
     'reports' => 'Reports',
+    'broadcast' => 'Bulk Message',
 ];

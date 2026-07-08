@@ -62,6 +62,7 @@ class RoleSeeder extends Seeder
             'beneficiaries.view',
             'disbursements.view',
             'disbursements.confirm',
+            'messages.broadcast',
         ]);
     }
 }

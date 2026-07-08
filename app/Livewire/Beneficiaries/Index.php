@@ -36,6 +36,16 @@ class Index extends Component
 
     public bool $trashed = false;
 
+    /**
+     * Ids checked via the row/header checkboxes, used only by the
+     * "send message" quick action (see {@see sendBroadcast()}) — cleared
+     * whenever the filtered result set changes so a stale selection never
+     * silently carries over to a different filter view.
+     *
+     * @var array<int, int>
+     */
+    public array $selected = [];
+
     public function mount(): void
     {
         Gate::authorize('viewAny', Beneficiary::class);
@@ -44,26 +54,61 @@ class Index extends Component
     public function updatingSearch(): void
     {
         $this->resetPage();
+        $this->selected = [];
     }
 
     public function updatingCategoryFilter(): void
     {
         $this->resetPage();
+        $this->selected = [];
     }
 
     public function updatingStatusFilter(): void
     {
         $this->resetPage();
+        $this->selected = [];
     }
 
     public function updatingCityFilter(): void
     {
         $this->resetPage();
+        $this->selected = [];
     }
 
     public function updatingTrashed(): void
     {
         $this->resetPage();
+        $this->selected = [];
+    }
+
+    /**
+     * Header checkbox: selects every row on the current page, or clears
+     * them if they're all already selected.
+     */
+    public function toggleSelectAllOnPage(): void
+    {
+        $pageIds = $this->beneficiaries->pluck('id')->all();
+
+        $allSelected = $pageIds !== [] && array_diff($pageIds, $this->selected) === [];
+
+        $this->selected = $allSelected
+            ? array_values(array_diff($this->selected, $pageIds))
+            : array_values(array_unique(array_merge($this->selected, $pageIds)));
+    }
+
+    /**
+     * Quick action from the listing: hand the checked ids off to the
+     * standalone bulk-messaging screen rather than sending from here.
+     */
+    public function sendBroadcast()
+    {
+        Gate::authorize('messages.broadcast');
+
+        if ($this->selected === []) {
+            return null;
+        }
+
+        return $this->redirectRoute('admin.messaging.broadcast', ['ids' => implode(',', $this->selected)], navigate: true);
     }
 
     /**

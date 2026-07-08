@@ -15,14 +15,27 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('beneficiaries.index_subtitle') }}</p>
         </div>
 
-        @can('create', \App\Models\Beneficiary::class)
-            <x-ui.button href="{{ route('admin.beneficiaries.create') }}" variant="primary">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                {{ __('beneficiaries.create_button') }}
-            </x-ui.button>
-        @endcan
+        <div class="flex items-center gap-2">
+            @can('messages.broadcast')
+                @if (count($selected) > 0)
+                    <x-ui.button variant="secondary" wire:click="sendBroadcast" wire:target="sendBroadcast">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.126A59.768 59.768 0 0 1 21.485 12 59.77 59.77 0 0 1 3.27 20.876L5.999 12Zm0 0h7.5" />
+                        </svg>
+                        {{ __('messaging.quick_send.button') }} ({{ count($selected) }})
+                    </x-ui.button>
+                @endif
+            @endcan
+
+            @can('create', \App\Models\Beneficiary::class)
+                <x-ui.button href="{{ route('admin.beneficiaries.create') }}" variant="primary">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    {{ __('beneficiaries.create_button') }}
+                </x-ui.button>
+            @endcan
+        </div>
     </div>
 
     <x-ui.card>
@@ -95,6 +108,16 @@
                 <x-ui.table>
                     <thead>
                         <tr>
+                            @can('messages.broadcast')
+                                <x-ui.table.th>
+                                    <input
+                                        type="checkbox"
+                                        wire:click="toggleSelectAllOnPage"
+                                        @checked($this->beneficiaries->isNotEmpty() && array_diff($this->beneficiaries->pluck('id')->all(), $selected) === [])
+                                        class="rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary-500/30 dark:border-white/20 dark:bg-transparent"
+                                    />
+                                </x-ui.table.th>
+                            @endcan
                             <x-ui.table.th>{{ __('beneficiaries.field_full_name') }}</x-ui.table.th>
                             <x-ui.table.th>{{ __('beneficiaries.field_national_id') }}</x-ui.table.th>
                             <x-ui.table.th>{{ __('beneficiaries.field_mobile') }}</x-ui.table.th>
@@ -107,6 +130,16 @@
                     <tbody class="divide-y divide-gray-100 dark:divide-white/10">
                         @foreach ($this->beneficiaries as $beneficiary)
                             <tr class="transition duration-150 hover:bg-gray-50 dark:hover:bg-white/5">
+                                @can('messages.broadcast')
+                                    <x-ui.table.td>
+                                        <input
+                                            type="checkbox"
+                                            wire:model.live="selected"
+                                            value="{{ $beneficiary->id }}"
+                                            class="rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary-500/30 dark:border-white/20 dark:bg-transparent"
+                                        />
+                                    </x-ui.table.td>
+                                @endcan
                                 <x-ui.table.td class="font-medium text-gray-900 dark:text-white">
                                     {{ $beneficiary->full_name }}
                                 </x-ui.table.td>

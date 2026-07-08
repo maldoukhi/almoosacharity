@@ -16,6 +16,7 @@ use App\Livewire\Beneficiaries\Form as BeneficiaryForm;
 use App\Livewire\Beneficiaries\Index as BeneficiaryIndex;
 use App\Livewire\Beneficiaries\Show as BeneficiaryShow;
 use App\Livewire\Dashboard;
+use App\Livewire\Messaging\Broadcast as BroadcastScreen;
 use App\Livewire\Notifications\Index;
 use App\Livewire\Reports\AidsReport;
 use App\Livewire\Reports\BeneficiariesReport;
@@ -106,6 +107,12 @@ Route::middleware(['auth', 'active'])->group(function (): void {
                 return response()->download($media->getPath(), $media->file_name);
             })->name('documents.download')->middleware('permission:beneficiaries.view');
             Route::get('/{beneficiary}', BeneficiaryShow::class)->name('show')->middleware('permission:beneficiaries.view');
+        });
+
+        Route::prefix('messaging')->name('messaging.')->group(function (): void {
+            // Needs beneficiaries.view too: the screen lists beneficiary
+            // names/mobiles and searches by national id.
+            Route::get('/broadcast', BroadcastScreen::class)->name('broadcast')->middleware('permission:messages.broadcast', 'permission:beneficiaries.view');
         });
 
         Route::prefix('surveys')->name('surveys.')->group(function (): void {
