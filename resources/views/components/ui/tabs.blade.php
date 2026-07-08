@@ -14,7 +14,7 @@
     'tabErrors' => [],
 ])
 
-<div class="flex gap-1 overflow-x-auto border-b border-gray-100 dark:border-white/10" role="tablist">
+<div class="flex gap-1 overflow-x-auto overflow-y-hidden border-b border-gray-100 dark:border-white/10" role="tablist">
     @foreach ($tabs as $key => $label)
         @php $hasError = $tabErrors[$key] ?? false; @endphp
 
@@ -43,7 +43,7 @@
             @if ($wireClick)
                 <span
                     @class([
-                        'absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-primary transition-opacity duration-200 ease-out',
+                        'absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-primary transition-opacity duration-200 ease-out',
                         'opacity-100' => $active === $key,
                         'opacity-0' => $active !== $key,
                     ])
@@ -51,7 +51,7 @@
                 ></span>
             @else
                 <span
-                    class="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-primary transition-opacity duration-200 ease-out"
+                    class="absolute inset-x-3 bottom-0 h-0.5 rounded-full bg-primary transition-opacity duration-200 ease-out"
                     :class="activeTab === @js($key) ? 'opacity-100' : 'opacity-0'"
                     aria-hidden="true"
                 ></span>
