@@ -4,11 +4,12 @@ use App\Actions\Confirmations\CreateAidConfirmation;
 use App\Enums\AidProgramType;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
+use App\Enums\RoleName;
+use App\Enums\SurveyQuestionType;
+use App\Enums\SurveyScope;
 use App\Livewire\Public\ConfirmReceipt;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
-use App\Enums\SurveyQuestionType;
-use App\Enums\SurveyScope;
 use App\Models\Survey;
 use App\Models\SurveyAnswer;
 use App\Models\SurveyQuestion;
@@ -22,7 +23,7 @@ function deliveredAidWithGeneralSurvey(): array
 
     // BeneficiaryFactory resolves `created_by` from an existing user, and
     // surveys.created_by is itself NOT NULL, so one must exist first.
-    $creator = userWithRole(\App\Enums\RoleName::DataEntry);
+    $creator = userWithRole(RoleName::DataEntry);
 
     $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
     $beneficiary = Beneficiary::factory()->create();

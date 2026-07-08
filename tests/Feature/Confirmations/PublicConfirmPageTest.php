@@ -4,6 +4,9 @@ use App\Actions\Confirmations\CreateAidConfirmation;
 use App\Enums\AidProgramType;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
+use App\Enums\RoleName;
+use App\Models\Aid;
+use App\Models\AidConfirmation;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
 use Database\Factories\AidFactory;
@@ -14,7 +17,7 @@ use Illuminate\Support\Facades\URL;
  * (so tests 9's "no sensitive data" assertions have something concrete to
  * check for), plus its freshly issued confirmation + raw token.
  *
- * @return array{0: \App\Models\Aid, 1: \App\Models\AidConfirmation, 2: string}
+ * @return array{0: Aid, 1: AidConfirmation, 2: string}
  */
 function deliveredAidWithFreshConfirmation(array $aidOverrides = []): array
 {
@@ -23,7 +26,7 @@ function deliveredAidWithFreshConfirmation(array $aidOverrides = []): array
     // BeneficiaryFactory::definition() resolves `created_by` from an
     // existing data-entry/system-admin user (falling back to the
     // hardcoded, non-existent id 1 otherwise), so one must exist first.
-    userWithRole(\App\Enums\RoleName::DataEntry);
+    userWithRole(RoleName::DataEntry);
 
     $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
     $beneficiary = Beneficiary::factory()->create([

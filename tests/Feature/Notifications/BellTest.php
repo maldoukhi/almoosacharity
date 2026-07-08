@@ -2,6 +2,7 @@
 
 use App\Enums\AidProgramType;
 use App\Enums\AidType;
+use App\Enums\RoleName;
 use App\Livewire\Notifications\Bell;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
@@ -52,9 +53,9 @@ it('marks every notification as read via markAllAsRead', function () {
     expect($user->unreadNotifications()->count())->toBe(0);
 });
 
-it("only shows the signed-in user their own notifications", function () {
+it('only shows the signed-in user their own notifications', function () {
     $user = asManager();
-    $otherUser = userWithRole(\App\Enums\RoleName::Manager);
+    $otherUser = userWithRole(RoleName::Manager);
     $aid = aidForNotification();
 
     $otherUser->notify(new AidConfirmedNotification($aid));

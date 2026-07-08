@@ -1,16 +1,15 @@
 <?php
 
-use Database\Factories\AidFactory;
 use App\Enums\AidProgramType;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
 use App\Enums\RoleName;
 use App\Livewire\Aids\Index;
 use App\Livewire\Approvals\Inbox;
-use App\Models\Aid;
 use App\Models\AidProgram;
 use App\Models\ApprovalFlow;
 use App\Models\Beneficiary;
+use Database\Factories\AidFactory;
 use Livewire\Livewire;
 
 it('only shows a user without aids.view-any the aids they created themselves', function () {

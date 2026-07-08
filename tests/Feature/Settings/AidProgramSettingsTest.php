@@ -1,13 +1,11 @@
 <?php
 
-use Database\Factories\AidFactory;
 use App\Enums\AidProgramType;
-use App\Enums\AidStatus;
 use App\Enums\AidType;
 use App\Livewire\Settings\AidPrograms\Index;
-use App\Models\Aid;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
+use Database\Factories\AidFactory;
 use Livewire\Livewire;
 
 it('refuses to delete an aid program that still has aids attached to it', function () {

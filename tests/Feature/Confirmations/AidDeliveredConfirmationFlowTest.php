@@ -12,6 +12,7 @@ use App\Models\Beneficiary;
 use App\Models\Disbursement;
 use App\Models\MessageLog;
 use Database\Factories\AidFactory;
+use Database\Seeders\NotificationTemplateSeeder;
 
 /**
  * Phase 5/6b wiring: as soon as RecordDelivery moves an aid to Delivered
@@ -23,7 +24,7 @@ use Database\Factories\AidFactory;
  * writes a message_logs row up front.
  */
 it('creates an aid_confirmation and logs the outbound sms(s) when an aid is delivered', function () {
-    (new \Database\Seeders\NotificationTemplateSeeder)->run();
+    (new NotificationTemplateSeeder)->run();
 
     $actor = asDataEntry();
 

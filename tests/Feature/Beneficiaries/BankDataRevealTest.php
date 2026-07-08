@@ -1,8 +1,9 @@
 <?php
 
 use App\Actions\Beneficiaries\CreateBeneficiary;
+use App\Enums\UserStatus;
 use App\Livewire\Beneficiaries\Profile\BankPanel;
-use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 use Livewire\Livewire;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Permission\Models\Role;
@@ -12,14 +13,14 @@ use Spatie\Permission\Models\Role;
  * roles, so a dedicated custom role is used to exercise the "has the
  * permission" side of RevealBankData.
  */
-function userWithBankDataView(): \App\Models\User
+function userWithBankDataView(): User
 {
     seedRolesAndPermissions();
 
     $role = Role::findOrCreate('bank-data-viewer', 'web');
     $role->syncPermissions(['beneficiaries.view', 'beneficiaries.bank-data.view']);
 
-    $user = \App\Models\User::factory()->create(['status' => \App\Enums\UserStatus::Active]);
+    $user = User::factory()->create(['status' => UserStatus::Active]);
     $user->assignRole('bank-data-viewer');
 
     return $user;

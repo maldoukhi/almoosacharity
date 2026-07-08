@@ -1,10 +1,16 @@
 <?php
 
 use App\Actions\Settings\SaveApprovalFlow;
+use App\Enums\AidProgramType;
+use App\Enums\AidStatus;
+use App\Enums\AidType;
 use App\Enums\ApprovalAction;
 use App\Enums\RoleName;
 use App\Livewire\Settings\ApprovalFlows\Index;
+use App\Models\AidProgram;
 use App\Models\ApprovalFlow;
+use App\Models\Beneficiary;
+use Database\Factories\AidFactory;
 use Livewire\Livewire;
 
 function approvalFlowStagePayload(): array
@@ -67,13 +73,13 @@ it('refuses to rewrite the stages of a flow that currently has an aid under revi
 
     $flow = ApprovalFlow::query()->default()->firstOrFail();
     $stage = $flow->stages()->orderBy('order')->firstOrFail();
-    $program = \App\Models\AidProgram::query()->where('type', \App\Enums\AidProgramType::Cash)->firstOrFail();
+    $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
 
-    \Database\Factories\AidFactory::new()->create([
-        'beneficiary_id' => \App\Models\Beneficiary::factory()->create()->id,
+    AidFactory::new()->create([
+        'beneficiary_id' => Beneficiary::factory()->create()->id,
         'aid_program_id' => $program->id,
-        'type' => \App\Enums\AidType::Cash,
-        'status' => \App\Enums\AidStatus::UnderReview,
+        'type' => AidType::Cash,
+        'status' => AidStatus::UnderReview,
         'approval_flow_id' => $flow->id,
         'current_stage_id' => $stage->id,
         'amount' => 500,

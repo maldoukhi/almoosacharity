@@ -6,7 +6,7 @@ use App\Models\BeneficiaryCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\BeneficiaryCategory>
+ * @extends Factory<BeneficiaryCategory>
  */
 class BeneficiaryCategoryFactory extends Factory
 {

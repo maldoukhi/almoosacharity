@@ -1,15 +1,15 @@
 <?php
 
-use Database\Factories\AidFactory;
 use App\Actions\Aids\SubmitAid;
 use App\Enums\AidProgramType;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
+use App\Enums\RoleName;
 use App\Exceptions\InvalidAidTransitionException;
-use App\Models\Aid;
 use App\Models\AidProgram;
 use App\Models\ApprovalFlow;
 use App\Models\Beneficiary;
+use Database\Factories\AidFactory;
 use Illuminate\Auth\Access\AuthorizationException;
 
 it('moves a cash draft aid with an amount to under_review at the first stage, with the flow snapshotted', function () {
@@ -81,7 +81,7 @@ it('refuses to submit a cash aid that has no positive amount', function () {
 it('refuses to let anyone but the aid creator submit it', function () {
     seedAidCatalog();
     $creator = asDataEntry();
-    $someoneElse = userWithRole(\App\Enums\RoleName::DataEntry);
+    $someoneElse = userWithRole(RoleName::DataEntry);
 
     $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
     $beneficiary = Beneficiary::factory()->create();

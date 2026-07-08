@@ -4,6 +4,7 @@ use App\Actions\Confirmations\ResendConfirmationLink;
 use App\Enums\AidProgramType;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
+use App\Enums\RoleName;
 use App\Jobs\Confirmations\SendConfirmationReminders;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
@@ -17,7 +18,7 @@ function outstandingUnconfirmedConfirmation(int $sentDaysAgo = 4)
 
     // BeneficiaryFactory::definition() resolves `created_by` from an
     // existing data-entry/system-admin user, so one must exist first.
-    userWithRole(\App\Enums\RoleName::DataEntry);
+    userWithRole(RoleName::DataEntry);
 
     $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
     $beneficiary = Beneficiary::factory()->create(['mobile' => '0509998888']);

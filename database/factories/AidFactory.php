@@ -12,7 +12,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Aid>
+ * @extends Factory<Aid>
  */
 class AidFactory extends Factory
 {
@@ -24,7 +24,7 @@ class AidFactory extends Factory
     {
         self::$referenceSequence++;
 
-        return 'AID-' . now()->format('Y') . '-' . str_pad((string) self::$referenceSequence, 6, '0', STR_PAD_LEFT);
+        return 'AID-'.now()->format('Y').'-'.str_pad((string) self::$referenceSequence, 6, '0', STR_PAD_LEFT);
     }
 
     public function definition(): array

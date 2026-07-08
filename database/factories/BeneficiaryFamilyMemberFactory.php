@@ -8,7 +8,7 @@ use App\Models\BeneficiaryFamilyMember;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\BeneficiaryFamilyMember>
+ * @extends Factory<BeneficiaryFamilyMember>
  */
 class BeneficiaryFamilyMemberFactory extends Factory
 {
@@ -46,7 +46,7 @@ class BeneficiaryFamilyMemberFactory extends Factory
 
         return [
             'beneficiary_id' => Beneficiary::factory(),
-            'name' => $this->faker->randomElement($names) . ' ' . $this->faker->randomElement($names),
+            'name' => $this->faker->randomElement($names).' '.$this->faker->randomElement($names),
             'relation' => $relation,
             'birth_date' => $this->faker->dateTimeBetween('-80 years', 'now'),
             'health_status' => $this->faker->randomElement(self::HEALTH_CONDITIONS),

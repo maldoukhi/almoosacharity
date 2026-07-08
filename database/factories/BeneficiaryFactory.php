@@ -12,7 +12,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Beneficiary>
+ * @extends Factory<Beneficiary>
  */
 class BeneficiaryFactory extends Factory
 {
@@ -83,7 +83,7 @@ class BeneficiaryFactory extends Factory
 
         // Build: account number + SA + "00" placeholder for the check
         // digits (ISO 13616 requires the placeholder before computing).
-        $rearranged = $accountNumber . '281000'; // SA = 28 10, then 00
+        $rearranged = $accountNumber.'281000'; // SA = 28 10, then 00
 
         // Calculate mod 97
         $mod = 0;
@@ -94,7 +94,7 @@ class BeneficiaryFactory extends Factory
         // Check digits = 98 - mod
         $checkDigits = str_pad((string) (98 - $mod), 2, '0', STR_PAD_LEFT);
 
-        return 'SA' . $checkDigits . $accountNumber;
+        return 'SA'.$checkDigits.$accountNumber;
     }
 
     /**
@@ -104,7 +104,7 @@ class BeneficiaryFactory extends Factory
     {
         $lastDigits = $this->faker->unique()->numerify('#########');
 
-        return '1' . $lastDigits;
+        return '1'.$lastDigits;
     }
 
     public function definition(): array

@@ -8,7 +8,7 @@ use App\Models\BeneficiaryIncomeSource;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\BeneficiaryIncomeSource>
+ * @extends Factory<BeneficiaryIncomeSource>
  */
 class BeneficiaryIncomeSourceFactory extends Factory
 {

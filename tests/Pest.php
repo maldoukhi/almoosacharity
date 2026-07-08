@@ -3,6 +3,8 @@
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Models\User;
+use Database\Seeders\AidProgramSeeder;
+use Database\Seeders\ApprovalFlowSeeder;
 use Database\Seeders\PermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -231,6 +233,6 @@ function beneficiaryAttributes(array $overrides = []): array
  */
 function seedAidCatalog(): void
 {
-    (new \Database\Seeders\ApprovalFlowSeeder)->run();
-    (new \Database\Seeders\AidProgramSeeder)->run();
+    (new ApprovalFlowSeeder)->run();
+    (new AidProgramSeeder)->run();
 }
