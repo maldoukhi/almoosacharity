@@ -4,9 +4,11 @@ use App\Enums\AidProgramType;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
 use App\Livewire\Aids\CancelAidModal;
+use App\Livewire\Aids\Show;
 use App\Livewire\Aids\SubmitAidModal;
 use App\Models\Aid;
 use App\Models\AidProgram;
+use App\Models\ApprovalFlow;
 use App\Models\Beneficiary;
 use Database\Factories\AidFactory;
 use Livewire\Livewire;
@@ -69,6 +71,34 @@ it('forbids opening the submit modal for an aid the actor did not create', funct
         ->assertForbidden();
 
     expect($aid->fresh()->status)->toBe(AidStatus::Draft);
+});
+
+it('hides the submit button for a system-admin on an already-under-review aid', function () {
+    // A system-admin's Gate::before would otherwise pass the submit gate
+    // regardless of state; the Show computeds must still hide submit.
+    asAdmin();
+
+    seedAidCatalog();
+    $flow = ApprovalFlow::query()->default()->where('is_active', true)->firstOrFail();
+    $stage = $flow->stages()->where('order', 1)->firstOrFail();
+    $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
+    $beneficiary = Beneficiary::factory()->create();
+
+    $aid = AidFactory::new()->create([
+        'beneficiary_id' => $beneficiary->id,
+        'aid_program_id' => $program->id,
+        'type' => AidType::Cash,
+        'status' => AidStatus::UnderReview,
+        'approval_flow_id' => $flow->id,
+        'current_stage_id' => $stage->id,
+        'amount' => 1000,
+        'submitted_at' => now(),
+    ]);
+
+    $component = Livewire::test(Show::class, ['aid' => $aid]);
+
+    expect($component->instance()->canSubmit())->toBeFalse()
+        ->and($component->instance()->canAct())->toBeTrue();
 });
 
 it('cancels a draft aid through the cancel modal', function () {

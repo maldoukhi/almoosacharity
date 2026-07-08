@@ -107,7 +107,12 @@ class Show extends Component
     #[Computed]
     public function canAct(): bool
     {
-        return Gate::allows('act', $this->aid);
+        // The status guard matters for a system-admin, whose Gate::before
+        // short-circuits the policy's own state checks: without it every
+        // action button would show regardless of the aid's actual state.
+        return $this->aid->status === AidStatus::UnderReview
+            && $this->aid->current_stage_id !== null
+            && Gate::allows('act', $this->aid);
     }
 
     /**
@@ -133,13 +138,17 @@ class Show extends Component
     #[Computed]
     public function canSubmit(): bool
     {
-        return Gate::allows('submit', $this->aid);
+        // Draft-only: without this a system-admin (Gate::before) would see
+        // the "submit" button on an already-submitted aid.
+        return $this->aid->status === AidStatus::Draft
+            && Gate::allows('submit', $this->aid);
     }
 
     #[Computed]
     public function canCancel(): bool
     {
-        return Gate::allows('cancel', $this->aid);
+        return in_array($this->aid->status, [AidStatus::Draft, AidStatus::Submitted, AidStatus::UnderReview], true)
+            && Gate::allows('cancel', $this->aid);
     }
 
     /**
