@@ -152,8 +152,7 @@
                     </p>
 
                     <x-ui.button
-                        wire:click="send"
-                        wire:confirm="{{ __('messaging.broadcast.confirm_send', ['count' => $this->eligibleCount]) }}"
+                        wire:click="confirmSend"
                         :disabled="$this->eligibleCount === 0 || trim($body) === '' || $this->manualNumbersInvalid !== []"
                     >
                         {{ __('messaging.broadcast.send_button', ['count' => $this->eligibleCount]) }}
@@ -272,4 +271,72 @@
             </x-ui.card>
         </div>
     </div>
+
+    {{-- Confirm-before-send modal: recipients summary + message preview --}}
+    @if ($showSendConfirm)
+        <div class="fixed inset-0 z-[70] overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="absolute inset-0 bg-primary-950/60 backdrop-blur-sm" wire:click="cancelSend"></div>
+
+            <div class="flex min-h-dvh items-center justify-center p-4">
+                <div class="relative w-full max-w-lg overflow-hidden rounded-(--radius-brand) bg-white shadow-xl dark:bg-primary-950 dark:ring-1 dark:ring-white/10">
+                    <div class="flex items-start gap-3 border-b border-gray-100 px-6 py-4 dark:border-white/10">
+                        <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-secondary-100 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-200">
+                            <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.126A59.768 59.768 0 0 1 21.485 12 59.77 59.77 0 0 1 3.27 20.876L5.999 12Zm0 0h7.5" />
+                            </svg>
+                        </span>
+                        <div>
+                            <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('messaging.broadcast.confirm_title') }}</h3>
+                            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('messaging.broadcast.confirm_subtitle') }}</p>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-5">
+                        <dl class="divide-y divide-gray-100 rounded-(--radius-brand) border border-gray-100 dark:divide-white/10 dark:border-white/10">
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('messaging.broadcast.field_channel') }}</dt>
+                                <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ \App\Enums\MessageChannel::from($channel)->label() }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('messaging.broadcast.confirm_recipients') }}</dt>
+                                <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">{{ $this->eligibleCount }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('messaging.broadcast.confirm_breakdown') }}</dt>
+                                <dd class="text-sm text-gray-700 dark:text-gray-200">
+                                    {{ __('messaging.broadcast.recipients_breakdown', [
+                                        'beneficiaries' => $this->beneficiaryEligibleCount,
+                                        'manual' => count($this->manualNumbersValid),
+                                        'total' => $this->eligibleCount,
+                                    ]) }}
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <div class="mt-4">
+                            <p class="mb-1.5 text-sm font-medium text-gray-600 dark:text-gray-300">{{ __('messaging.broadcast.confirm_message') }}</p>
+                            <div class="max-h-40 overflow-y-auto rounded-(--radius-brand) bg-gray-50 p-4 dark:bg-white/5">
+                                <p class="whitespace-pre-line text-sm text-gray-800 dark:text-gray-100">{{ $this->preview }}</p>
+                            </div>
+                        </div>
+
+                        @if ($this->excludedNoMobileCount > 0)
+                            <p class="mt-3 text-xs text-status-review">
+                                {{ __('messaging.broadcast.excluded_no_mobile', ['count' => $this->excludedNoMobileCount]) }}
+                            </p>
+                        @endif
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4 dark:border-white/10">
+                        <x-ui.button type="button" variant="ghost" wire:click="cancelSend">
+                            {{ __('common.cancel') }}
+                        </x-ui.button>
+                        <x-ui.button type="button" variant="primary" wire:click="send" wire:target="send" wire:loading.attr="disabled">
+                            {{ __('messaging.broadcast.confirm_send_button', ['count' => $this->eligibleCount]) }}
+                        </x-ui.button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

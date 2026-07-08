@@ -79,6 +79,14 @@ class Broadcast extends Component
      */
     public bool $selectAllFiltered = true;
 
+    /**
+     * Whether the "confirm before sending" modal (recipients + preview) is
+     * open. Opened by {@see confirmSend()} once the message passes the same
+     * validation {@see send()} enforces, so the modal never shows for an
+     * invalid draft.
+     */
+    public bool $showSendConfirm = false;
+
     public function mount(): void
     {
         Gate::authorize('messages.broadcast');
@@ -170,10 +178,35 @@ class Broadcast extends Component
         }
     }
 
-    public function send(): void
+    /**
+     * Validate the draft and, if it is sendable, open the confirmation
+     * modal. Runs the exact same checks {@see send()} does, so an invalid
+     * draft surfaces its errors inline instead of opening the modal.
+     */
+    public function confirmSend(): void
     {
         Gate::authorize('messages.broadcast');
 
+        if (! $this->passesPreflight()) {
+            return;
+        }
+
+        $this->showSendConfirm = true;
+    }
+
+    public function cancelSend(): void
+    {
+        $this->showSendConfirm = false;
+    }
+
+    /**
+     * Shared pre-send validation for {@see confirmSend()} and {@see send()}:
+     * throws (Livewire renders the field errors) on a validation failure and
+     * returns false, having added a specific error, on the business-rule
+     * checks (invalid manual numbers, no/too many recipients).
+     */
+    private function passesPreflight(): bool
+    {
         $maxLength = MessageChannel::from($this->channel) === MessageChannel::Sms ? 480 : 1000;
 
         $this->validate([
@@ -187,22 +220,35 @@ class Broadcast extends Component
                 'numbers' => implode('، ', $this->manualNumbersInvalid),
             ]));
 
-            return;
+            return false;
         }
 
         if ($this->eligibleCount === 0) {
             $this->addError('body', __('messaging.broadcast.error_no_recipients'));
 
-            return;
+            return false;
         }
 
         // A hard recipient cap keeps a single broadcast (and its provider
-        // cost) bounded; wire:confirm is client-side only, so this is
+        // cost) bounded; the confirm modal is client-side only, so this is
         // enforced server-side both here and in the action.
         if ($this->eligibleCount > SendBroadcastAction::MAX_RECIPIENTS) {
             $this->addError('body', __('messaging.broadcast.error_too_many_recipients', [
                 'max' => SendBroadcastAction::MAX_RECIPIENTS,
             ]));
+
+            return false;
+        }
+
+        return true;
+    }
+
+    public function send(): void
+    {
+        Gate::authorize('messages.broadcast');
+
+        if (! $this->passesPreflight()) {
+            $this->showSendConfirm = false;
 
             return;
         }
@@ -212,6 +258,8 @@ class Broadcast extends Component
         $throttleKey = 'broadcast:'.Auth::id();
 
         if (RateLimiter::tooManyAttempts($throttleKey, maxAttempts: 5)) {
+            $this->showSendConfirm = false;
+
             $this->addError('body', __('messaging.broadcast.error_throttled', [
                 'seconds' => RateLimiter::availableIn($throttleKey),
             ]));
@@ -241,7 +289,7 @@ class Broadcast extends Component
 
         $this->dispatch('toast', type: 'success', message: __('messaging.broadcast.sent', ['count' => $broadcast->recipients_count]));
 
-        $this->reset(['body', 'selectedTemplate', 'saveAsTemplate', 'newTemplateName', 'manualNumbers']);
+        $this->reset(['body', 'selectedTemplate', 'saveAsTemplate', 'newTemplateName', 'manualNumbers', 'showSendConfirm']);
     }
 
     /**
