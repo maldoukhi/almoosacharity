@@ -5,6 +5,8 @@ namespace App\Livewire\Reports;
 use App\Enums\MessageChannel;
 use App\Enums\MessageStatus;
 use App\Exports\MessagesExport;
+use App\Jobs\Messaging\SendSmsMessage;
+use App\Jobs\Messaging\SendWhatsAppMessage;
 use App\Models\MessageLog;
 use App\Reports\Filters\MessagesReportFilter;
 use App\Reports\MessagesReport as MessagesReportData;
@@ -46,6 +48,39 @@ class MessagesReport extends Component
     public function mount(): void
     {
         Gate::authorize('reports.view');
+    }
+
+    /**
+     * Re-queue a failed message for another send attempt (e.g. after the
+     * provider credentials were fixed). Requires the broadcast permission
+     * since it triggers an outbound send.
+     */
+    public function resend(int $id): void
+    {
+        Gate::authorize('messages.broadcast');
+
+        $log = MessageLog::query()
+            ->whereKey($id)
+            ->where('status', MessageStatus::Failed)
+            ->first();
+
+        if (! $log) {
+            abort(404);
+        }
+
+        $log->update(['status' => MessageStatus::Pending, 'error' => null]);
+
+        match ($log->channel) {
+            MessageChannel::Sms => SendSmsMessage::dispatch($log->id),
+            MessageChannel::WhatsApp => SendWhatsAppMessage::dispatch(
+                $log->id,
+                $log->recipient,
+                (string) $log->body,
+                idempotencyKey: 'resend-'.$log->id.'-'.now()->timestamp,
+            ),
+        };
+
+        $this->dispatch('toast', type: 'success', message: __('reports.messages.resend_queued'));
     }
 
     public function updatingFrom(): void

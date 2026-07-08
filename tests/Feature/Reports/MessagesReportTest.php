@@ -2,6 +2,7 @@
 
 use App\Enums\MessageChannel;
 use App\Enums\MessageStatus;
+use App\Jobs\Messaging\SendSmsMessage;
 use App\Models\Aid;
 use App\Models\Beneficiary;
 use App\Models\Broadcast;
@@ -9,6 +10,7 @@ use App\Models\MessageLog;
 use App\Models\User;
 use App\Reports\Filters\MessagesReportFilter;
 use App\Reports\MessagesReport;
+use Illuminate\Support\Facades\Queue;
 
 it('shows the broadcast sender\'s name for a broadcast message and "System" for an automated notification', function () {
     $sender = User::factory()->create(['name' => 'محمد الأحمد']);
@@ -88,4 +90,36 @@ it('filters by source (broadcast vs automated notification)', function () {
 
     $notificationsOnly = (new MessagesReport(new MessagesReportFilter(source: 'notification')))->query()->get();
     expect($notificationsOnly)->toHaveCount(2);
+});
+
+it('re-queues a failed message and resets it to pending', function () {
+    Queue::fake();
+
+    asAdmin();
+
+    $failed = MessageLog::factory()->create([
+        'channel' => MessageChannel::Sms,
+        'status' => MessageStatus::Failed,
+        'recipient' => '0512345678',
+        'error' => 'invalid credentials information',
+    ]);
+
+    Livewire\Livewire::test(App\Livewire\Reports\MessagesReport::class)
+        ->call('resend', $failed->id)
+        ->assertDispatched('toast');
+
+    expect($failed->fresh()->status)->toBe(MessageStatus::Pending)
+        ->and($failed->fresh()->error)->toBeNull();
+
+    Queue::assertPushed(SendSmsMessage::class);
+});
+
+it('refuses to resend a message that did not fail', function () {
+    asAdmin();
+
+    $sent = MessageLog::factory()->create(['status' => MessageStatus::Sent]);
+
+    Livewire\Livewire::test(App\Livewire\Reports\MessagesReport::class)
+        ->call('resend', $sent->id)
+        ->assertStatus(404);
 });
