@@ -18,6 +18,14 @@ class UpdateBeneficiary
     private const BANK_FIELDS = ['iban', 'bank_name', 'bank_account_holder'];
 
     /**
+     * Nullable date/numeric columns: '' must become null (MySQL strict mode
+     * rejects '' for these). String columns accept '' and are left alone.
+     *
+     * @var array<int, string>
+     */
+    private const NULLABLE_NUMERIC_FIELDS = ['birth_date', 'family_members_count', 'monthly_income', 'rent_amount'];
+
+    /**
      * Update the given beneficiary's attributes and resync its categories.
      *
      * Bank fields (iban/bank_name/bank_account_holder) follow a "blank
@@ -36,11 +44,14 @@ class UpdateBeneficiary
     {
         $data = $this->resolveBankFields($data, $actor);
 
-        // Blank optional fields (e.g. a cleared birth_date) must be stored as
-        // null, not '' — MySQL strict mode rejects '' for date/numeric
-        // columns. Bank fields were already unset above when left blank, so
-        // this only affects genuinely cleared optional values.
-        $data = array_map(fn ($value) => $value === '' ? null : $value, $data);
+        // A cleared birth_date/amount must be stored as null, not '' (MySQL
+        // strict mode rejects '' for date/numeric columns). String columns
+        // and the NOT NULL mobile column are left as submitted.
+        foreach (self::NULLABLE_NUMERIC_FIELDS as $field) {
+            if (($data[$field] ?? null) === '') {
+                $data[$field] = null;
+            }
+        }
 
         return DB::transaction(function () use ($beneficiary, $data, $categoryIds): Beneficiary {
             $beneficiary->update($data);

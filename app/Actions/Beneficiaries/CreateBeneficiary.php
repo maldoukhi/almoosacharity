@@ -18,6 +18,15 @@ class CreateBeneficiary
     private const BANK_FIELDS = ['iban', 'bank_name', 'bank_account_holder'];
 
     /**
+     * Nullable date/numeric columns: MySQL strict mode rejects '' for these,
+     * so a blank submission must be stored as null. String columns are left
+     * alone (they accept '' and some, like mobile, are NOT NULL).
+     *
+     * @var array<int, string>
+     */
+    private const NULLABLE_NUMERIC_FIELDS = ['birth_date', 'family_members_count', 'monthly_income', 'rent_amount'];
+
+    /**
      * Create a new beneficiary from the given validated attributes, syncing
      * the given category ids and stamping `created_by` with the actor.
      *
@@ -30,11 +39,7 @@ class CreateBeneficiary
     {
         $this->guardBankFields($data, $actor);
 
-        // Optional fields arrive from the form as '' when left blank; MySQL
-        // in strict mode rejects '' for date/numeric columns (birth_date,
-        // rent_amount, ...), so normalize blanks to null. Required fields
-        // are validated non-empty, so this never nulls a mandatory value.
-        $data = array_map(fn ($value) => $value === '' ? null : $value, $data);
+        $data = $this->nullifyBlankNumericFields($data);
 
         return DB::transaction(function () use ($data, $categoryIds, $actor): Beneficiary {
             $beneficiary = Beneficiary::create([
@@ -59,6 +64,24 @@ class CreateBeneficiary
      *
      * @throws AuthorizationException
      */
+    /**
+     * Convert '' to null for nullable date/numeric columns so MySQL strict
+     * mode accepts them (SQLite silently coerces, hiding this in dev).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function nullifyBlankNumericFields(array $data): array
+    {
+        foreach (self::NULLABLE_NUMERIC_FIELDS as $field) {
+            if (($data[$field] ?? null) === '') {
+                $data[$field] = null;
+            }
+        }
+
+        return $data;
+    }
+
     private function guardBankFields(array $data, User $actor): void
     {
         if (array_intersect_key($data, array_flip(self::BANK_FIELDS)) === []) {
