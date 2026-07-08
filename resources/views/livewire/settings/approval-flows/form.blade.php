@@ -1,7 +1,14 @@
 @php
     $isEdit = $flow?->exists ?? false;
 
-    $roleOptions = collect($this->roles)->mapWithKeys(fn ($role) => [$role->value => $role->label()]);
+    // $this->roles returns Spatie Role models (incl. custom roles), not
+    // RoleName enums: key by the stored role name and translate the default
+    // ones, falling back to the raw name for custom roles.
+    $roleOptions = collect($this->roles)->mapWithKeys(fn ($role) => [
+        $role->name => \Illuminate\Support\Facades\Lang::has('roles.names.'.$role->name)
+            ? __('roles.names.'.$role->name)
+            : $role->name,
+    ]);
     $stagesCount = count($stages);
 @endphp
 
