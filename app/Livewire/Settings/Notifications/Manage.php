@@ -93,6 +93,19 @@ class Manage extends Component
 
     public bool $whatsappQrModalOpen = false;
 
+    /**
+     * Existing Okta channels fetched on demand so the operator can link an
+     * already-provisioned (often already-connected) channel instead of
+     * pairing a new one via QR.
+     *
+     * @var array<int, array{id: string, name: ?string, status: ?string, type: ?string}>
+     */
+    public array $oktaChannels = [];
+
+    public bool $oktaChannelsFetched = false;
+
+    public ?string $oktaChannelsMessage = null;
+
     public function mount(): void
     {
         Gate::authorize('notifications.settings.manage');
@@ -482,6 +495,65 @@ class Manage extends Component
         $this->whatsappQrStatus = null;
         $this->whatsappQrPolling = false;
         $this->whatsappQrMessage = null;
+    }
+
+    /**
+     * Fetch the channels already provisioned on the Okta account so the
+     * operator can link an existing (often already-connected) one rather
+     * than pairing a new channel via QR.
+     */
+    public function fetchOktaChannels(): void
+    {
+        Gate::authorize('notifications.settings.manage');
+
+        $this->oktaChannelsMessage = null;
+
+        $config = $this->effectiveOktaConfig();
+
+        if ($config['baseUrl'] === '' || $config['token'] === '') {
+            $this->oktaChannelsMessage = __('notifications.settings.okta_channels_missing_credentials');
+
+            return;
+        }
+
+        $gateway = $this->buildOktaGateway($config);
+
+        if (! $gateway instanceof WhatsAppChannelPairingInterface) {
+            return;
+        }
+
+        try {
+            $this->oktaChannels = $gateway->listChannels();
+        } catch (Throwable $e) {
+            $this->oktaChannels = [];
+            $this->oktaChannelsFetched = true;
+            $this->oktaChannelsMessage = $e->getMessage();
+
+            return;
+        }
+
+        $this->oktaChannelsFetched = true;
+    }
+
+    /**
+     * Link an existing channel by persisting its id as the active
+     * okta_channel_id (used for real sends).
+     */
+    public function useOktaChannel(string $channelId): void
+    {
+        Gate::authorize('notifications.settings.manage');
+
+        $channelId = trim($channelId);
+
+        if ($channelId === '') {
+            return;
+        }
+
+        app(Settings::class)->set('okta_channel_id', $channelId);
+        $this->oktaChannelId = $channelId;
+        $this->oktaVerifyResult = null;
+
+        $this->dispatch('toast', type: 'success', message: __('notifications.settings.okta_channel_selected'));
     }
 
     /**

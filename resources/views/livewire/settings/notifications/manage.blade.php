@@ -276,12 +276,55 @@
                             {{ __('notifications.settings.action_connect_whatsapp') }}
                         </x-ui.button>
 
+                        <x-ui.button type="button" variant="ghost" size="sm" wire:click="fetchOktaChannels" wire:target="fetchOktaChannels">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true" wire:loading.class="animate-spin" wire:target="fetchOktaChannels">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                            </svg>
+                            {{ __('notifications.settings.okta_channels_fetch') }}
+                        </x-ui.button>
+
                         @if ($whatsappQrStatus)
                             <x-ui.badge :color="$whatsappQrStatus === 'connected' ? 'approved' : ($whatsappQrStatus === 'pending' ? 'review' : 'rejected')">
                                 {{ __('notifications.settings.qr_status_'.$whatsappQrStatus) }}
                             </x-ui.badge>
                         @endif
                     </div>
+
+                    {{-- Link an already-provisioned channel (often one already
+                         connected on the Okta platform) instead of pairing anew. --}}
+                    @if ($oktaChannelsMessage)
+                        <p class="mt-3 text-xs text-status-rejected">{{ $oktaChannelsMessage }}</p>
+                    @endif
+
+                    @if ($oktaChannelsFetched && ! $oktaChannelsMessage)
+                        @if (count($oktaChannels) === 0)
+                            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.okta_channels_empty') }}</p>
+                        @else
+                            <ul class="mt-3 max-w-md space-y-2">
+                                @foreach ($oktaChannels as $channel)
+                                    <li wire:key="okta-channel-{{ $channel['id'] }}" class="flex items-center justify-between gap-3 rounded-(--radius-brand) border border-gray-200 px-3.5 py-2.5 dark:border-white/10">
+                                        <div class="min-w-0">
+                                            <p class="truncate text-sm font-medium text-gray-900 dark:text-white">{{ $channel['name'] ?: $channel['id'] }}</p>
+                                            <div class="mt-0.5 flex items-center gap-2">
+                                                <span dir="ltr" class="truncate text-xs text-gray-500 dark:text-gray-400">{{ $channel['id'] }}</span>
+                                                @if ($channel['status'])
+                                                    <x-ui.badge :color="$channel['status'] === 'connected' ? 'approved' : 'review'">{{ $channel['status'] }}</x-ui.badge>
+                                                @endif
+                                            </div>
+                                        </div>
+
+                                        @if ((string) $oktaChannelId === (string) $channel['id'])
+                                            <x-ui.badge color="approved">{{ __('notifications.settings.okta_channel_in_use') }}</x-ui.badge>
+                                        @else
+                                            <x-ui.button type="button" variant="secondary" size="sm" wire:click="useOktaChannel('{{ $channel['id'] }}')">
+                                                {{ __('notifications.settings.okta_channel_use') }}
+                                            </x-ui.button>
+                                        @endif
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    @endif
 
                     {{-- The Channel ID is not entered by hand: it is produced by a
                          successful QR pairing (or taken from .env). Shown read-only
@@ -336,11 +379,23 @@
         <div class="fixed inset-0 z-[70] overflow-y-auto" role="dialog" aria-modal="true">
             <div class="absolute inset-0 bg-primary-950/60 backdrop-blur-sm" wire:click="closeWhatsappQrPairing"></div>
 
-            <div class="flex min-h-dvh items-center justify-center px-4 py-6 text-center sm:p-0">
-                <div class="relative my-8 inline-block w-full max-w-sm transform overflow-hidden rounded-(--radius-brand) bg-white p-6 text-start align-middle shadow-xl transition-all dark:bg-primary-950">
-                    <h3 class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_okta_qr_title') }}</h3>
+            <div class="flex min-h-dvh items-center justify-center p-4">
+                <div
+                    wire:key="whatsapp-qr-modal"
+                    @if ($whatsappQrPolling) wire:poll.5s.keep-alive="pollWhatsappQrStatus" @endif
+                    class="relative w-full max-w-md overflow-hidden rounded-(--radius-brand) bg-white shadow-xl dark:bg-primary-950 dark:ring-1 dark:ring-white/10"
+                >
+                    <div class="flex items-start justify-between gap-3 border-b border-gray-100 px-6 py-4 dark:border-white/10">
+                        <div class="flex items-center gap-2.5">
+                            <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-secondary-100 text-secondary-700 dark:bg-secondary-500/20 dark:text-secondary-200">
+                                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 19.5h.75v.75h-.75v-.75ZM19.5 13.5h.75v.75h-.75v-.75ZM19.5 19.5h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z" />
+                                </svg>
+                            </span>
+                            <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_okta_qr_title') }}</h3>
+                        </div>
 
-                    <div class="mt-3 flex flex-wrap items-center gap-3">
                         @if ($whatsappQrStatus)
                             <x-ui.badge :color="$whatsappQrStatus === 'connected' ? 'approved' : ($whatsappQrStatus === 'pending' ? 'review' : 'rejected')">
                                 {{ __('notifications.settings.qr_status_'.$whatsappQrStatus) }}
@@ -348,20 +403,36 @@
                         @endif
                     </div>
 
-                    <div
-                        wire:key="whatsapp-qr-poll"
-                        wire:poll.5s.keep-alive="pollWhatsappQrStatus"
-                        class="mt-4 flex flex-col items-center gap-2"
-                    >
-                        <div id="whatsapp-qr-svg" wire:ignore class="h-48 w-48 rounded-(--radius-brand) border border-gray-200 p-4 [&_svg]:h-full [&_svg]:w-full dark:border-white/10"></div>
-                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_waiting') }}</p>
+                    <div class="px-6 py-5">
+                        @if ($whatsappQrMessage)
+                            <div class="rounded-(--radius-brand) border border-status-rejected/20 bg-status-rejected/5 px-4 py-6 text-center text-sm text-status-rejected">
+                                {{ $whatsappQrMessage }}
+                            </div>
+                        @else
+                            <p class="mb-4 text-center text-sm text-gray-600 dark:text-gray-300">{{ __('notifications.settings.qr_instructions') }}</p>
+
+                            <div class="flex flex-col items-center gap-3">
+                                <div
+                                    wire:ignore
+                                    x-data="{ render(text) { window.renderWhatsappQr(this.$refs.canvas, text) } }"
+                                    x-init="$nextTick(() => render(@js($whatsappQrText)))"
+                                    @whatsapp-qr-updated.window="render($event.detail.text)"
+                                    class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10"
+                                >
+                                    <div x-ref="canvas" class="flex size-56 items-center justify-center [&_svg]:h-full [&_svg]:w-full">
+                                        <svg class="size-8 animate-spin text-gray-300 motion-reduce:hidden" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Z"></path>
+                                        </svg>
+                                    </div>
+                                </div>
+
+                                <p class="text-center text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_waiting') }}</p>
+                            </div>
+                        @endif
                     </div>
 
-                    @if ($whatsappQrMessage)
-                        <p class="mt-3 text-xs text-status-rejected">{{ $whatsappQrMessage }}</p>
-                    @endif
-
-                    <div class="mt-5 flex items-center justify-end">
+                    <div class="flex items-center justify-end border-t border-gray-100 px-6 py-4 dark:border-white/10">
                         <x-ui.button type="button" variant="ghost" size="sm" wire:click="closeWhatsappQrPairing">
                             {{ __('common.close') }}
                         </x-ui.button>
@@ -373,26 +444,29 @@
 
     <script src="{{ asset('vendor/qrcode-generator/qrcode.js') }}"></script>
     <script>
-        document.addEventListener('livewire:init', () => {
-            Livewire.on('whatsapp-qr-updated', ({ text }) => {
-                const el = document.getElementById('whatsapp-qr-svg');
+        // Draw the raw pairing payload Okta returns into an <svg> QR. Called
+        // by Alpine both on the modal's x-init (reliable: the canvas exists
+        // the moment the modal mounts) and on each poll's whatsapp-qr-updated
+        // event, so the code renders immediately and refreshes as it rotates.
+        window.renderWhatsappQr = function (el, text) {
+            if (! el) {
+                return;
+            }
 
-                if (! el) {
-                    return;
-                }
+            if (! text || typeof qrcode === 'undefined') {
+                el.innerHTML = '';
 
-                if (! text) {
-                    el.innerHTML = '';
+                return;
+            }
 
-                    return;
-                }
-
-                const qr = qrcode(0, 'L');
+            try {
+                const qr = qrcode(0, 'M');
                 qr.addData(text);
                 qr.make();
-
-                el.innerHTML = qr.createSvgTag({ cellSize: 5, margin: 2 });
-            });
-        });
+                el.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 1 });
+            } catch (e) {
+                el.innerHTML = '';
+            }
+        };
     </script>
 </div>

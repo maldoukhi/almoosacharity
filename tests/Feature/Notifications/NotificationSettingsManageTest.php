@@ -62,7 +62,7 @@ it('forbids a user without notifications.settings.manage from calling any provid
 
     foreach ([
         'verifyTaqnyat', 'verifyOkta', 'clearTaqnyatApiKey', 'clearOktaToken', 'clearOktaChannel',
-        'startWhatsappQrPairing', 'pollWhatsappQrStatus', 'closeWhatsappQrPairing', 'fetchSenders',
+        'startWhatsappQrPairing', 'pollWhatsappQrStatus', 'closeWhatsappQrPairing', 'fetchOktaChannels', 'fetchSenders',
     ] as $action) {
         expect(fn () => $component->{$action}())
             ->toThrow(AuthorizationException::class);
@@ -326,6 +326,40 @@ it('verifies the Okta connection via the configured channel', function () {
         'success' => true,
         'status' => 'connected',
     ]);
+});
+
+it('fetches existing Okta channels so an operator can link one', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    bindFakeOktaGateway([
+        new Psr7Response(200, ['Content-Type' => 'application/json'], json_encode([
+            'data' => [
+                ['id' => 'ch_a', 'display_name' => 'Almoosa WhatsApp', 'status' => 'connected'],
+                ['id' => 'ch_b', 'display_name' => 'Backup', 'status' => 'pending'],
+            ],
+        ])),
+    ]);
+
+    $component = Livewire::test(Manage::class)
+        ->set('oktaBaseUrl', 'https://connect.example.com')
+        ->set('oktaTokenInput', 'a-token')
+        ->call('fetchOktaChannels');
+
+    expect($component->get('oktaChannelsFetched'))->toBeTrue()
+        ->and($component->get('oktaChannels'))->toHaveCount(2)
+        ->and($component->get('oktaChannels')[0])->toMatchArray(['id' => 'ch_a', 'name' => 'Almoosa WhatsApp', 'status' => 'connected']);
+});
+
+it('links an existing channel by persisting its id as the active channel', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    Livewire::test(Manage::class)
+        ->call('useOktaChannel', 'ch_existing')
+        ->assertDispatched('toast');
+
+    expect(app(Settings::class)->get('okta_channel_id'))->toBe('ch_existing');
 });
 
 it('runs the full QR pairing flow through to a connected channel, persisting the new channel id', function () {

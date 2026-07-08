@@ -34,4 +34,13 @@ interface WhatsAppChannelPairingInterface
      * session/channel.
      */
     public function qrPairingStatus(string $channelId): QrPairingSession;
+
+    /**
+     * List the channels already provisioned on the account, so an operator
+     * can link an existing (already-connected) channel instead of pairing
+     * a fresh one via QR.
+     *
+     * @return array<int, array{id: string, name: ?string, status: ?string, type: ?string}>
+     */
+    public function listChannels(): array;
 }

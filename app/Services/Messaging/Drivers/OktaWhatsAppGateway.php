@@ -8,6 +8,7 @@ use App\Services\Messaging\GatewayResponse;
 use App\Services\Messaging\QrPairingSession;
 use App\Support\Settings;
 use Okta\Connect\WhatsApp\Client;
+use Okta\Connect\WhatsApp\DTO\Channel as SdkChannel;
 use Okta\Connect\WhatsApp\DTO\QrSession as SdkQrSession;
 use Okta\Connect\WhatsApp\Exceptions\RateLimitException;
 use Okta\Connect\WhatsApp\Exceptions\WhatsAppException;
@@ -147,6 +148,24 @@ class OktaWhatsAppGateway implements WhatsAppChannelPairingInterface, WhatsAppGa
         } catch (WhatsAppException $e) {
             throw new RuntimeException($e->getMessage(), previous: $e);
         }
+    }
+
+    public function listChannels(): array
+    {
+        $config = $this->resolvedConfig();
+
+        try {
+            $result = $this->client($config)->channels()->list();
+        } catch (WhatsAppException $e) {
+            throw new RuntimeException($e->getMessage(), previous: $e);
+        }
+
+        return array_map(static fn (SdkChannel $channel): array => [
+            'id' => (string) $channel->id,
+            'name' => $channel->displayName,
+            'status' => $channel->status,
+            'type' => $channel->type?->value,
+        ], $result->items());
     }
 
     protected function mapQrSession(SdkQrSession $session): QrPairingSession
