@@ -90,6 +90,12 @@ class FamilyMembers extends Component
             'education_status' => ['nullable', 'string', 'max:255'],
         ]);
 
+        // A blank date must be stored as null, not '' (MySQL strict mode
+        // rejects '' for a date column; SQLite silently accepts it).
+        if (($validated['birth_date'] ?? '') === '') {
+            $validated['birth_date'] = null;
+        }
+
         if ($this->editingId) {
             $this->beneficiary->familyMembers()->whereKey($this->editingId)->update($validated);
         } else {
