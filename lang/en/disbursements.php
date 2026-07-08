@@ -27,6 +27,16 @@ return [
 
     'confirm_start' => 'Are you sure you want to start disbursing this aid using the selected method?',
     'confirm_record' => 'Are you sure you want to record this aid as delivered?',
+
+    'start_confirm' => [
+        'title' => 'Confirm start of disbursement',
+        'subtitle' => 'Review the deliverer and recipient before starting.',
+        'deliverer' => 'Deliverer',
+        'recipient' => 'Recipient',
+        'signature' => 'Signature (optional)',
+        'signature_hint' => 'Sign inside the box with a finger or mouse; it is saved with the disbursement record.',
+        'clear_signature' => 'Clear signature',
+    ],
     'confirm_confirm' => 'Are you sure you want to confirm the review of this disbursement?',
 
     'proof_recommended_notice' => 'Attaching proof of delivery (a photo or PDF) is recommended before recording delivery.',

@@ -70,6 +70,10 @@ class Disbursement extends Model implements HasMedia
         // cases, so it must never live on the public disk: same posture as
         // Beneficiary's supporting-document collections.
         $this->addMediaCollection('delivery_proof')->useDisk('local')->singleFile();
+
+        // Optional signature captured when disbursement starts (recipient
+        // or deliverer acknowledgement) — private, same posture as the proof.
+        $this->addMediaCollection('start_signature')->useDisk('local')->singleFile();
     }
 
     /**

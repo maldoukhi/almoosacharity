@@ -32,6 +32,12 @@ class Panel extends Component
 
     public string $method = '';
 
+    /** Whether the start-confirmation modal is open. */
+    public bool $showStartConfirm = false;
+
+    /** Captured signature as a data: URL (optional), saved on start. */
+    public string $signature = '';
+
     public string $reference = '';
 
     public string $courierName = '';
@@ -97,6 +103,27 @@ class Panel extends Component
         return $this->disbursement?->bank_account_masked ?? $this->aid->beneficiary->maskedIban();
     }
 
+    /**
+     * Validate a method is picked and, if so, open the start-confirmation
+     * modal (deliverer/recipient summary + optional signature).
+     */
+    public function confirmStart(): void
+    {
+        Gate::authorize('start', [Disbursement::class, $this->aid]);
+
+        $this->validate([
+            'method' => ['required', 'string', 'in:'.implode(',', array_column(DisbursementMethod::cases(), 'value'))],
+        ]);
+
+        $this->showStartConfirm = true;
+    }
+
+    public function cancelStart(): void
+    {
+        $this->showStartConfirm = false;
+        $this->signature = '';
+    }
+
     public function start(): void
     {
         Gate::authorize('start', [Disbursement::class, $this->aid]);
@@ -106,22 +133,51 @@ class Panel extends Component
         ]);
 
         try {
-            app(StartDisbursement::class)->handle(
+            $disbursement = app(StartDisbursement::class)->handle(
                 $this->aid,
                 DisbursementMethod::from($this->method),
                 Auth::user(),
             );
         } catch (InvalidAidTransitionException|AuthorizationException $exception) {
+            $this->showStartConfirm = false;
             $this->dispatch('toast', type: 'error', message: $exception->getMessage());
 
             return;
         }
+
+        $this->attachSignature($disbursement);
+
+        $this->showStartConfirm = false;
+        $this->signature = '';
 
         $this->dispatch('toast', type: 'success', message: __('disbursements.messages.started'));
 
         $this->refreshPanel();
 
         $this->dispatch('disbursement-updated');
+    }
+
+    /**
+     * Persist the captured signature (a `data:image/png;base64,…` string
+     * from the canvas) onto the disbursement, if one was drawn.
+     */
+    private function attachSignature(Disbursement $disbursement): void
+    {
+        $signature = trim($this->signature);
+
+        if ($signature === '' || ! str_starts_with($signature, 'data:image/')) {
+            return;
+        }
+
+        $base64 = preg_replace('#^data:image/\w+;base64,#', '', $signature) ?? '';
+
+        if ($base64 === '') {
+            return;
+        }
+
+        $disbursement->addMediaFromBase64($base64)
+            ->usingFileName('signature-'.$disbursement->id.'.png')
+            ->toMediaCollection('start_signature');
     }
 
     public function record(): void

@@ -7,6 +7,7 @@ use App\Enums\AidType;
 use App\Enums\DisbursementMethod;
 use App\Enums\DisbursementStatus;
 use App\Exceptions\InvalidAidTransitionException;
+use App\Livewire\Disbursements\Panel;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
 use App\Models\Disbursement;
@@ -31,6 +32,30 @@ function approvedAidWithBeneficiary(array $beneficiaryOverrides = [], array $aid
         'amount' => 1200,
     ], $aidOverrides));
 }
+
+it('opens the confirm modal, then starts and saves a signature from the panel', function () {
+    asDataEntry();
+
+    $aid = approvedAidWithBeneficiary();
+
+    $signature = 'data:image/png;base64,'.base64_encode('fake-png-bytes');
+
+    Livewire\Livewire::test(Panel::class, ['aid' => $aid])
+        ->set('method', DisbursementMethod::OfficePickup->value)
+        ->call('confirmStart')
+        ->assertSet('showStartConfirm', true)
+        ->set('signature', $signature)
+        ->call('start')
+        ->assertSet('showStartConfirm', false);
+
+    $disbursement = $aid->fresh()->disbursement;
+
+    expect($disbursement)->not->toBeNull()
+        ->and($disbursement->status)->toBe(DisbursementStatus::Pending)
+        ->and($disbursement->getFirstMedia('start_signature'))->not->toBeNull();
+
+    expect($aid->fresh()->status)->toBe(AidStatus::InDisbursement);
+});
 
 it('starts a bank-transfer disbursement with a masked iban snapshot and moves the aid to in_disbursement', function () {
     $actor = asDataEntry();

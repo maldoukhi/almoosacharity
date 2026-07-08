@@ -68,13 +68,97 @@
                     type="button"
                     variant="primary"
                     class="w-full"
-                    wire:click="start"
-                    wire:confirm="{{ __('disbursements.confirm_start') }}"
+                    wire:click="confirmStart"
                 >
                     {{ __('disbursements.start_button') }}
                 </x-ui.button>
             @endif
         </div>
+
+        {{-- Start-confirmation modal: deliverer/recipient summary + signature --}}
+        @if ($showStartConfirm)
+            <div class="fixed inset-0 z-[70] overflow-y-auto" role="dialog" aria-modal="true">
+                <div class="absolute inset-0 bg-primary-950/60 backdrop-blur-sm" wire:click="cancelStart"></div>
+
+                <div class="flex min-h-dvh items-center justify-center p-4">
+                    <div
+                        wire:key="disb-start-modal"
+                        x-data="signaturePad()"
+                        class="relative w-full max-w-lg overflow-hidden rounded-(--radius-brand) bg-white shadow-xl dark:bg-primary-950 dark:ring-1 dark:ring-white/10"
+                    >
+                        <div class="flex items-start gap-3 border-b border-gray-100 px-6 py-4 dark:border-white/10">
+                            <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-600 dark:bg-primary-500/15 dark:text-primary-300">
+                                <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg>
+                            </span>
+                            <div>
+                                <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('disbursements.start_confirm.title') }}</h3>
+                                <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('disbursements.start_confirm.subtitle') }}</p>
+                            </div>
+                        </div>
+
+                        <div class="px-6 py-5">
+                            <dl class="divide-y divide-gray-100 rounded-(--radius-brand) border border-gray-100 dark:divide-white/10 dark:border-white/10">
+                                <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                    <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('disbursements.field_method') }}</dt>
+                                    <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ \App\Enums\DisbursementMethod::from($method)->label() }}</dd>
+                                </div>
+                                @if ($aid->type === \App\Enums\AidType::Cash)
+                                    <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                        <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_amount') }}</dt>
+                                        <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">{{ number_format((float) $aid->amount, 2) }} {{ __('aids.currency_sar') }}</dd>
+                                    </div>
+                                @endif
+                                <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                    <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('disbursements.start_confirm.deliverer') }}</dt>
+                                    <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ auth()->user()->name }}</dd>
+                                </div>
+                                <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                    <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('disbursements.start_confirm.recipient') }}</dt>
+                                    <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ $aid->beneficiary?->full_name }}</dd>
+                                </div>
+                            </dl>
+
+                            {{-- Optional signature --}}
+                            <div class="mt-5">
+                                <div class="mb-1.5 flex items-center justify-between">
+                                    <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('disbursements.start_confirm.signature') }}</p>
+                                    <button type="button" @click="clear()" class="text-xs font-medium text-status-rejected hover:underline">
+                                        {{ __('disbursements.start_confirm.clear_signature') }}
+                                    </button>
+                                </div>
+                                <canvas
+                                    x-ref="pad"
+                                    x-init="init()"
+                                    @pointerdown="startDraw($event)"
+                                    @pointermove="draw($event)"
+                                    @pointerup.window="endDraw()"
+                                    @pointerleave="endDraw()"
+                                    class="h-40 w-full touch-none rounded-(--radius-brand) border border-dashed border-gray-300 bg-gray-50 dark:border-white/15 dark:bg-white/5"
+                                ></canvas>
+                                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('disbursements.start_confirm.signature_hint') }}</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4 dark:border-white/10">
+                            <x-ui.button type="button" variant="ghost" wire:click="cancelStart">
+                                {{ __('common.cancel') }}
+                            </x-ui.button>
+                            <x-ui.button
+                                type="button"
+                                variant="primary"
+                                x-on:click="$wire.set('signature', hasDrawn ? $refs.pad.toDataURL('image/png') : '', false); $wire.start()"
+                                wire:target="start"
+                                wire:loading.attr="disabled"
+                            >
+                                {{ __('disbursements.start_button') }}
+                            </x-ui.button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
     @elseif ($aid->status === \App\Enums\AidStatus::InDisbursement && $disbursement)
         {{-- Step 2: record the actual hand-off. --}}
         <div class="space-y-4">
@@ -258,4 +342,53 @@
     @else
         <x-ui.empty-state :title="__('disbursements.empty_title')" :description="__('disbursements.empty_description')" />
     @endif
+
+    <script>
+        window.signaturePad = function () {
+            return {
+                drawing: false,
+                hasDrawn: false,
+                ctx: null,
+                last: { x: 0, y: 0 },
+                init() {
+                    const canvas = this.$refs.pad;
+                    const ratio = window.devicePixelRatio || 1;
+                    const rect = canvas.getBoundingClientRect();
+                    canvas.width = rect.width * ratio;
+                    canvas.height = rect.height * ratio;
+                    this.ctx = canvas.getContext('2d');
+                    this.ctx.scale(ratio, ratio);
+                    this.ctx.lineWidth = 2;
+                    this.ctx.lineCap = 'round';
+                    this.ctx.strokeStyle = '#1C545E';
+                },
+                pos(e) {
+                    const rect = this.$refs.pad.getBoundingClientRect();
+                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                },
+                startDraw(e) {
+                    this.drawing = true;
+                    this.last = this.pos(e);
+                },
+                draw(e) {
+                    if (! this.drawing) return;
+                    const p = this.pos(e);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.last.x, this.last.y);
+                    this.ctx.lineTo(p.x, p.y);
+                    this.ctx.stroke();
+                    this.last = p;
+                    this.hasDrawn = true;
+                },
+                endDraw() {
+                    this.drawing = false;
+                },
+                clear() {
+                    const canvas = this.$refs.pad;
+                    this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    this.hasDrawn = false;
+                },
+            };
+        };
+    </script>
 </x-ui.card>
