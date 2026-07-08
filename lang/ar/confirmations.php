@@ -1,8 +1,10 @@
 <?php
 
 return [
-    // Outbound SMS/WhatsApp body sent with the signed confirmation link.
-    'sms_body' => 'مرحبًا :name، نأمل تأكيد استلامك للإعانة عبر الرابط التالي: :link',
+    // Default outbound SMS/WhatsApp body sent with the signed confirmation
+    // link (admin-editable from the settings screen). Placeholders: {name},
+    // {link}.
+    'default_body' => 'مرحبًا {name}، نأمل تأكيد استلامك للإعانة عبر الرابط التالي: {link}',
 
     'errors' => [
         'requires_delivered' => 'لا يمكن إصدار رابط تأكيد الاستلام إلا بعد تسليم الإعانة فعليًا',

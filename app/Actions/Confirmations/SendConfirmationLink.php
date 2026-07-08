@@ -46,9 +46,14 @@ class SendConfirmationLink
             ['confirmation' => $confirmation->id, 'token' => $rawToken],
         );
 
-        $body = __('confirmations.sms_body', [
-            'name' => $beneficiary->full_name,
-            'link' => $link,
+        // The body is admin-editable from the notifications settings screen
+        // (validated to always contain the {link} placeholder); fall back to
+        // the shipped default when nothing has been saved.
+        $template = $this->settings->get('confirmation_body') ?: __('confirmations.default_body');
+
+        $body = strtr($template, [
+            '{name}' => $beneficiary->full_name,
+            '{link}' => $link,
         ]);
 
         $channel = 'sms';

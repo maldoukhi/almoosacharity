@@ -100,6 +100,29 @@ it('lets an authorized admin update a template body and the channel toggles', fu
     expect($settings->get('taqnyat_sender'))->toBe('Almoosa');
 });
 
+it('rejects a confirmation body that is missing the {link} placeholder, and saves a valid one', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    // Missing {link} — must fail validation and persist nothing.
+    Livewire::test(Manage::class)
+        ->set('confirmationBody', 'مرحبًا {name}، تم تسليم إعانتك.')
+        ->call('save')
+        ->assertHasErrors(['confirmationBody']);
+
+    expect(app(Settings::class)->get('confirmation_body'))->toBeNull();
+
+    // With {link} present — saves successfully.
+    $valid = 'مرحبًا {name}، أكّد استلامك من هنا: {link}';
+
+    Livewire::test(Manage::class)
+        ->set('confirmationBody', $valid)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(app(Settings::class)->get('confirmation_body'))->toBe($valid);
+});
+
 it('saves the Taqnyat API key encrypted, resets the input, and never leaks it back to the browser', function () {
     (new NotificationTemplateSeeder)->run();
     asAdmin();

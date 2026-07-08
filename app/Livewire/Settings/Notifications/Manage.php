@@ -42,6 +42,12 @@ class Manage extends Component
     public bool $whatsappEnabled = false;
 
     /**
+     * The editable body of the receipt-confirmation message (the one that
+     * carries the signed link). Must always contain the {link} placeholder.
+     */
+    public string $confirmationBody = '';
+
+    /**
      * Always starts empty — never pre-filled from the stored secret. A
      * non-empty value here means "replace the saved key on next save";
      * left empty, the currently-saved key (if any) is kept as-is.
@@ -129,6 +135,7 @@ class Manage extends Component
         $this->senderName = $settings->get('taqnyat_sender') ?: null;
         $this->smsEnabled = $settings->get('sms_enabled', '1') === '1';
         $this->whatsappEnabled = $settings->get('whatsapp_enabled', '0') === '1';
+        $this->confirmationBody = $settings->get('confirmation_body') ?: __('confirmations.default_body');
 
         // Non-secret provider fields are shown as-is (the saved override,
         // or blank to fall back to config/.env) — unlike the secret
@@ -148,10 +155,16 @@ class Manage extends Component
             'senderName' => ['nullable', 'string', 'max:11'],
             'smsEnabled' => ['boolean'],
             'whatsappEnabled' => ['boolean'],
+            // The confirmation message must always keep the {link} placeholder,
+            // otherwise the beneficiary would get a message with no way to
+            // confirm receipt.
+            'confirmationBody' => ['required', 'string', 'max:480', 'regex:/\{link\}/'],
             'taqnyatApiKeyInput' => ['nullable', 'string', 'max:255'],
             'oktaBaseUrl' => ['nullable', 'string', 'max:255'],
             'oktaChannelId' => ['nullable', 'string', 'max:255'],
             'oktaTokenInput' => ['nullable', 'string', 'max:255'],
+        ], [
+            'confirmationBody.regex' => __('notifications.settings.confirmation_body_link_required'),
         ]);
 
         foreach ($this->templates as $eventValue => $channels) {
@@ -168,6 +181,7 @@ class Manage extends Component
         $settings->set('taqnyat_sender', $this->senderName !== null ? trim($this->senderName) : null);
         $settings->set('sms_enabled', $this->smsEnabled ? '1' : '0');
         $settings->set('whatsapp_enabled', $this->whatsappEnabled ? '1' : '0');
+        $settings->set('confirmation_body', trim($this->confirmationBody));
 
         $settings->set('okta_base_url', trim($this->oktaBaseUrl) !== '' ? trim($this->oktaBaseUrl) : null);
         $settings->set('okta_channel_id', trim($this->oktaChannelId) !== '' ? trim($this->oktaChannelId) : null);

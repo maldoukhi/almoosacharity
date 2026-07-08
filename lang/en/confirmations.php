@@ -1,8 +1,10 @@
 <?php
 
 return [
-    // Outbound SMS/WhatsApp body sent with the signed confirmation link.
-    'sms_body' => 'Hello :name, please confirm you received your aid via this link: :link',
+    // Default outbound SMS/WhatsApp body sent with the signed confirmation
+    // link (admin-editable from the settings screen). Placeholders: {name},
+    // {link}.
+    'default_body' => 'Hello {name}, please confirm you received your aid via this link: {link}',
 
     'errors' => [
         'requires_delivered' => 'A confirmation link can only be issued once the aid has actually been delivered',

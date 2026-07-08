@@ -57,6 +57,12 @@ return [
         'field_sms_enabled' => 'Enable SMS',
         'field_whatsapp_enabled' => 'Enable WhatsApp',
 
+        'section_confirmation_title' => 'Confirmation message',
+        'section_confirmation_description' => 'The message sent to the beneficiary with the receipt-confirmation link. Placeholders: {name} beneficiary name, {link} confirmation link.',
+        'field_confirmation_body' => 'Message body',
+        'field_confirmation_body_hint' => 'The message must contain {link} to embed the confirmation link; you may also use {name} for the beneficiary name.',
+        'confirmation_body_link_required' => 'The message body must contain the {link} placeholder to embed the confirmation link.',
+
         'section_taqnyat_title' => 'Taqnyat settings',
         'section_taqnyat_description' => 'The sender name and API key for the Taqnyat SMS account',
         'field_sender_name' => 'Sender name',

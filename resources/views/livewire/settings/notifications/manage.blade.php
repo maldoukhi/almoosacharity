@@ -102,6 +102,31 @@
         <x-ui.card>
             <x-slot:header>
                 <div>
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_confirmation_title') }}</h2>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('notifications.settings.section_confirmation_description') }}</p>
+                </div>
+            </x-slot:header>
+
+            <div>
+                <label for="confirmationBody" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('notifications.settings.field_confirmation_body') }}</label>
+                <textarea
+                    id="confirmationBody"
+                    wire:model="confirmationBody"
+                    rows="3"
+                    maxlength="480"
+                    dir="rtl"
+                    class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary dark:border-white/10 dark:bg-white/5 dark:text-white"
+                ></textarea>
+                @error('confirmationBody')
+                    <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                @enderror
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.field_confirmation_body_hint') }}</p>
+            </div>
+        </x-ui.card>
+
+        <x-ui.card>
+            <x-slot:header>
+                <div>
                     <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_taqnyat_title') }}</h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('notifications.settings.section_taqnyat_description') }}</p>
                 </div>

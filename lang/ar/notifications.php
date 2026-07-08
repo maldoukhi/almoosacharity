@@ -57,6 +57,12 @@ return [
         'field_sms_enabled' => 'تفعيل الرسائل النصية (SMS)',
         'field_whatsapp_enabled' => 'تفعيل واتساب',
 
+        'section_confirmation_title' => 'رسالة تأكيد الاستلام',
+        'section_confirmation_description' => 'نص الرسالة المُرسلة للمستفيد مع رابط تأكيد الاستلام. المتغيرات: {name} اسم المستفيد، {link} رابط التأكيد.',
+        'field_confirmation_body' => 'نص الرسالة',
+        'field_confirmation_body_hint' => 'يجب أن تحتوي الرسالة على {link} لإدراج رابط التأكيد؛ ويمكن استخدام {name} لاسم المستفيد.',
+        'confirmation_body_link_required' => 'يجب أن يحتوي نص الرسالة على المتغير {link} لإدراج رابط التأكيد.',
+
         'section_taqnyat_title' => 'إعدادات Taqnyat',
         'section_taqnyat_description' => 'اسم المرسل ومفتاح API الخاص بحساب Taqnyat لإرسال الرسائل النصية',
         'field_sender_name' => 'اسم المرسل',
