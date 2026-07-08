@@ -160,8 +160,8 @@
                                                 <x-ui.button
                                                     variant="ghost"
                                                     size="sm"
-                                                    wire:click="delete({{ $program->id }})"
-                                                    wire:confirm="{{ __('aid_programs.confirm_delete') }}"
+                                                    data-confirm="{{ __('aid_programs.confirm_delete') }}"
+                                                    x-on:click="uiConfirm($el.dataset.confirm, () => $wire.delete({{ $program->id }}), { danger: true })"
                                                     title="{{ __('common.delete') }}"
                                                     class="!text-gray-500 hover:!bg-status-rejected/10 hover:!text-status-rejected dark:!text-gray-400 dark:hover:!bg-status-rejected/15 dark:hover:!text-status-rejected"
                                                 >

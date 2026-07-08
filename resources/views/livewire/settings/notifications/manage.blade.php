@@ -170,8 +170,8 @@
                     @if ($this->taqnyatHasKey)
                         <button
                             type="button"
-                            wire:click="clearTaqnyatApiKey"
-                            wire:confirm="{{ __('notifications.settings.confirm_clear_secret') }}"
+                            data-confirm="{{ __('notifications.settings.confirm_clear_secret') }}"
+                            x-on:click="uiConfirm($el.dataset.confirm, () => $wire.clearTaqnyatApiKey(), { danger: true })"
                             class="mt-1.5 text-xs font-medium text-status-rejected hover:underline"
                         >
                             {{ __('notifications.settings.action_clear') }}
@@ -235,8 +235,8 @@
                     @if ($this->oktaHasToken)
                         <button
                             type="button"
-                            wire:click="clearOktaToken"
-                            wire:confirm="{{ __('notifications.settings.confirm_clear_secret') }}"
+                            data-confirm="{{ __('notifications.settings.confirm_clear_secret') }}"
+                            x-on:click="uiConfirm($el.dataset.confirm, () => $wire.clearOktaToken(), { danger: true })"
                             class="mt-1.5 text-xs font-medium text-status-rejected hover:underline"
                         >
                             {{ __('notifications.settings.action_clear') }}
@@ -359,8 +359,8 @@
                                 <x-ui.badge color="approved">{{ __('notifications.settings.okta_channel_linked') }}</x-ui.badge>
                                 <button
                                     type="button"
-                                    wire:click="clearOktaChannel"
-                                    wire:confirm="{{ __('notifications.settings.okta_channel_unlink_confirm') }}"
+                                    data-confirm="{{ __('notifications.settings.okta_channel_unlink_confirm') }}"
+                                    x-on:click="uiConfirm($el.dataset.confirm, () => $wire.clearOktaChannel(), { danger: true })"
                                     class="shrink-0 text-xs font-medium text-status-rejected hover:underline"
                                 >
                                     {{ __('notifications.settings.okta_channel_unlink') }}

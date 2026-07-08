@@ -246,8 +246,8 @@
                                 type="button"
                                 variant="ghost"
                                 class="mt-4 w-full"
-                                wire:click="resendConfirmation"
-                                wire:confirm="{{ __('confirmations.confirm_resend') }}"
+                                data-confirm="{{ __('confirmations.confirm_resend') }}"
+                                x-on:click="uiConfirm($el.dataset.confirm, () => $wire.resendConfirmation())"
                             >
                                 {{ __('confirmations.resend_button') }}
                             </x-ui.button>

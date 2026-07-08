@@ -61,8 +61,8 @@
                             <x-ui.button
                                 variant="danger"
                                 size="sm"
-                                wire:click="delete({{ $flow->id }})"
-                                wire:confirm="{{ __('approval_flows.confirm_delete') }}"
+                                data-confirm="{{ __('approval_flows.confirm_delete') }}"
+                                x-on:click="uiConfirm($el.dataset.confirm, () => $wire.delete({{ $flow->id }}), { danger: true })"
                             >
                                 {{ __('common.delete') }}
                             </x-ui.button>
