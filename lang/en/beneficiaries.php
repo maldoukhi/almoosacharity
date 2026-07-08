@@ -113,6 +113,22 @@ return [
         'confirm_delete' => 'Are you sure you want to delete this document?',
         'empty_title' => 'No documents',
         'empty_description' => 'No documents have been uploaded yet',
+        'file_count' => '{0} No files|{1} 1 file|[2,*] :count files',
+        'create_first_title' => 'Save the beneficiary first',
+        'create_first_description' => 'The beneficiary record must be saved before documents can be attached to it.',
+    ],
+
+    'family_tree' => [
+        'view_tree' => 'Tree View',
+        'view_table' => 'Table View',
+        'view_switch_label' => 'Switch between tree view and table view',
+        'zoom_in' => 'Zoom in',
+        'zoom_out' => 'Zoom out',
+        'reset_view' => 'Reset view',
+        'center_label' => 'Beneficiary',
+        'age_years' => '{0} Less than a year|{1} 1 year|[2,*] :count years',
+        'empty_title' => 'No family members',
+        'empty_description' => 'No family members have been added yet to show in the tree',
     ],
 
     'activity' => [

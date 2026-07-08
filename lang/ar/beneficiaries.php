@@ -113,6 +113,22 @@ return [
         'confirm_delete' => 'هل أنت متأكد من حذف هذا المستند؟',
         'empty_title' => 'لا توجد مستندات',
         'empty_description' => 'لم يتم رفع أي مستندات بعد',
+        'file_count' => '{0} لا ملفات|{1} ملف واحد|[2,*] :count ملفات',
+        'create_first_title' => 'احفظ المستفيد أولًا',
+        'create_first_description' => 'يجب حفظ بيانات المستفيد قبل إمكانية إرفاق المستندات الخاصة به.',
+    ],
+
+    'family_tree' => [
+        'view_tree' => 'عرض الشجرة',
+        'view_table' => 'عرض الجدول',
+        'view_switch_label' => 'التبديل بين عرض الشجرة وعرض الجدول',
+        'zoom_in' => 'تكبير',
+        'zoom_out' => 'تصغير',
+        'reset_view' => 'إعادة الضبط',
+        'center_label' => 'المستفيد',
+        'age_years' => '{0} أقل من سنة|{1} سنة واحدة|[2,*] :count سنة',
+        'empty_title' => 'لا يوجد أفراد أسرة',
+        'empty_description' => 'لم يتم إضافة أفراد أسرة بعد لعرضهم في الشجرة',
     ],
 
     'activity' => [

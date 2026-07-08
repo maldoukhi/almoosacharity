@@ -31,6 +31,7 @@
         $tabs['bank'] = __('beneficiaries.tab.bank');
     }
 
+    $tabs['documents'] = __('beneficiaries.tab.documents');
     $tabs['categories'] = __('beneficiaries.tab.categories');
 @endphp
 
@@ -180,6 +181,22 @@
                     </div>
                 </div>
             @endif
+
+            {{-- المستندات --}}
+            <div x-show="activeTab === 'documents'" x-transition.opacity.duration.200ms class="pt-2">
+                @if ($isEdit)
+                    @livewire('beneficiaries.profile.documents', ['beneficiary' => $beneficiary], key('documents-form-'.$beneficiary->id))
+                @else
+                    <x-ui.empty-state :title="__('beneficiaries.documents.create_first_title')" :description="__('beneficiaries.documents.create_first_description')">
+                        <x-slot:icon>
+                            <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m5.231 13.481L15 17.25m-1.519-3.769a1 1 0 0 0-.363.363m1.882 3.406L11.7 14.5m0 0-2.2 2.2m2.2-2.2 2.2 2.2" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18.75V4.5a2.25 2.25 0 0 1 2.25-2.25h6.879a1.5 1.5 0 0 1 1.06.44l3.622 3.62a1.5 1.5 0 0 1 .44 1.061V18.75a2.25 2.25 0 0 1-2.25 2.25H8.25a2.25 2.25 0 0 1-2.25-2.25Z" />
+                            </svg>
+                        </x-slot:icon>
+                    </x-ui.empty-state>
+                @endif
+            </div>
 
             {{-- التصنيفات --}}
             <div x-show="activeTab === 'categories'" x-transition.opacity.duration.200ms class="pt-2">
