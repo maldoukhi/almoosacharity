@@ -30,7 +30,7 @@ return [
     'field_national_id' => 'رقم الهوية',
     'field_nationality' => 'الجنسية',
     'field_birth_date' => 'تاريخ الميلاد',
-    'field_gender' => 'النوع',
+    'field_gender' => 'الجنس',
     'field_marital_status' => 'الحالة الاجتماعية',
     'field_family_members_count' => 'عدد أفراد الأسرة',
     'field_mobile' => 'رقم الجوال',
