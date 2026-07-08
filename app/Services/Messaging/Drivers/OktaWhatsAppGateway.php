@@ -6,6 +6,7 @@ use App\Services\Messaging\Contracts\WhatsAppChannelPairingInterface;
 use App\Services\Messaging\Contracts\WhatsAppGatewayInterface;
 use App\Services\Messaging\GatewayResponse;
 use App\Services\Messaging\QrPairingSession;
+use App\Support\MobileNumber;
 use App\Support\Settings;
 use Okta\Connect\WhatsApp\Client;
 use Okta\Connect\WhatsApp\DTO\Channel as SdkChannel;
@@ -82,7 +83,7 @@ class OktaWhatsAppGateway implements WhatsAppChannelPairingInterface, WhatsAppGa
         return $this->attempt(function () use ($to, $message, $idempotencyKey, $config) {
             return $this->client($config)->messages()->send([
                 'channel_id' => $config['channelId'],
-                'to' => $to,
+                'to' => MobileNumber::toInternational($to),
                 'type' => 'text',
                 'text' => ['body' => $message],
             ], $idempotencyKey);
@@ -101,7 +102,7 @@ class OktaWhatsAppGateway implements WhatsAppChannelPairingInterface, WhatsAppGa
         return $this->attempt(function () use ($to, $templateName, $variables, $language, $idempotencyKey, $config) {
             return $this->client($config)->templates()->send([
                 'channel_id' => $config['channelId'],
-                'wa_id' => $to,
+                'wa_id' => MobileNumber::toInternational($to),
                 'template_name' => $templateName,
                 'language' => $language,
                 'variables' => array_values($variables),

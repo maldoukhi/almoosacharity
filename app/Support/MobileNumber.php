@@ -35,4 +35,26 @@ final class MobileNumber
 
         return $value;
     }
+
+    /**
+     * Converts a Saudi mobile number to the international `wa_id` format
+     * WhatsApp/Meta expects: country code, no leading zero, no `+`
+     * (e.g. 0560249160 → 966560249160). Numbers already in international
+     * form are passed through with only `+`, a leading `00` and separators
+     * stripped, so a WhatsApp send never goes out in the local `05…` form
+     * (which Meta rejects) even though the message log keeps the local
+     * number for display.
+     */
+    public static function toInternational(string $raw): string
+    {
+        $local = self::normalize($raw);
+
+        if (preg_match('/^0(5\d{8})$/', $local, $matches) === 1) {
+            return '966'.$matches[1];
+        }
+
+        $digits = preg_replace('/[\s\-()+]/', '', $raw) ?? $raw;
+
+        return preg_replace('/^00/', '', $digits) ?? $digits;
+    }
 }
