@@ -103,6 +103,8 @@ return [
     'filter_program' => 'Filter by Program',
     'filter_type' => 'Filter by Type',
 
+    'results_count' => '{0} No results|{1} 1 result|[2,*] :count results',
+
     'empty_title' => 'No Aids',
     'empty_description' => 'Start by creating a new aid for your beneficiaries',
 

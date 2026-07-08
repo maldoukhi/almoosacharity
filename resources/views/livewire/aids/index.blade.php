@@ -56,7 +56,14 @@
         </div>
     </x-ui.card>
 
-    <div class="relative">
+    <x-ui.card>
+        <div class="mb-4">
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+                {{ trans_choice('aids.results_count', $this->aids->total(), ['count' => $this->aids->total()]) }}
+            </p>
+        </div>
+
+        <div class="relative">
         <div wire:loading.flex wire:target="search, statusFilter, programFilter, typeFilter" class="hidden flex-col gap-2" style="display: none">
             <x-ui.skeleton height="3rem" />
             <x-ui.skeleton height="3rem" />
@@ -188,5 +195,6 @@
                 </div>
             @endif
         </div>
-    </div>
+        </div>
+    </x-ui.card>
 </div>
