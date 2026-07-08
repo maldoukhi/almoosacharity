@@ -20,6 +20,10 @@ return [
     'stages_title' => 'المراحل',
     'add_stage' => 'إضافة مرحلة',
 
+    'flow_start_label' => 'تقديم الطلب',
+    'flow_end_label' => 'اعتماد نهائي',
+    'stage_label' => 'المرحلة :number',
+
     'move_up' => 'نقل لأعلى',
     'move_down' => 'نقل لأسفل',
 

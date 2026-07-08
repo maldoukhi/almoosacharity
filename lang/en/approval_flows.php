@@ -20,6 +20,10 @@ return [
     'stages_title' => 'Stages',
     'add_stage' => 'Add Stage',
 
+    'flow_start_label' => 'Submit Request',
+    'flow_end_label' => 'Final Approval',
+    'stage_label' => 'Stage :number',
+
     'move_up' => 'Move Up',
     'move_down' => 'Move Down',
 

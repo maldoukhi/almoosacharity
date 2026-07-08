@@ -95,6 +95,50 @@
     }
 }
 
+/* Approval flow editor — spine node entrance (stage cards, start/end nodes) */
+@keyframes approval-node-in {
+    from {
+        opacity: 0;
+        transform: translateY(10px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Approval flow editor — a small pulse traveling down each spine connector,
+   giving the vertical line a calm "flowing" feel between stage nodes. */
+@keyframes approval-flow-pulse {
+    0% {
+        top: 0%;
+        opacity: 0;
+    }
+    12% {
+        opacity: 1;
+    }
+    88% {
+        opacity: 1;
+    }
+    100% {
+        top: calc(100% - 0.5rem);
+        opacity: 0;
+    }
+}
+
+/* Approval flow editor — subtle down-arrow breathing between spine nodes */
+@keyframes approval-arrow-pulse {
+    0%,
+    100% {
+        opacity: 0.45;
+        transform: translateY(0);
+    }
+    50% {
+        opacity: 1;
+        transform: translateY(3px);
+    }
+}
+
 [x-cloak] {
     display: none !important;
 }
