@@ -271,6 +271,55 @@ class Manage extends Component
     }
 
     /**
+     * Whether enough Okta config exists (base URL + token) to make calls —
+     * used to auto-load the channel list on page open without prompting.
+     */
+    #[Computed]
+    public function oktaConfigured(): bool
+    {
+        $config = $this->effectiveOktaConfig();
+
+        return $config['baseUrl'] !== '' && $config['token'] !== '';
+    }
+
+    /**
+     * The status of the channel currently in use (okta_channel_id), looked
+     * up in the fetched channel list — null when no channel is set, the
+     * list has not been fetched, or the channel is not among the account's
+     * channels (itself a disconnect signal).
+     */
+    #[Computed]
+    public function activeChannelStatus(): ?string
+    {
+        $active = trim($this->oktaChannelId);
+
+        if ($active === '') {
+            return null;
+        }
+
+        foreach ($this->oktaChannels as $channel) {
+            if ((string) $channel['id'] === $active) {
+                return $channel['status'];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * True when the channel in use is known to be not connected — so the
+     * screen can warn that outgoing WhatsApp messages may not be delivered.
+     */
+    #[Computed]
+    public function activeChannelDisconnected(): bool
+    {
+        return $this->oktaChannelsFetched
+            && $this->oktaChannelsMessage === null
+            && trim($this->oktaChannelId) !== ''
+            && $this->activeChannelStatus() !== 'connected';
+    }
+
+    /**
      * Tests the *currently effective* Taqnyat API key: whatever is typed
      * (but not yet saved) in {@see $taqnyatApiKeyInput}, else the saved
      * secret, else the config/.env default.

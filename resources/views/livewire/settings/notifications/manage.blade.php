@@ -269,6 +269,7 @@
                 <h3 class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_okta_qr_title') }}</h3>
 
                 @if ($this->whatsappPairingSupported)
+                    <div @if ($this->oktaConfigured && ! $oktaChannelsFetched) wire:init="fetchOktaChannels" @endif>
                     <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_scanning_hint') }}</p>
 
                     <div class="flex flex-wrap items-center gap-3">
@@ -280,7 +281,7 @@
                             <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.7" stroke="currentColor" aria-hidden="true" wire:loading.class="animate-spin" wire:target="fetchOktaChannels">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
                             </svg>
-                            {{ __('notifications.settings.okta_channels_fetch') }}
+                            {{ __('notifications.settings.okta_channels_refresh') }}
                         </x-ui.button>
 
                         @if ($whatsappQrStatus)
@@ -289,6 +290,17 @@
                             </x-ui.badge>
                         @endif
                     </div>
+
+                    {{-- Alert the operator when the channel in use is not
+                         connected — outgoing WhatsApp messages may not deliver. --}}
+                    @if ($this->activeChannelDisconnected)
+                        <div class="mt-3 flex items-start gap-2 rounded-(--radius-brand) border border-status-rejected/20 bg-status-rejected/5 px-3.5 py-2.5 text-sm text-status-rejected">
+                            <svg class="mt-0.5 size-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                            </svg>
+                            <span>{{ __('notifications.settings.okta_channel_disconnected_warning') }}</span>
+                        </div>
+                    @endif
 
                     {{-- Link an already-provisioned channel (often one already
                          connected on the Okta platform) instead of pairing anew. --}}
@@ -327,8 +339,8 @@
                     @endif
 
                     {{-- The Channel ID is not entered by hand: it is produced by a
-                         successful QR pairing (or taken from .env). Shown read-only
-                         so the operator sees which channel is linked. --}}
+                         successful QR pairing or by choosing an existing channel.
+                         Shown read-only so the operator sees which channel is linked. --}}
                     <div class="mt-5 max-w-md">
                         <label for="oktaChannelId" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
                             {{ __('notifications.settings.field_okta_channel_id') }}
@@ -361,6 +373,7 @@
                         @endif
 
                         <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.field_okta_channel_id_hint') }}</p>
+                    </div>
                     </div>
                 @else
                     <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_not_supported') }}</p>
