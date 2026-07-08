@@ -26,7 +26,7 @@ class SaveAidProgram
                 'description' => $data['description'] ?? null,
             ];
 
-            if ($program) {
+            if ($program?->exists) {
                 $program->update($attributes);
 
                 return $program->fresh();

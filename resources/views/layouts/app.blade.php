@@ -47,5 +47,7 @@
     </div>
 
     <x-ui.toast />
+
+    @livewire('wire-elements-modal')
 </body>
 </html>

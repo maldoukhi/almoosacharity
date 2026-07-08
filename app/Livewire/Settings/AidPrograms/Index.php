@@ -7,6 +7,7 @@ use App\Models\AidProgram;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\On;
 use Livewire\Component;
 
 /**
@@ -19,6 +20,15 @@ class Index extends Component
     public function mount(): void
     {
         Gate::authorize('viewAny', AidProgram::class);
+    }
+
+    /**
+     * Refresh the list after the create/edit modal saves a program.
+     */
+    #[On('aid-program-saved')]
+    public function refreshList(): void
+    {
+        unset($this->programs);
     }
 
     /**
