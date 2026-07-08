@@ -343,7 +343,7 @@ class Form extends Component
         }
 
         if ($result instanceof Aid) {
-            $this->redirectRoute('aids.show', ['aid' => $result->id], navigate: true);
+            $this->redirectRoute('aids.show', $result, navigate: true);
 
             return;
         }
@@ -370,7 +370,7 @@ class Form extends Component
                 $this->dispatch('toast', type: 'error', message: $exception->getMessage());
             }
 
-            $this->redirectRoute('aids.show', ['aid' => $result->id], navigate: true);
+            $this->redirectRoute('aids.show', $result, navigate: true);
 
             return;
         }

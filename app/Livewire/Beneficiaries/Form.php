@@ -270,7 +270,7 @@ class Form extends Component
 
         $this->dispatch('toast', type: 'success', message: __('beneficiaries.messages.saved'));
 
-        $this->redirectRoute('admin.beneficiaries.show', ['beneficiary' => $beneficiary->id], navigate: true);
+        $this->redirectRoute('admin.beneficiaries.show', $beneficiary, navigate: true);
     }
 
     public function render()

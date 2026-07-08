@@ -8,6 +8,7 @@ use App\Enums\Gender;
 use App\Enums\HousingType;
 use App\Enums\IdType;
 use App\Enums\MaritalStatus;
+use App\Models\Concerns\HasHashid;
 use Database\Factories\BeneficiaryFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -33,7 +34,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 class Beneficiary extends Model implements HasMedia
 {
     /** @use HasFactory<BeneficiaryFactory> */
-    use HasFactory, InteractsWithMedia, LogsActivity, SoftDeletes;
+    use HasFactory, HasHashid, InteractsWithMedia, LogsActivity, SoftDeletes;
 
     /**
      * Get the attributes that should be cast.
