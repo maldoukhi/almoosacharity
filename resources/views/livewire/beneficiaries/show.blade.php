@@ -134,7 +134,24 @@
                             </button>
                         </div>
 
-                        <div class="flex items-center gap-1" x-show="view === 'tree' && {{ $beneficiary->familyMembers->isNotEmpty() ? 'true' : 'false' }}" x-cloak>
+                        <div class="flex items-center gap-2">
+                            @can('update', $beneficiary)
+                                <div x-show="view === 'tree'" x-cloak>
+                                    <x-ui.button
+                                        type="button"
+                                        variant="secondary"
+                                        size="sm"
+                                        x-on:click="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-modal', arguments: { beneficiary: {{ $beneficiary->id }} } })"
+                                    >
+                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                        </svg>
+                                        {{ __('beneficiaries.family.add_button') }}
+                                    </x-ui.button>
+                                </div>
+                            @endcan
+
+                            <div class="flex items-center gap-1" x-show="view === 'tree' && {{ $beneficiary->familyMembers->isNotEmpty() ? 'true' : 'false' }}" x-cloak>
                             <button
                                 type="button"
                                 @click="zoomOut()"
@@ -170,6 +187,7 @@
                                 </svg>
                                 <span class="sr-only">{{ __('beneficiaries.family_tree.zoom_in') }}</span>
                             </button>
+                            </div>
                         </div>
                     </div>
 
@@ -218,12 +236,18 @@
                                     @foreach ($this->familyTreeNodes as $index => $node)
                                         <div
                                             wire:key="family-tree-node-{{ $node['id'] }}"
-                                            class="absolute flex w-24 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 text-center"
+                                            role="button"
+                                            tabindex="0"
+                                            title="{{ $node['name'] }}"
+                                            @pointerdown.stop
+                                            @click.stop="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-detail-modal', arguments: { beneficiary: {{ $beneficiary->id }}, memberId: {{ $node['id'] }} } })"
+                                            @keydown.enter.prevent="$dispatch('openModal', { component: 'beneficiaries.profile.family-member-detail-modal', arguments: { beneficiary: {{ $beneficiary->id }}, memberId: {{ $node['id'] }} } })"
+                                            class="group absolute flex w-24 -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center gap-1 rounded-(--radius-brand) p-1 text-center transition duration-150 ease-out hover:bg-white/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-500 dark:hover:bg-white/5"
                                             style="left: {{ $node['x'] }}%; top: {{ $node['y'] }}%; animation: fade-in-up .3s ease-out both; animation-delay: {{ min($index + 1, 10) * 60 }}ms"
                                         >
                                             <span
                                                 @class([
-                                                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-(--shadow-card) ring-2',
+                                                    'flex h-11 w-11 shrink-0 items-center justify-center rounded-full shadow-(--shadow-card) ring-2 transition duration-150 ease-out group-hover:scale-105',
                                                     'bg-accent-100 text-accent-700 ring-accent-200 dark:bg-accent-500/20 dark:text-accent-200 dark:ring-accent-500/30' => $node['tier'] === 'top',
                                                     'bg-secondary-100 text-secondary-700 ring-secondary-200 dark:bg-secondary-500/20 dark:text-secondary-200 dark:ring-secondary-500/30' => $node['tier'] === 'side',
                                                     'bg-primary-100 text-primary-700 ring-primary-200 dark:bg-primary-500/20 dark:text-primary-200 dark:ring-primary-500/30' => $node['tier'] === 'bottom',
