@@ -9,6 +9,7 @@ return [
     'back' => 'Back',
     'close' => 'Close',
     'confirm' => 'Confirm',
+    'confirm_title' => 'Confirm action',
     'search' => 'Search',
     'all' => 'All',
     'actions' => 'Actions',

@@ -48,6 +48,8 @@
 
     <x-ui.toast />
 
+    <x-ui.confirm-dialog />
+
     @livewire('wire-elements-modal')
 </body>
 </html>

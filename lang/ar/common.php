@@ -9,6 +9,7 @@ return [
     'back' => 'رجوع',
     'close' => 'إغلاق',
     'confirm' => 'تأكيد',
+    'confirm_title' => 'تأكيد الإجراء',
     'search' => 'بحث',
     'all' => 'الكل',
     'actions' => 'الإجراءات',

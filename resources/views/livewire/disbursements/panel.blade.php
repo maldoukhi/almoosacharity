@@ -243,8 +243,8 @@
                 type="button"
                 variant="primary"
                 class="w-full"
-                wire:click="record"
-                wire:confirm="{{ __('disbursements.confirm_record') }}"
+                data-confirm="{{ __('disbursements.confirm_record') }}"
+                x-on:click="uiConfirm($el.dataset.confirm, () => $wire.record())"
             >
                 {{ __('disbursements.record_button') }}
             </x-ui.button>
@@ -330,8 +330,8 @@
                             type="button"
                             variant="secondary"
                             size="sm"
-                            wire:click="confirm"
-                            wire:confirm="{{ __('disbursements.confirm_confirm') }}"
+                            data-confirm="{{ __('disbursements.confirm_confirm') }}"
+                            x-on:click="uiConfirm($el.dataset.confirm, () => $wire.confirm())"
                         >
                             {{ __('disbursements.confirm_button') }}
                         </x-ui.button>
