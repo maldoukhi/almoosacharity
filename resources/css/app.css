@@ -10,6 +10,7 @@
 @source '../../storage/framework/views/*.php';
 @source '../views/**/*.blade.php';
 @source '../../app/Livewire/**/*.php';
+@source '../../vendor/wire-elements/modal/src/ModalComponent.php';
 
 /* Dark mode via .dark class on <html> (user toggle), not OS preference alone */
 @custom-variant dark (&:where(.dark, .dark *));
