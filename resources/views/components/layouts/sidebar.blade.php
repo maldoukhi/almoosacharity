@@ -16,10 +16,10 @@
 <aside
     x-cloak
     :class="[
-        sidebarOpen ? '!translate-x-0' : '',
+        sidebarOpen ? 'translate-x-0!' : '',
         sidebarCollapsed ? 'lg:w-20' : 'lg:w-64',
     ]"
-    class="fixed inset-y-0 start-0 z-40 flex w-64 -translate-x-full flex-col border-e border-gray-100 bg-white transition-all duration-200 ease-out rtl:translate-x-full ltr:-translate-x-full lg:static lg:translate-x-0 dark:border-white/10 dark:bg-primary-950"
+    class="fixed inset-y-0 start-0 z-40 flex w-64 flex-col border-e border-gray-100 bg-white transition-all duration-200 ease-out max-lg:rtl:translate-x-full max-lg:ltr:-translate-x-full lg:static dark:border-white/10 dark:bg-primary-950"
 >
     <div class="flex h-16 shrink-0 items-center gap-3 border-b border-gray-100 px-4 dark:border-white/10">
         <img src="{{ asset('images/brand/logo.svg') }}" alt="{{ config('app.name') }}" class="h-8 w-auto shrink-0">
