@@ -420,6 +420,41 @@ it('runs the full QR pairing flow through to a connected channel, persisting the
     expect(app(Settings::class)->get('okta_channel_id'))->toBe('ch_new');
 });
 
+it('adopts the channel when the QR session reports disconnected but the channel list shows it connected', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    bindFakeOktaGateway([
+        // 1) QR session poll comes back terminal-but-not-connected...
+        new Psr7Response(200, ['Content-Type' => 'application/json'], json_encode([
+            'channel' => ['id' => 'ch_paired', 'display_name' => 'Almoosa WhatsApp', 'status' => 'disconnected'],
+            'qr' => null,
+            'qr_ttl_seconds' => null,
+        ])),
+        // 2) ...but the channel list (the Okta platform's own truth) shows
+        //    the very same channel as connected.
+        new Psr7Response(200, ['Content-Type' => 'application/json'], json_encode([
+            'data' => [
+                ['id' => 'ch_paired', 'display_name' => 'Almoosa WhatsApp', 'status' => 'connected'],
+            ],
+        ])),
+    ]);
+
+    $component = Livewire::test(Manage::class)
+        ->set('oktaBaseUrl', 'https://connect.example.com')
+        ->set('oktaTokenInput', 'a-token')
+        ->set('whatsappQrChannelId', 'ch_paired')
+        ->set('whatsappQrPolling', true)
+        ->set('whatsappQrModalOpen', true)
+        ->call('pollWhatsappQrStatus');
+
+    expect($component->get('whatsappQrStatus'))->toBe('connected')
+        ->and($component->get('whatsappQrModalOpen'))->toBeFalse()
+        ->and($component->get('oktaChannelId'))->toBe('ch_paired');
+
+    expect(app(Settings::class)->get('okta_channel_id'))->toBe('ch_paired');
+});
+
 it('shows the QR pairing section since the Okta driver always implements the pairing interface', function () {
     (new NotificationTemplateSeeder)->run();
     asAdmin();

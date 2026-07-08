@@ -172,6 +172,12 @@ class ConfirmReceipt extends Component
         }
 
         $this->step++;
+
+        // currentQuestion is a #[Computed] and was already read (and thus
+        // memoized for this request) above, before step changed. Without
+        // clearing that cache the re-render would show the *previous*
+        // question and the screen would look stuck on the same step.
+        unset($this->currentQuestion);
     }
 
     public function previousStep(): void
@@ -181,6 +187,8 @@ class ConfirmReceipt extends Component
         }
 
         $this->step--;
+
+        unset($this->currentQuestion);
     }
 
     /**

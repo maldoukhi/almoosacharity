@@ -122,6 +122,7 @@ return [
         'qr_scanning_hint' => 'Click "Connect WhatsApp" then scan the code that appears using the WhatsApp app on the device you want to pair',
         'action_connect_whatsapp' => 'Connect WhatsApp via QR',
         'qr_status_pending' => 'Waiting for scan',
+        'qr_status_awaiting_scan' => 'Waiting for scan',
         'qr_status_connected' => 'Connected',
         'qr_status_disconnected' => 'Disconnected',
         'qr_status_failed' => 'Pairing failed',

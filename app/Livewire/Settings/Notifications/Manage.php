@@ -485,6 +485,15 @@ class Manage extends Component
         $this->whatsappQrPolling = ! $session->isTerminal();
         $this->whatsappQrMessage = null;
 
+        // The session can come back immediately terminal (e.g. the channel
+        // was already paired on the Okta platform) — reconcile against the
+        // real channel status before showing a "disconnected" dead end.
+        if ($session->isTerminal() && ! $session->isConnected()) {
+            $this->adoptChannelIfConnected($session->channelId);
+
+            return;
+        }
+
         $this->dispatch('whatsapp-qr-updated', text: $this->whatsappQrText);
     }
 
@@ -525,22 +534,20 @@ class Manage extends Component
         $this->whatsappQrText = $session->qr;
 
         if ($session->isConnected()) {
-            $this->whatsappQrPolling = false;
-            $this->whatsappQrModalOpen = false;
-            $this->dispatch('whatsapp-qr-updated', text: null);
-
-            // The channel just paired is the one that should now be used
-            // for real sends — persist it immediately so the operator
-            // doesn't need a second manual step.
-            app(Settings::class)->set('okta_channel_id', $session->channelId);
-            $this->oktaChannelId = $session->channelId;
-
-            $this->dispatch('toast', type: 'success', message: __('notifications.settings.okta_qr_connected'));
+            $this->markChannelConnected($session->channelId);
 
             return;
         }
 
         if ($session->isTerminal()) {
+            // The QR *session* just ended — but the channel itself may have
+            // paired successfully (it shows as connected on the Okta
+            // platform). Reconcile against the channel list before treating
+            // this as a failure.
+            if ($this->adoptChannelIfConnected($this->whatsappQrChannelId)) {
+                return;
+            }
+
             $this->whatsappQrPolling = false;
             $this->dispatch('whatsapp-qr-updated', text: null);
             $this->dispatch('toast', type: 'error', message: __('notifications.settings.okta_qr_failed'));
@@ -549,6 +556,53 @@ class Manage extends Component
         }
 
         $this->dispatch('whatsapp-qr-updated', text: $this->whatsappQrText);
+    }
+
+    /**
+     * Adopt the pairing channel as the active one when the channel list —
+     * the same source of truth the operator sees on the Okta platform —
+     * reports it as connected, even if the QR *session* endpoint reported a
+     * terminal 'disconnected'/'failed'. Returns true when adopted.
+     */
+    protected function adoptChannelIfConnected(?string $channelId): bool
+    {
+        if ($channelId === null || $channelId === '') {
+            return false;
+        }
+
+        try {
+            $channels = $this->buildOktaGateway($this->effectiveOktaConfig())->listChannels();
+        } catch (Throwable) {
+            return false;
+        }
+
+        foreach ($channels as $channel) {
+            if ((string) $channel['id'] === (string) $channelId && $channel['status'] === 'connected') {
+                $this->markChannelConnected($channelId);
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Persist the just-paired channel as the active okta_channel_id, close
+     * the QR modal, and confirm to the operator. Shared by the direct
+     * "session connected" path and the channel-list reconciliation above.
+     */
+    protected function markChannelConnected(string $channelId): void
+    {
+        $this->whatsappQrPolling = false;
+        $this->whatsappQrStatus = 'connected';
+        $this->whatsappQrModalOpen = false;
+        $this->dispatch('whatsapp-qr-updated', text: null);
+
+        app(Settings::class)->set('okta_channel_id', $channelId);
+        $this->oktaChannelId = $channelId;
+
+        $this->dispatch('toast', type: 'success', message: __('notifications.settings.okta_qr_connected'));
     }
 
     protected function resetWhatsappQrState(): void

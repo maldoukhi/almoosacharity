@@ -338,7 +338,7 @@
                         </x-ui.button>
 
                         @if ($whatsappQrStatus)
-                            <x-ui.badge :color="$whatsappQrStatus === 'connected' ? 'approved' : ($whatsappQrStatus === 'pending' ? 'review' : 'rejected')">
+                            <x-ui.badge :color="in_array($whatsappQrStatus, ['pending', 'awaiting_scan'], true) ? 'review' : ($whatsappQrStatus === 'connected' ? 'approved' : 'rejected')">
                                 {{ __('notifications.settings.qr_status_'.$whatsappQrStatus) }}
                             </x-ui.badge>
                         @endif
@@ -442,6 +442,11 @@
         </div>
     </form>
 
+    {{-- Teleported to <body> so the fixed overlay always covers the whole
+         viewport: rendered in place it sits inside the scrolling <main>
+         (and any transformed ancestor traps `position: fixed`), which left
+         the backdrop short of full-page and introduced a stray scrollbar. --}}
+    @teleport('body')
     @if ($whatsappQrModalOpen)
         <div class="fixed inset-0 z-[70] overflow-y-auto" role="dialog" aria-modal="true">
             <div class="absolute inset-0 bg-primary-950/60 backdrop-blur-sm" wire:click="closeWhatsappQrPairing"></div>
@@ -464,7 +469,7 @@
                         </div>
 
                         @if ($whatsappQrStatus)
-                            <x-ui.badge :color="$whatsappQrStatus === 'connected' ? 'approved' : ($whatsappQrStatus === 'pending' ? 'review' : 'rejected')">
+                            <x-ui.badge :color="in_array($whatsappQrStatus, ['pending', 'awaiting_scan'], true) ? 'review' : ($whatsappQrStatus === 'connected' ? 'approved' : 'rejected')">
                                 {{ __('notifications.settings.qr_status_'.$whatsappQrStatus) }}
                             </x-ui.badge>
                         @endif
@@ -508,6 +513,7 @@
             </div>
         </div>
     @endif
+    @endteleport
 
     <script src="{{ asset('vendor/qrcode-generator/qrcode.js') }}"></script>
     <script>

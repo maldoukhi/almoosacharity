@@ -122,6 +122,7 @@ return [
         'qr_scanning_hint' => 'اضغط على "ربط واتساب" ثم امسح الرمز الظاهر عبر تطبيق واتساب على الجهاز المطلوب ربطه',
         'action_connect_whatsapp' => 'ربط واتساب عبر QR',
         'qr_status_pending' => 'بانتظار المسح',
+        'qr_status_awaiting_scan' => 'بانتظار المسح',
         'qr_status_connected' => 'متصلة',
         'qr_status_disconnected' => 'منقطعة',
         'qr_status_failed' => 'فشل الربط',

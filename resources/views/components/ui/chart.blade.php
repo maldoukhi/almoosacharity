@@ -14,6 +14,7 @@
     x-data="{
         chart: null,
         observer: null,
+        raf: null,
         isPie: {{ in_array($type, ['donut', 'pie'], true) ? 'true' : 'false' }},
         isDark() {
             return document.documentElement.classList.contains('dark');
@@ -60,6 +61,17 @@
                 return;
             }
 
+            // Arriving via wire:navigate, the flex layout / collapsible
+            // sidebar can leave this container at zero width for a frame or
+            // two. Rendering then yields a zero-size 'sliver' that collapses
+            // to nothing — so keep deferring until the element has a real
+            // width instead of drawing into an unsized box.
+            if (this.$refs.canvas.offsetWidth === 0) {
+                this.raf = requestAnimationFrame(() => this.render());
+
+                return;
+            }
+
             this.chart = new window.ApexCharts(this.$refs.canvas, this.buildOptions());
             this.chart.render();
 
@@ -76,23 +88,32 @@
             });
         },
         teardown() {
+            if (this.raf) { cancelAnimationFrame(this.raf); this.raf = null; }
             if (this.observer) { this.observer.disconnect(); this.observer = null; }
             if (this.chart) { this.chart.destroy(); this.chart = null; }
         },
         init() {
-            // Defer to the next frame so the container has its real width
-            // when arriving via wire:navigate — ApexCharts renders an empty
-            // chart into a zero-width element otherwise.
-            requestAnimationFrame(() => this.render());
+            this._onNavigated = () => this.render();
+            this._onNavigating = () => this.teardown();
+
+            // Render on the first (non-SPA) page load...
+            this.raf = requestAnimationFrame(() => this.render());
+
+            // ...and re-render after every wire:navigate visit completes.
+            // livewire:navigated fires once the destination DOM is fully
+            // committed (container properly sized): if the chart was torn
+            // down on the way out this rebuilds it, and if it is still alive
+            // render() is a no-op.
+            document.addEventListener('livewire:navigated', this._onNavigated);
 
             // Livewire's SPA navigation swaps the page without unmounting
             // Alpine cleanly, so tear the chart down before leaving to avoid
             // a leaked instance/observer that leaves the canvas blank.
-            this._onNavigating = () => this.teardown();
             document.addEventListener('livewire:navigating', this._onNavigating);
         },
         destroy() {
             this.teardown();
+            document.removeEventListener('livewire:navigated', this._onNavigated);
             document.removeEventListener('livewire:navigating', this._onNavigating);
         },
     }"

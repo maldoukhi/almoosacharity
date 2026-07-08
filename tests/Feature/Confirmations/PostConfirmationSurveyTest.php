@@ -103,6 +103,40 @@ it('records a survey response linked to the aid_confirmation via the full public
     expect($answer->value)->toBe('كانت الخدمة ممتازة');
 });
 
+it('advances to the next question (currentQuestion is not stale after nextStep)', function () {
+    [, $confirmation, $rawToken, $survey, $first] = deliveredAidWithGeneralSurvey();
+
+    // A second question, so nextStep() must actually advance the step
+    // rather than jumping straight to submit. This is the regression guard
+    // for the bug where nextStep read the memoized currentQuestion before
+    // incrementing step, leaving the screen stuck on the first question.
+    $second = SurveyQuestion::query()->create([
+        'survey_id' => $survey->id,
+        'type' => SurveyQuestionType::ShortText,
+        'label' => 'هل لديك أي ملاحظات؟',
+        'is_required' => true,
+        'position' => 2,
+        'options' => [],
+        'config' => [],
+    ]);
+
+    Livewire::withQueryParams(['token' => $rawToken]);
+
+    Livewire::test(ConfirmReceipt::class, ['confirmation' => $confirmation])
+        ->call('confirm')
+        ->call('startSurvey')
+        ->assertSet('step', 0)
+        ->set("answers.{$first->id}", 'ممتاز')
+        ->call('nextStep')
+        ->assertHasNoErrors()
+        ->assertSet('view', 'survey')
+        ->assertSet('step', 1)
+        ->assertSee($second->label)
+        ->set("answers.{$second->id}", 'لا شكرًا')
+        ->call('nextStep')
+        ->assertSet('view', 'done');
+});
+
 it('rejects submitting the survey when a required answer is missing', function () {
     [, $confirmation, $rawToken, , $question] = deliveredAidWithGeneralSurvey();
 
