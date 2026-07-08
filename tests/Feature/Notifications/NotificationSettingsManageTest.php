@@ -61,8 +61,8 @@ it('forbids a user without notifications.settings.manage from calling any provid
     $component = new Manage;
 
     foreach ([
-        'verifyTaqnyat', 'verifyOkta', 'clearTaqnyatApiKey', 'clearOktaToken',
-        'startWhatsappQrPairing', 'pollWhatsappQrStatus', 'fetchSenders',
+        'verifyTaqnyat', 'verifyOkta', 'clearTaqnyatApiKey', 'clearOktaToken', 'clearOktaChannel',
+        'startWhatsappQrPairing', 'pollWhatsappQrStatus', 'closeWhatsappQrPairing', 'fetchSenders',
     ] as $action) {
         expect(fn () => $component->{$action}())
             ->toThrow(AuthorizationException::class);
@@ -178,6 +178,44 @@ it('clears a stored secret via the dedicated clear actions', function () {
 
     expect(app(Settings::class)->getSecret('taqnyat_api_key'))->toBeNull();
     expect(app(Settings::class)->getSecret('okta_token'))->toBeNull();
+});
+
+it('clears a stale channel id via clearOktaChannel without touching other Okta settings', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    $settings = app(Settings::class);
+    $settings->set('okta_base_url', 'https://connect.example.com');
+    $settings->set('okta_channel_id', 'admin@almoosacharity.org');
+
+    $component = Livewire::test(Manage::class)
+        ->call('clearOktaChannel');
+
+    expect(app(Settings::class)->get('okta_channel_id'))->toBeNull();
+    expect(app(Settings::class)->get('okta_base_url'))->toBe('https://connect.example.com');
+    expect($component->get('oktaChannelId'))->toBe('');
+});
+
+it('opens the QR pairing modal as soon as pairing starts, and closes it via closeWhatsappQrPairing', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    // No base_url/token configured — startWhatsappQrPairing bails out early
+    // with a missing-credentials message, but the modal must still open so
+    // that message is visible to the operator.
+    $component = Livewire::test(Manage::class)
+        ->call('startWhatsappQrPairing');
+
+    expect($component->get('whatsappQrModalOpen'))->toBeTrue();
+
+    $component->call('closeWhatsappQrPairing');
+
+    expect($component->get('whatsappQrModalOpen'))->toBeFalse()
+        ->and($component->get('whatsappQrChannelId'))->toBeNull()
+        ->and($component->get('whatsappQrText'))->toBeNull()
+        ->and($component->get('whatsappQrStatus'))->toBeNull()
+        ->and($component->get('whatsappQrPolling'))->toBeFalse()
+        ->and($component->get('whatsappQrMessage'))->toBeNull();
 });
 
 it('verifies the Taqnyat connection and shows the balance on success', function () {

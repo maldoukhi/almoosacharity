@@ -283,21 +283,6 @@
                         @endif
                     </div>
 
-                    @if ($whatsappQrMessage)
-                        <p class="mt-2 text-xs text-status-rejected">{{ $whatsappQrMessage }}</p>
-                    @endif
-
-                    @if ($whatsappQrText)
-                        <div
-                            wire:key="whatsapp-qr-poll"
-                            wire:poll.5s.keep-alive="pollWhatsappQrStatus"
-                            class="mt-4 inline-flex flex-col items-center gap-2 rounded-(--radius-brand) border border-gray-200 p-4 dark:border-white/10"
-                        >
-                            <div id="whatsapp-qr-svg" wire:ignore class="h-48 w-48 [&_svg]:h-full [&_svg]:w-full"></div>
-                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_waiting') }}</p>
-                        </div>
-                    @endif
-
                     {{-- The Channel ID is not entered by hand: it is produced by a
                          successful QR pairing (or taken from .env). Shown read-only
                          so the operator sees which channel is linked. --}}
@@ -317,6 +302,14 @@
                                     class="block w-full rounded-(--radius-brand) border border-gray-200 bg-gray-50 px-3.5 py-2.5 text-sm text-gray-700 shadow-sm dark:border-white/10 dark:bg-white/5 dark:text-gray-200"
                                 />
                                 <x-ui.badge color="approved">{{ __('notifications.settings.okta_channel_linked') }}</x-ui.badge>
+                                <button
+                                    type="button"
+                                    wire:click="clearOktaChannel"
+                                    wire:confirm="{{ __('notifications.settings.okta_channel_unlink_confirm') }}"
+                                    class="shrink-0 text-xs font-medium text-status-rejected hover:underline"
+                                >
+                                    {{ __('notifications.settings.okta_channel_unlink') }}
+                                </button>
                             </div>
                         @else
                             <div class="rounded-(--radius-brand) border border-dashed border-gray-300 bg-gray-50/60 px-3.5 py-3 text-sm text-gray-500 dark:border-white/10 dark:bg-white/5 dark:text-gray-400">
@@ -338,6 +331,45 @@
             </x-ui.button>
         </div>
     </form>
+
+    @if ($whatsappQrModalOpen)
+        <div class="fixed inset-0 z-[70] overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="absolute inset-0 bg-primary-950/60 backdrop-blur-sm" wire:click="closeWhatsappQrPairing"></div>
+
+            <div class="flex min-h-dvh items-center justify-center px-4 py-6 text-center sm:p-0">
+                <div class="relative my-8 inline-block w-full max-w-sm transform overflow-hidden rounded-(--radius-brand) bg-white p-6 text-start align-middle shadow-xl transition-all dark:bg-primary-950">
+                    <h3 class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_okta_qr_title') }}</h3>
+
+                    <div class="mt-3 flex flex-wrap items-center gap-3">
+                        @if ($whatsappQrStatus)
+                            <x-ui.badge :color="$whatsappQrStatus === 'connected' ? 'approved' : ($whatsappQrStatus === 'pending' ? 'review' : 'rejected')">
+                                {{ __('notifications.settings.qr_status_'.$whatsappQrStatus) }}
+                            </x-ui.badge>
+                        @endif
+                    </div>
+
+                    <div
+                        wire:key="whatsapp-qr-poll"
+                        wire:poll.5s.keep-alive="pollWhatsappQrStatus"
+                        class="mt-4 flex flex-col items-center gap-2"
+                    >
+                        <div id="whatsapp-qr-svg" wire:ignore class="h-48 w-48 rounded-(--radius-brand) border border-gray-200 p-4 [&_svg]:h-full [&_svg]:w-full dark:border-white/10"></div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.qr_waiting') }}</p>
+                    </div>
+
+                    @if ($whatsappQrMessage)
+                        <p class="mt-3 text-xs text-status-rejected">{{ $whatsappQrMessage }}</p>
+                    @endif
+
+                    <div class="mt-5 flex items-center justify-end">
+                        <x-ui.button type="button" variant="ghost" size="sm" wire:click="closeWhatsappQrPairing">
+                            {{ __('common.close') }}
+                        </x-ui.button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     <script src="{{ asset('vendor/qrcode-generator/qrcode.js') }}"></script>
     <script>

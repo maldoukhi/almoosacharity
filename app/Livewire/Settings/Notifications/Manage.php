@@ -91,6 +91,8 @@ class Manage extends Component
 
     public ?string $whatsappQrMessage = null;
 
+    public bool $whatsappQrModalOpen = false;
+
     public function mount(): void
     {
         Gate::authorize('notifications.settings.manage');
@@ -200,6 +202,22 @@ class Manage extends Component
         $this->oktaVerifyResult = null;
 
         $this->dispatch('toast', type: 'success', message: __('notifications.settings.okta_token_cleared'));
+    }
+
+    /**
+     * Unlinks a stale/incorrect channel id (e.g. a leftover value from a
+     * time when the field was hand-editable) without touching the base
+     * URL or token. The operator re-links via QR pairing afterwards.
+     */
+    public function clearOktaChannel(): void
+    {
+        Gate::authorize('notifications.settings.manage');
+
+        app(Settings::class)->set('okta_channel_id', null);
+        $this->oktaChannelId = '';
+        $this->oktaVerifyResult = null;
+
+        $this->dispatch('toast', type: 'success', message: __('notifications.settings.okta_channel_cleared'));
     }
 
     #[Computed]
@@ -359,6 +377,8 @@ class Manage extends Component
 
     public function startWhatsappQrPairing(): void
     {
+        $this->whatsappQrModalOpen = true;
+
         Gate::authorize('notifications.settings.manage');
 
         $config = $this->effectiveOktaConfig();
@@ -392,6 +412,20 @@ class Manage extends Component
         $this->dispatch('whatsapp-qr-updated', text: $this->whatsappQrText);
     }
 
+    /**
+     * Closes the QR pairing modal (via its explicit close button), clearing
+     * any in-progress pairing state so a later re-open starts fresh.
+     */
+    public function closeWhatsappQrPairing(): void
+    {
+        Gate::authorize('notifications.settings.manage');
+
+        $this->resetWhatsappQrState();
+        $this->whatsappQrModalOpen = false;
+
+        $this->dispatch('whatsapp-qr-updated', text: null);
+    }
+
     public function pollWhatsappQrStatus(): void
     {
         Gate::authorize('notifications.settings.manage');
@@ -416,6 +450,7 @@ class Manage extends Component
 
         if ($session->isConnected()) {
             $this->whatsappQrPolling = false;
+            $this->whatsappQrModalOpen = false;
             $this->dispatch('whatsapp-qr-updated', text: null);
 
             // The channel just paired is the one that should now be used
