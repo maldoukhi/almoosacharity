@@ -37,6 +37,8 @@ class Builder extends Component
 
     public bool $is_active = false;
 
+    public bool $is_required = false;
+
     public ?string $starts_at = null;
 
     public ?string $ends_at = null;
@@ -61,6 +63,7 @@ class Builder extends Component
         $this->scope = $this->survey->scope->value;
         $this->aid_program_id = $this->survey->aid_program_id;
         $this->is_active = $this->survey->is_active;
+        $this->is_required = $this->survey->is_required;
         $this->starts_at = $this->survey->starts_at?->format('Y-m-d\TH:i');
         $this->ends_at = $this->survey->ends_at?->format('Y-m-d\TH:i');
 
@@ -188,6 +191,7 @@ class Builder extends Component
                 Rule::exists('aid_programs', 'id')->whereNull('deleted_at'),
             ],
             'is_active' => ['boolean'],
+            'is_required' => ['boolean'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
             'questions' => ['required', 'array', 'min:1'],
@@ -217,6 +221,7 @@ class Builder extends Component
                     'scope' => $validated['scope'],
                     'aid_program_id' => $validated['aid_program_id'] ?? null,
                     'is_active' => $validated['is_active'] ?? false,
+                    'is_required' => $validated['is_required'] ?? false,
                     'starts_at' => $validated['starts_at'] ?? null,
                     'ends_at' => $validated['ends_at'] ?? null,
                 ],

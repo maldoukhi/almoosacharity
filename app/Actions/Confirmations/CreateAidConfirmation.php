@@ -34,7 +34,9 @@ class CreateAidConfirmation
             throw AidConfirmationException::requiresDelivered();
         }
 
-        $rawToken = Str::random(48);
+        // 24 alphanumeric chars ≈ 140 bits of entropy: still comfortably
+        // unguessable, while keeping the token-only public link short.
+        $rawToken = Str::random(24);
 
         $attributes = [
             'token_hash' => AidConfirmation::hashToken($rawToken),

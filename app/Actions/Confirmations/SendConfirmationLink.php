@@ -2,8 +2,11 @@
 
 namespace App\Actions\Confirmations;
 
+use App\Enums\MessageChannel;
+use App\Enums\NotificationEvent;
 use App\Models\AidConfirmation;
 use App\Services\Messaging\Messenger;
+use App\Services\Notifications\NotifyBeneficiary;
 use App\Support\ConfirmationLink;
 use App\Support\Settings;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +23,7 @@ class SendConfirmationLink
         private readonly Messenger $messenger,
         private readonly Settings $settings,
         private readonly ConfirmationLink $confirmationLink,
+        private readonly NotifyBeneficiary $notifyBeneficiary,
     ) {}
 
     /**
@@ -50,8 +54,28 @@ class SendConfirmationLink
 
         $body = strtr($template, [
             '{name}' => $beneficiary->full_name,
+            '{short_name}' => $beneficiary->short_name,
             '{link}' => $link,
         ]);
+
+        // Combined delivery message: when the admin has turned this on, the
+        // beneficiary should receive a *single* message on delivery carrying
+        // both the "aid delivered" notice and the confirmation link (the
+        // standalone delivery notification is suppressed in
+        // SendBeneficiaryAidNotification). We only fold the notice into the
+        // first send at delivery time, never into the later reminder
+        // (preserveSentAt), and only when the AidDelivered template is active.
+        if (! $preserveSentAt && $this->settings->get('combined_delivery_message') === '1') {
+            $deliveryNotice = $this->notifyBeneficiary->renderBody(
+                $aid,
+                NotificationEvent::AidDelivered,
+                MessageChannel::Sms,
+            );
+
+            if ($deliveryNotice !== null && trim($deliveryNotice) !== '') {
+                $body = $deliveryNotice."\n\n".$body;
+            }
+        }
 
         $channel = 'sms';
 

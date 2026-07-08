@@ -16,6 +16,8 @@ return [
     'field_scope' => 'النطاق',
     'field_program' => 'برنامج الإعانة',
     'field_is_active' => 'نشط',
+    'field_is_required' => 'الاستبيان إجباري',
+    'field_is_required_hint' => 'عند التفعيل، لا يمكن للمستفيد تخطي الاستبيان.',
     'field_starts_at' => 'تاريخ البدء (اختياري)',
     'field_ends_at' => 'تاريخ الانتهاء (اختياري)',
     'field_questions_count' => 'عدد الأسئلة',

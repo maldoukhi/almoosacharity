@@ -18,31 +18,36 @@ use Livewire\Component;
 
 /**
  * The public, unauthenticated "confirm receipt" page reached only via the
- * signed link sent when an aid's disbursement is delivered (see
+ * short link sent when an aid's disbursement is delivered (see
  * {@see CreateConfirmationOnDelivery}). No sensitive data
  * (cash amount, IBAN, national id...) is ever exposed here — only the
  * non-sensitive delivery summary needed for the beneficiary to recognise
  * what they're confirming.
  *
- * A genuinely time-expired link never reaches this component at all: the
- * route's own 'signed' middleware rejects it first (see the
- * InvalidSignatureException render registered in bootstrap/app.php,
- * which shows the same friendly "expired" copy from a plain view
- * instead). The `expired` state below only exists as a second line of
- * defense for the rare case the model's own expires_at and the
- * signature's embedded expiry could ever disagree.
+ * The raw token in the URL path is the sole secret: it is looked up by its
+ * sha256 digest (never persisted in the clear), so an unknown/tampered
+ * token resolves to no row and lands on the friendly `not_found` state
+ * rather than leaking whether any given link exists. Expiry is enforced by
+ * the model itself here (the `expired` state), since there is no longer a
+ * signed-URL middleware in front of the route.
  */
 #[Layout('layouts::public')]
 class ConfirmReceipt extends Component
 {
     #[Locked]
-    public AidConfirmation $confirmation;
+    public ?AidConfirmation $confirmation = null;
 
     /**
-     * confirm | already | expired | success | survey | done
+     * confirm | already | expired | success | survey | done | not_found
      */
     #[Locked]
     public string $view = 'confirm';
+
+    /**
+     * Optional signature captured on the confirm step as a
+     * `data:image/png;base64,…` string from the canvas.
+     */
+    public string $signature = '';
 
     /**
      * Answers keyed by survey_question_id.
@@ -53,14 +58,20 @@ class ConfirmReceipt extends Component
 
     public int $step = 0;
 
-    public function mount(AidConfirmation $confirmation): void
+    public function mount(string $token): void
     {
-        $rawToken = (string) request()->query('token', '');
+        $confirmation = $token === ''
+            ? null
+            : AidConfirmation::query()
+                ->where('token_hash', AidConfirmation::hashToken($token))
+                ->first();
 
-        if ($rawToken === '' || ! hash_equals($confirmation->token_hash, AidConfirmation::hashToken($rawToken))) {
-            $this->logAccessFailure($confirmation, 'invalid or missing token');
+        if ($confirmation === null) {
+            $this->logAccessFailure('invalid or unknown token');
 
-            abort(403);
+            $this->view = 'not_found';
+
+            return;
         }
 
         $this->confirmation = $confirmation;
@@ -131,9 +142,12 @@ class ConfirmReceipt extends Component
             $this->confirmation,
             (string) (request()->ip() ?? '0.0.0.0'),
             (string) request()->userAgent(),
+            $this->signature,
         );
 
         $this->confirmation->refresh();
+
+        $this->signature = '';
 
         $this->view = 'success';
     }
@@ -238,6 +252,13 @@ class ConfirmReceipt extends Component
             return;
         }
 
+        // A survey flagged is_required cannot be bypassed: the beneficiary
+        // must complete it. The UI hides the skip control in this case, so
+        // this is the server-side guard against a crafted skip request.
+        if ($this->survey?->is_required) {
+            return;
+        }
+
         $this->view = 'done';
     }
 
@@ -257,10 +278,12 @@ class ConfirmReceipt extends Component
         ]);
     }
 
-    private function logAccessFailure(AidConfirmation $confirmation, string $reason): void
+    private function logAccessFailure(string $reason): void
     {
+        // No AidConfirmation to attach the entry to (the token matched no
+        // row), so this is a subject-less audit entry rather than one
+        // performedOn a specific confirmation.
         activity('aid-confirmation')
-            ->performedOn($confirmation)
             ->withProperties(['reason' => $reason, 'ip' => request()->ip()])
             ->log('confirmation access denied');
     }

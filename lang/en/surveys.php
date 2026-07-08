@@ -16,6 +16,8 @@ return [
     'field_scope' => 'Scope',
     'field_program' => 'Aid program',
     'field_is_active' => 'Active',
+    'field_is_required' => 'Required survey',
+    'field_is_required_hint' => 'When enabled, the beneficiary cannot skip the survey.',
     'field_starts_at' => 'Start date (optional)',
     'field_ends_at' => 'End date (optional)',
     'field_questions_count' => 'Questions',

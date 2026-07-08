@@ -19,7 +19,7 @@ class SaveSurvey
      * question missing from $questions is deleted — unless it already
      * has recorded answers, in which case the whole save is rejected.
      *
-     * @param  array{title: string, description?: ?string, scope: string, aid_program_id?: ?int, is_active?: bool, starts_at?: ?string, ends_at?: ?string}  $data
+     * @param  array{title: string, description?: ?string, scope: string, aid_program_id?: ?int, is_active?: bool, is_required?: bool, starts_at?: ?string, ends_at?: ?string}  $data
      * @param  array<int, array{id?: int, type: string, label: string, help_text?: ?string, is_required?: bool, options?: array<int, array{value: string, label: string}>, config?: array<string, mixed>}>  $questions
      *
      * @throws SurveyQuestionHasAnswersException
@@ -38,6 +38,7 @@ class SaveSurvey
                 'scope' => $data['scope'],
                 'aid_program_id' => $data['scope'] === SurveyScope::Program->value ? $data['aid_program_id'] : null,
                 'is_active' => $data['is_active'] ?? false,
+                'is_required' => $data['is_required'] ?? false,
                 'starts_at' => $data['starts_at'] ?? null,
                 'ends_at' => $data['ends_at'] ?? null,
             ];

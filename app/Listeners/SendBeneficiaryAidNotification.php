@@ -7,6 +7,7 @@ use App\Events\Aids\AidApproved;
 use App\Events\Aids\AidDelivered;
 use App\Events\Aids\AidReadyForCollection;
 use App\Services\Notifications\NotifyBeneficiary;
+use App\Support\Settings;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 /**
@@ -17,10 +18,21 @@ use Illuminate\Contracts\Queue\ShouldQueue;
  */
 class SendBeneficiaryAidNotification implements ShouldQueue
 {
-    public function __construct(private readonly NotifyBeneficiary $notifyBeneficiary) {}
+    public function __construct(
+        private readonly NotifyBeneficiary $notifyBeneficiary,
+        private readonly Settings $settings,
+    ) {}
 
     public function handle(AidApproved|AidReadyForCollection|AidDelivered $event): void
     {
+        // When the "combined delivery message" toggle is on, the delivery
+        // notice is folded into the single confirmation-link message sent by
+        // SendConfirmationLink, so suppress the standalone delivery
+        // notification here to avoid double-messaging the beneficiary.
+        if ($event instanceof AidDelivered && $this->settings->get('combined_delivery_message') === '1') {
+            return;
+        }
+
         $notificationEvent = match ($event::class) {
             AidApproved::class => NotificationEvent::AidApproved,
             AidReadyForCollection::class => NotificationEvent::AidReady,

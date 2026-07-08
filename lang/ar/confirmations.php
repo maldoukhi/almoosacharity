@@ -25,9 +25,14 @@ return [
     'confirm_button' => 'أؤكد الاستلام',
     'confirming' => 'جارٍ التأكيد...',
 
+    'signature' => 'التوقيع (اختياري)',
+    'signature_hint' => 'يمكنك التوقيع بإصبعك داخل الإطار أعلاه لتوثيق الاستلام.',
+    'clear_signature' => 'مسح',
+
     'success_title' => 'شكرًا لتأكيدك',
     'success_description' => 'تم تسجيل تأكيد استلامك للإعانة بنجاح.',
     'share_feedback_button' => 'شارك رأيك',
+    'start_required_survey_button' => 'أكمل الاستبيان',
     'finish_button' => 'إنهاء',
 
     'already_title' => 'تم التأكيد مسبقًا',

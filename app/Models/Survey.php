@@ -16,7 +16,7 @@ use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
 #[Fillable([
-    'title', 'description', 'is_active', 'scope', 'aid_program_id',
+    'title', 'description', 'is_active', 'is_required', 'scope', 'aid_program_id',
     'starts_at', 'ends_at', 'created_by',
 ])]
 class Survey extends Model
@@ -30,6 +30,7 @@ class Survey extends Model
     {
         return [
             'is_active' => 'boolean',
+            'is_required' => 'boolean',
             'scope' => SurveyScope::class,
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',

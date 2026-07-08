@@ -49,6 +49,7 @@ return [
 
         'legend_title' => 'المتغيرات المتاحة',
         'legend_name' => '{name} — اسم المستفيد',
+        'legend_short_name' => '{short_name} — الاسم المختصر (الأول والأخير)',
         'legend_amount' => '{amount} — مبلغ الإعانة (للإعانات النقدية)',
         'legend_program' => '{program} — اسم برنامج الإعانة',
 
@@ -59,6 +60,8 @@ return [
         'section_channels_description' => 'تفعيل/تعطيل الإرسال عبر كل قناة لكل الإشعارات',
         'field_sms_enabled' => 'تفعيل الرسائل النصية (SMS)',
         'field_whatsapp_enabled' => 'تفعيل واتساب',
+        'field_combined_delivery_message' => 'دمج إشعار التسليم مع رابط التأكيد في رسالة واحدة',
+        'field_combined_delivery_message_hint' => 'عند التفعيل، يستلم المستفيد عند تسليم الإعانة رسالة واحدة تجمع إشعار التسليم ورابط تأكيد الاستلام بدلًا من رسالتين منفصلتين.',
 
         'section_confirmation_title' => 'رسالة تأكيد الاستلام',
         'section_confirmation_description' => 'نص الرسالة المُرسلة للمستفيد مع رابط تأكيد الاستلام. المتغيرات: {name} اسم المستفيد، {link} رابط التأكيد.',

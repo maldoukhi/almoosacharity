@@ -21,8 +21,19 @@
             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('confirmations.expired_description') }}</p>
         </x-ui.card>
 
+    @elseif ($view === 'not_found')
+        <x-ui.card class="text-center">
+            <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-status-rejected/10 text-status-rejected">
+                <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                </svg>
+            </div>
+            <h1 class="text-lg font-semibold text-gray-900 dark:text-white">{{ __('confirmations.not_found_title') }}</h1>
+            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('confirmations.not_found_description') }}</p>
+        </x-ui.card>
+
     @elseif ($view === 'confirm')
-        <x-ui.card>
+        <x-ui.card x-data="confirmationSignaturePad()">
             <div class="mb-5 text-center">
                 <p class="text-base font-semibold text-gray-900 dark:text-white">
                     {{ __('confirmations.greeting', ['name' => $this->aid->beneficiary?->first_name ?? '']) }}
@@ -63,12 +74,33 @@
                 </div>
             </dl>
 
+            {{-- Optional signature --}}
+            <div class="mt-5">
+                <div class="mb-1.5 flex items-center justify-between">
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('confirmations.signature') }}</p>
+                    <button type="button" @click="clear()" class="text-xs font-medium text-status-rejected hover:underline">
+                        {{ __('confirmations.clear_signature') }}
+                    </button>
+                </div>
+                <canvas
+                    x-ref="pad"
+                    x-init="init()"
+                    @pointerdown="startDraw($event)"
+                    @pointermove="draw($event)"
+                    @pointerup.window="endDraw()"
+                    @pointerleave="endDraw()"
+                    class="h-40 w-full touch-none rounded-(--radius-brand) border border-dashed border-gray-300 bg-gray-50 dark:border-white/15 dark:bg-white/5"
+                ></canvas>
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('confirmations.signature_hint') }}</p>
+            </div>
+
             <x-ui.button
                 type="button"
                 variant="secondary"
                 size="lg"
                 class="mt-6 w-full"
-                wire:click="confirm"
+                x-on:click="$wire.set('signature', hasDrawn ? $refs.pad.toDataURL('image/png') : '', false); $wire.confirm()"
+                wire:target="confirm"
                 wire:loading.attr="disabled"
             >
                 {{ __('confirmations.confirm_button') }}
@@ -88,13 +120,16 @@
             <div class="mt-6 flex flex-col gap-2">
                 @if ($this->survey)
                     <x-ui.button type="button" variant="secondary" class="w-full" wire:click="startSurvey">
-                        {{ __('confirmations.share_feedback_button') }}
+                        {{ $this->survey->is_required ? __('confirmations.start_required_survey_button') : __('confirmations.share_feedback_button') }}
                     </x-ui.button>
                 @endif
 
-                <x-ui.button type="button" variant="ghost" class="w-full" wire:click="skipSurvey">
-                    {{ __('confirmations.finish_button') }}
-                </x-ui.button>
+                {{-- A required survey must be completed: no finish/skip shortcut. --}}
+                @unless ($this->survey?->is_required)
+                    <x-ui.button type="button" variant="ghost" class="w-full" wire:click="skipSurvey">
+                        {{ __('confirmations.finish_button') }}
+                    </x-ui.button>
+                @endunless
             </div>
         </x-ui.card>
 
@@ -214,9 +249,13 @@
             </div>
 
             <div class="mt-6 flex items-center justify-between gap-3">
-                <x-ui.button type="button" variant="ghost" size="sm" wire:click="skipSurvey">
-                    {{ __('confirmations.skip_button') }}
-                </x-ui.button>
+                @if ($this->survey?->is_required)
+                    <span></span>
+                @else
+                    <x-ui.button type="button" variant="ghost" size="sm" wire:click="skipSurvey">
+                        {{ __('confirmations.skip_button') }}
+                    </x-ui.button>
+                @endif
 
                 <div class="flex items-center gap-2">
                     @if ($step > 0)
@@ -244,6 +283,55 @@
             <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ __('confirmations.done_description') }}</p>
         </x-ui.card>
     @endif
+
+    <script>
+        window.confirmationSignaturePad = function () {
+            return {
+                drawing: false,
+                hasDrawn: false,
+                ctx: null,
+                last: { x: 0, y: 0 },
+                init() {
+                    const canvas = this.$refs.pad;
+                    const ratio = window.devicePixelRatio || 1;
+                    const rect = canvas.getBoundingClientRect();
+                    canvas.width = rect.width * ratio;
+                    canvas.height = rect.height * ratio;
+                    this.ctx = canvas.getContext('2d');
+                    this.ctx.scale(ratio, ratio);
+                    this.ctx.lineWidth = 2;
+                    this.ctx.lineCap = 'round';
+                    this.ctx.strokeStyle = '#1C545E';
+                },
+                pos(e) {
+                    const rect = this.$refs.pad.getBoundingClientRect();
+                    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                },
+                startDraw(e) {
+                    this.drawing = true;
+                    this.last = this.pos(e);
+                },
+                draw(e) {
+                    if (! this.drawing) return;
+                    const p = this.pos(e);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(this.last.x, this.last.y);
+                    this.ctx.lineTo(p.x, p.y);
+                    this.ctx.stroke();
+                    this.last = p;
+                    this.hasDrawn = true;
+                },
+                endDraw() {
+                    this.drawing = false;
+                },
+                clear() {
+                    const canvas = this.$refs.pad;
+                    this.ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    this.hasDrawn = false;
+                },
+            };
+        };
+    </script>
 
     <style>
         .confirmation-checkmark__circle,

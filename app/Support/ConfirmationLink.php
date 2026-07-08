@@ -4,7 +4,6 @@ namespace App\Support;
 
 use App\Actions\Confirmations\SendConfirmationLink;
 use App\Models\AidConfirmation;
-use Illuminate\Support\Facades\URL;
 
 /**
  * Single source of truth for the beneficiary-facing "confirm receipt" URL.
@@ -13,6 +12,12 @@ use Illuminate\Support\Facades\URL;
  * ({@see SendConfirmationLink}) from the routing
  * strategy itself, so the link format can be shortened without touching the
  * senders.
+ *
+ * The link is deliberately short: a token-only path (`/c/{token}`) rather
+ * than a long signed URL. The raw token is the single secret — it is stored
+ * only as a sha256 digest ({@see AidConfirmation::hashToken()}), is
+ * cryptographically strong (~140 bits), and expiry is enforced by the model
+ * itself, so no query-string signature is needed to keep the link secure.
  */
 class ConfirmationLink
 {
@@ -21,10 +26,6 @@ class ConfirmationLink
      */
     public function url(AidConfirmation $confirmation, string $rawToken): string
     {
-        return URL::temporarySignedRoute(
-            'public.confirm',
-            $confirmation->expires_at,
-            ['confirmation' => $confirmation->id, 'token' => $rawToken],
-        );
+        return route('public.confirm', ['token' => $rawToken]);
     }
 }

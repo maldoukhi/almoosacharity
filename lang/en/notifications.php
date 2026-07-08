@@ -49,6 +49,7 @@ return [
 
         'legend_title' => 'Available placeholders',
         'legend_name' => '{name} — beneficiary name',
+        'legend_short_name' => '{short_name} — short name (first and last)',
         'legend_amount' => '{amount} — aid amount (cash aids only)',
         'legend_program' => '{program} — aid program name',
 
@@ -59,6 +60,8 @@ return [
         'section_channels_description' => 'Enable/disable sending over each channel for all notifications',
         'field_sms_enabled' => 'Enable SMS',
         'field_whatsapp_enabled' => 'Enable WhatsApp',
+        'field_combined_delivery_message' => 'Combine the delivery notice and confirmation link into one message',
+        'field_combined_delivery_message_hint' => 'When on, on delivery the beneficiary receives a single message combining the delivery notice and the receipt-confirmation link instead of two separate messages.',
 
         'section_confirmation_title' => 'Confirmation message',
         'section_confirmation_description' => 'The message sent to the beneficiary with the receipt-confirmation link. Placeholders: {name} beneficiary name, {link} confirmation link.',

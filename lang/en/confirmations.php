@@ -25,9 +25,14 @@ return [
     'confirm_button' => 'Confirm Receipt',
     'confirming' => 'Confirming...',
 
+    'signature' => 'Signature (optional)',
+    'signature_hint' => 'You may sign with your finger inside the box above to document receipt.',
+    'clear_signature' => 'Clear',
+
     'success_title' => 'Thank You',
     'success_description' => 'Your confirmation has been recorded successfully.',
     'share_feedback_button' => 'Share Your Feedback',
+    'start_required_survey_button' => 'Complete the Survey',
     'finish_button' => 'Finish',
 
     'already_title' => 'Already Confirmed',

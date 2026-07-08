@@ -5,12 +5,13 @@ use App\Enums\AidProgramType;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
 use App\Enums\RoleName;
+use App\Livewire\Public\ConfirmReceipt;
 use App\Models\Aid;
 use App\Models\AidConfirmation;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
 use Database\Factories\AidFactory;
-use Illuminate\Support\Facades\URL;
+use Livewire\Livewire;
 
 /**
  * A delivered cash aid with a real, non-blank beneficiary IBAN/national id
@@ -48,14 +49,15 @@ function deliveredAidWithFreshConfirmation(array $aidOverrides = []): array
     return [$aid, $confirmation, $rawToken];
 }
 
-it('shows the confirm page for a valid signed link and token, and records opened_at once', function () {
+it('shows the confirm page for a short token-only link, and records opened_at once', function () {
     [, $confirmation, $rawToken] = deliveredAidWithFreshConfirmation();
 
-    $link = URL::temporarySignedRoute(
-        'public.confirm',
-        $confirmation->expires_at,
-        ['confirmation' => $confirmation->id, 'token' => $rawToken],
-    );
+    $link = route('public.confirm', ['token' => $rawToken]);
+
+    // The link is short: the raw token in the path, no signature query
+    // string and no confirmation id.
+    expect($link)->toContain('/c/'.$rawToken);
+    expect($link)->not->toContain('signature=');
 
     expect($confirmation->opened_at)->toBeNull();
 
@@ -70,59 +72,35 @@ it('shows the confirm page for a valid signed link and token, and records opened
     expect($confirmation->fresh()->opened_at->equalTo($firstOpenedAt))->toBeTrue();
 });
 
-it('rejects a validly signed link whose token does not match the confirmation', function () {
-    [, $confirmation] = deliveredAidWithFreshConfirmation();
+it('shows a friendly not_found page for an unknown/wrong token', function () {
+    deliveredAidWithFreshConfirmation();
 
-    // Signed correctly for *this* (wrong) token value — the signature
-    // itself passes, only the component's own hash_equals() check fails.
-    $link = URL::temporarySignedRoute(
-        'public.confirm',
-        $confirmation->expires_at,
-        ['confirmation' => $confirmation->id, 'token' => 'not-the-real-token'],
-    );
+    $response = $this->get(route('public.confirm', ['token' => 'not-a-real-token']));
 
-    $this->get($link)->assertForbidden();
-});
-
-it('rejects an unsigned confirmation link', function () {
-    [, $confirmation, $rawToken] = deliveredAidWithFreshConfirmation();
-
-    $unsigned = '/confirm/'.$confirmation->id.'?token='.$rawToken;
-
-    $this->get($unsigned)->assertStatus(403);
+    // The token matched no row: friendly not_found copy, never a 500 and
+    // never a hint that any given link exists.
+    $response->assertOk();
+    $response->assertSee(__('confirmations.not_found_title'));
 });
 
 it('shows a friendly expired page (not a 500) for a model-expired confirmation', function () {
     [, $confirmation, $rawToken] = deliveredAidWithFreshConfirmation();
 
-    // Expire the confirmation itself while keeping the *signature's own*
-    // expiry further in the future, so the 'signed' middleware lets the
-    // request through and ConfirmReceipt's own isExpired() second line of
-    // defense is what's actually being exercised here.
+    // Expire the confirmation itself: the token still resolves the row,
+    // and ConfirmReceipt's own isExpired() check is what shows the expired
+    // copy now that there is no signed middleware in front of the route.
     $confirmation->update(['expires_at' => now()->subDay()]);
 
-    $link = URL::temporarySignedRoute(
-        'public.confirm',
-        now()->addDay(),
-        ['confirmation' => $confirmation->id, 'token' => $rawToken],
-    );
-
-    $response = $this->get($link);
+    $response = $this->get(route('public.confirm', ['token' => $rawToken]));
 
     $response->assertOk();
     $response->assertSee(__('confirmations.expired_title'));
 });
 
 it('never exposes the cash amount, iban, or national id on the public confirmation page', function () {
-    [$aid, $confirmation, $rawToken] = deliveredAidWithFreshConfirmation();
+    [$aid, , $rawToken] = deliveredAidWithFreshConfirmation();
 
-    $link = URL::temporarySignedRoute(
-        'public.confirm',
-        $confirmation->expires_at,
-        ['confirmation' => $confirmation->id, 'token' => $rawToken],
-    );
-
-    $response = $this->get($link);
+    $response = $this->get(route('public.confirm', ['token' => $rawToken]));
 
     $response->assertOk();
     $response->assertDontSee(number_format((float) $aid->amount, 2));
@@ -130,14 +108,33 @@ it('never exposes the cash amount, iban, or national id on the public confirmati
     $response->assertDontSee('1234567890');
 });
 
-it('rate limits the public confirmation route after 10 requests per minute', function () {
+it('saves a signature drawn on the confirm step to the media collection', function () {
     [, $confirmation, $rawToken] = deliveredAidWithFreshConfirmation();
 
-    $link = URL::temporarySignedRoute(
-        'public.confirm',
-        $confirmation->expires_at,
-        ['confirmation' => $confirmation->id, 'token' => $rawToken],
-    );
+    $signature = 'data:image/png;base64,'.base64_encode('fake-png-bytes');
+
+    Livewire::test(ConfirmReceipt::class, ['token' => $rawToken])
+        ->set('signature', $signature)
+        ->call('confirm')
+        ->assertSet('view', 'success');
+
+    expect($confirmation->fresh()->getFirstMedia('confirmation_signature'))->not->toBeNull();
+});
+
+it('does not save a signature when none was drawn', function () {
+    [, $confirmation, $rawToken] = deliveredAidWithFreshConfirmation();
+
+    Livewire::test(ConfirmReceipt::class, ['token' => $rawToken])
+        ->call('confirm')
+        ->assertSet('view', 'success');
+
+    expect($confirmation->fresh()->getFirstMedia('confirmation_signature'))->toBeNull();
+});
+
+it('rate limits the public confirmation route after 10 requests per minute', function () {
+    [, , $rawToken] = deliveredAidWithFreshConfirmation();
+
+    $link = route('public.confirm', ['token' => $rawToken]);
 
     for ($i = 0; $i < 10; $i++) {
         $this->get($link)->assertOk();

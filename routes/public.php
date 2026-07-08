@@ -8,15 +8,15 @@ use Illuminate\Support\Facades\Route;
 | Public (unauthenticated) Routes
 |--------------------------------------------------------------------------
 |
-| Beneficiary-facing routes reached only via a signed, single-purpose
-| link — never linked to from anywhere inside the authenticated app.
-| Rate limited, and 'signed' additionally guarantees the query string
-| (confirmation id + raw token) hasn't been tampered with and that the
-| link hasn't outlived the expiry it was signed with.
+| Beneficiary-facing routes reached only via a short, single-purpose link
+| — never linked to from anywhere inside the authenticated app. The raw
+| token in the path is the sole secret: it is stored only as a sha256
+| digest, is cryptographically strong (~140 bits, unguessable), can be
+| used once, and its expiry is enforced by the AidConfirmation model.
+| Rate limited to blunt brute-forcing.
 |
 */
 Route::middleware(['web', 'throttle:10,1'])->group(function (): void {
-    Route::get('/confirm/{confirmation}', ConfirmReceipt::class)
-        ->middleware('signed')
+    Route::get('/c/{token}', ConfirmReceipt::class)
         ->name('public.confirm');
 });

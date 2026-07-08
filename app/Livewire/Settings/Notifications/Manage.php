@@ -42,6 +42,13 @@ class Manage extends Component
     public bool $whatsappEnabled = false;
 
     /**
+     * When on, the delivery notice and the receipt-confirmation link are
+     * sent to the beneficiary as a *single* message on delivery instead of
+     * two separate ones. Off by default (the two-message behaviour).
+     */
+    public bool $combinedDeliveryMessage = false;
+
+    /**
      * The editable body of the receipt-confirmation message (the one that
      * carries the signed link). Must always contain the {link} placeholder.
      */
@@ -135,6 +142,7 @@ class Manage extends Component
         $this->senderName = $settings->get('taqnyat_sender') ?: null;
         $this->smsEnabled = $settings->get('sms_enabled', '1') === '1';
         $this->whatsappEnabled = $settings->get('whatsapp_enabled', '0') === '1';
+        $this->combinedDeliveryMessage = $settings->get('combined_delivery_message', '0') === '1';
         $this->confirmationBody = $settings->get('confirmation_body') ?: __('confirmations.default_body');
 
         // Non-secret provider fields are shown as-is (the saved override,
@@ -155,6 +163,7 @@ class Manage extends Component
             'senderName' => ['nullable', 'string', 'max:11'],
             'smsEnabled' => ['boolean'],
             'whatsappEnabled' => ['boolean'],
+            'combinedDeliveryMessage' => ['boolean'],
             // The confirmation message must always keep the {link} placeholder,
             // otherwise the beneficiary would get a message with no way to
             // confirm receipt.
@@ -181,6 +190,7 @@ class Manage extends Component
         $settings->set('taqnyat_sender', $this->senderName !== null ? trim($this->senderName) : null);
         $settings->set('sms_enabled', $this->smsEnabled ? '1' : '0');
         $settings->set('whatsapp_enabled', $this->whatsappEnabled ? '1' : '0');
+        $settings->set('combined_delivery_message', $this->combinedDeliveryMessage ? '1' : '0');
         $settings->set('confirmation_body', trim($this->confirmationBody));
 
         $settings->set('okta_base_url', trim($this->oktaBaseUrl) !== '' ? trim($this->oktaBaseUrl) : null);

@@ -48,6 +48,7 @@
                 <p class="mb-1.5 text-xs font-semibold text-gray-700 dark:text-gray-200">{{ __('notifications.settings.legend_title') }}</p>
                 <ul class="space-y-1 text-xs text-gray-500 dark:text-gray-400">
                     <li>{{ __('notifications.settings.legend_name') }}</li>
+                    <li>{{ __('notifications.settings.legend_short_name') }}</li>
                     <li>{{ __('notifications.settings.legend_amount') }}</li>
                     <li>{{ __('notifications.settings.legend_program') }}</li>
                 </ul>
@@ -148,6 +149,20 @@
                         <span class="absolute start-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-out peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5"></span>
                     </span>
                     <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('notifications.settings.field_whatsapp_enabled') }}</span>
+                </label>
+            </div>
+
+            <div class="mt-6 border-t border-gray-200 pt-5 dark:border-white/10">
+                <label class="flex cursor-pointer items-start gap-3 select-none">
+                    <span class="relative mt-0.5 inline-block h-6 w-11 shrink-0">
+                        <input type="checkbox" wire:model="combinedDeliveryMessage" class="peer sr-only" />
+                        <span class="absolute inset-0 rounded-full bg-gray-200 transition-colors duration-200 ease-out peer-checked:bg-primary dark:bg-white/10"></span>
+                        <span class="absolute start-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-out peer-checked:translate-x-5 rtl:peer-checked:-translate-x-5"></span>
+                    </span>
+                    <span class="min-w-0">
+                        <span class="block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('notifications.settings.field_combined_delivery_message') }}</span>
+                        <span class="mt-1 block text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.field_combined_delivery_message_hint') }}</span>
+                    </span>
                 </label>
             </div>
         </x-ui.card>

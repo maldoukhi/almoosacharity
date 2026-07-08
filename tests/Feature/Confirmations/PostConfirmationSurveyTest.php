@@ -76,9 +76,7 @@ function deliveredAidWithGeneralSurvey(): array
 it('records a survey response linked to the aid_confirmation via the full public confirm -> survey flow', function () {
     [, $confirmation, $rawToken, , $question] = deliveredAidWithGeneralSurvey();
 
-    Livewire::withQueryParams(['token' => $rawToken]);
-
-    Livewire::test(ConfirmReceipt::class, ['confirmation' => $confirmation])
+    Livewire::test(ConfirmReceipt::class, ['token' => $rawToken])
         ->call('confirm')
         ->assertSet('view', 'success')
         ->call('startSurvey')
@@ -120,9 +118,7 @@ it('advances to the next question (currentQuestion is not stale after nextStep)'
         'config' => [],
     ]);
 
-    Livewire::withQueryParams(['token' => $rawToken]);
-
-    Livewire::test(ConfirmReceipt::class, ['confirmation' => $confirmation])
+    Livewire::test(ConfirmReceipt::class, ['token' => $rawToken])
         ->call('confirm')
         ->call('startSurvey')
         ->assertSet('step', 0)
@@ -137,12 +133,43 @@ it('advances to the next question (currentQuestion is not stale after nextStep)'
         ->assertSet('view', 'done');
 });
 
+it('does not let a required survey be skipped from either the success or survey step', function () {
+    [, , $rawToken, $survey, $question] = deliveredAidWithGeneralSurvey();
+
+    // Mark the whole survey required (the admin toggle another agent owns).
+    $survey->forceFill(['is_required' => true])->save();
+
+    Livewire::test(ConfirmReceipt::class, ['token' => $rawToken])
+        ->call('confirm')
+        ->assertSet('view', 'success')
+        // The finish/skip shortcut is gone: skipping from success is a no-op.
+        ->call('skipSurvey')
+        ->assertSet('view', 'success')
+        ->call('startSurvey')
+        ->assertSet('view', 'survey')
+        // Skipping from within the survey is also a no-op.
+        ->call('skipSurvey')
+        ->assertSet('view', 'survey')
+        // The only way out is to actually complete it.
+        ->set("answers.{$question->id}", 'أكملت الاستبيان')
+        ->call('nextStep')
+        ->assertSet('view', 'done');
+});
+
+it('still allows skipping an optional survey', function () {
+    [, , $rawToken] = deliveredAidWithGeneralSurvey();
+
+    Livewire::test(ConfirmReceipt::class, ['token' => $rawToken])
+        ->call('confirm')
+        ->assertSet('view', 'success')
+        ->call('skipSurvey')
+        ->assertSet('view', 'done');
+});
+
 it('rejects submitting the survey when a required answer is missing', function () {
     [, $confirmation, $rawToken, , $question] = deliveredAidWithGeneralSurvey();
 
-    Livewire::withQueryParams(['token' => $rawToken]);
-
-    Livewire::test(ConfirmReceipt::class, ['confirmation' => $confirmation])
+    Livewire::test(ConfirmReceipt::class, ['token' => $rawToken])
         ->call('confirm')
         ->call('startSurvey')
         ->set("answers.{$question->id}", '')

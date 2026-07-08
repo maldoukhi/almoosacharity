@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 /**
  * The beneficiary-facing "confirm receipt" link state for a single aid's
@@ -26,9 +28,19 @@ use Spatie\Activitylog\Support\LogOptions;
     'confirmed_at', 'reminder_sent_at', 'confirmed_ip',
     'confirmed_user_agent', 'channel',
 ])]
-class AidConfirmation extends Model
+class AidConfirmation extends Model implements HasMedia
 {
-    use HasFactory, LogsActivity;
+    use HasFactory, InteractsWithMedia, LogsActivity;
+
+    /**
+     * The optional signature the beneficiary draws on the public confirm
+     * page. Private (same posture as Disbursement's 'start_signature'):
+     * never on the public disk, single file, replaced on redraw.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('confirmation_signature')->useDisk('local')->singleFile();
+    }
 
     /**
      * @return array<string, string>

@@ -6,6 +6,7 @@ use App\Enums\AidType;
 use App\Enums\MessageChannel;
 use App\Enums\NotificationEvent;
 use App\Models\Aid;
+use App\Models\Beneficiary;
 use App\Models\NotificationTemplate;
 use App\Services\Messaging\Messenger;
 use App\Support\Settings;
@@ -37,14 +38,64 @@ class NotifyBeneficiary
             return;
         }
 
-        $vars = [
-            'name' => $beneficiary->full_name,
-            'amount' => $aid->type === AidType::Cash ? number_format((float) $aid->amount, 2) : '',
-            'program' => $aid->program?->name ?? '',
-        ];
+        $vars = $this->buildVars($aid, $beneficiary);
 
         $this->sendChannel(MessageChannel::Sms, $aid, $beneficiary->mobile, $event, $vars);
         $this->sendChannel(MessageChannel::WhatsApp, $aid, $beneficiary->mobile, $event, $vars);
+    }
+
+    /**
+     * Render the active {@see NotificationTemplate} body for a given
+     * event/channel pair with all placeholders substituted, or null when no
+     * active template exists (or the aid has no beneficiary). Used by the
+     * combined delivery-message flow to fold the "aid delivered" notice into
+     * the confirmation message — it does not itself send anything and does
+     * not consult the channel-enabled toggles.
+     */
+    public function renderBody(Aid $aid, NotificationEvent $event, MessageChannel $channel): ?string
+    {
+        $beneficiary = $aid->beneficiary;
+
+        if ($beneficiary === null) {
+            return null;
+        }
+
+        $template = NotificationTemplate::query()->activeFor($event, $channel)->first();
+
+        if (! $template) {
+            return null;
+        }
+
+        return $this->render($template->body, $this->buildVars($aid, $beneficiary));
+    }
+
+    /**
+     * The placeholder values for an aid/beneficiary, shared by every
+     * outbound body render.
+     *
+     * @return array<string, string>
+     */
+    private function buildVars(Aid $aid, Beneficiary $beneficiary): array
+    {
+        return [
+            'name' => $beneficiary->full_name,
+            'short_name' => $beneficiary->short_name,
+            'amount' => $aid->type === AidType::Cash ? number_format((float) $aid->amount, 2) : '',
+            'program' => $aid->program?->name ?? '',
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $vars
+     */
+    private function render(string $body, array $vars): string
+    {
+        return strtr($body, [
+            '{name}' => $vars['name'],
+            '{short_name}' => $vars['short_name'],
+            '{amount}' => $vars['amount'],
+            '{program}' => $vars['program'],
+        ]);
     }
 
     /**
@@ -62,11 +113,7 @@ class NotifyBeneficiary
             return;
         }
 
-        $body = strtr($template->body, [
-            '{name}' => $vars['name'],
-            '{amount}' => $vars['amount'],
-            '{program}' => $vars['program'],
-        ]);
+        $body = $this->render($template->body, $vars);
 
         match ($channel) {
             MessageChannel::Sms => $this->messenger->sms($mobile, $body, related: $aid),
