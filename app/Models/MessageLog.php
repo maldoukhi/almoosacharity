@@ -54,4 +54,44 @@ class MessageLog extends Model
     {
         return $this->morphTo();
     }
+
+    /**
+     * A human-friendly, actionable explanation for a recognized provider
+     * error, or null when the raw {@see $error} is not one we can map. The
+     * raw provider message is always kept and shown as-is; this only *adds*
+     * context (what it means, how to fix it) when we recognize the pattern.
+     *
+     * Matching is done on a lowercased needle so it is resilient to the
+     * provider's casing/wording drift around the key phrase.
+     */
+    public function errorHint(): ?string
+    {
+        if (blank($this->error)) {
+            return null;
+        }
+
+        $needle = strtolower($this->error);
+
+        return match (true) {
+            str_contains($needle, 'credential'),
+            str_contains($needle, 'unauthorized'),
+            str_contains($needle, 'invalid token'),
+            str_contains($needle, 'authentication') => __('reports.messages.hint_invalid_credentials'),
+
+            str_contains($needle, 'balance'),
+            str_contains($needle, 'insufficient'),
+            str_contains($needle, 'not enough') => __('reports.messages.hint_insufficient_balance'),
+
+            str_contains($needle, 'sender') => __('reports.messages.hint_invalid_sender'),
+
+            str_contains($needle, 'rate limit'),
+            str_contains($needle, 'too many') => __('reports.messages.hint_rate_limited'),
+
+            str_contains($needle, 'recipient'),
+            str_contains($needle, 'mobile'),
+            str_contains($needle, 'number') => __('reports.messages.hint_invalid_recipient'),
+
+            default => null,
+        };
+    }
 }

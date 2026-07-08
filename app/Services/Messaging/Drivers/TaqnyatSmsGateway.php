@@ -4,6 +4,7 @@ namespace App\Services\Messaging\Drivers;
 
 use App\Services\Messaging\Contracts\SmsGatewayInterface;
 use App\Services\Messaging\GatewayResponse;
+use App\Support\MobileNumber;
 use App\Support\Settings;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
@@ -53,10 +54,17 @@ class TaqnyatSmsGateway implements SmsGatewayInterface
         $apiKey = $settings->getSecret('taqnyat_api_key') ?: $this->apiKey;
         $sender = $settings->get('taqnyat_sender') ?: $this->sender;
 
+        // Taqnyat rejects local `05XXXXXXXX` recipients — the number must be
+        // in international `9665XXXXXXXX` form (no `+`, no leading zero). The
+        // message_logs row keeps the original local number for display; only
+        // the value sent on the wire is converted, mirroring the WhatsApp
+        // gateway's wa_id handling.
+        $recipient = MobileNumber::toInternational($to);
+
         $response = Http::withToken($apiKey)
             ->acceptJson()
             ->post(rtrim($this->baseUrl, '/').'/v1/messages', [
-                'recipients' => [$to],
+                'recipients' => [$recipient],
                 'sender' => $sender,
                 'body' => $message,
                 'smsId' => (string) Str::uuid(),

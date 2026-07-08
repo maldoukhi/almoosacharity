@@ -7,7 +7,7 @@
     ]);
 @endphp
 
-<div class="space-y-6" x-data="{ reasonOpen: false, reasonText: '', bodyOpen: false, bodyText: '' }">
+<div class="space-y-6" x-data="{ reasonOpen: false, reasonText: '', reasonHint: '', bodyOpen: false, bodyText: '' }">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ __('reports.messages.title') }}</h1>
@@ -112,7 +112,7 @@
                                 @if ($row->status === \App\Enums\MessageStatus::Failed && filled($row->error))
                                     <button
                                         type="button"
-                                        @click="reasonText = @js($row->error); reasonOpen = true"
+                                        @click="reasonText = @js($row->error); reasonHint = @js($row->errorHint()); reasonOpen = true"
                                         title="{{ __('reports.messages.view_reason') }}"
                                         class="inline-flex items-center gap-1"
                                     >
@@ -194,8 +194,19 @@
                     <h3 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('reports.messages.column_reason') }}</h3>
                 </div>
 
-                <div class="px-6 py-5">
-                    <p class="rounded-(--radius-brand) bg-gray-50 p-4 text-sm leading-6 break-words whitespace-pre-line text-gray-800 dark:bg-white/5 dark:text-gray-100" dir="ltr" x-text="reasonText"></p>
+                <div class="space-y-4 px-6 py-5">
+                    {{-- Friendly, actionable explanation (shown only for
+                         recognized provider errors). --}}
+                    <div x-show="reasonHint" x-cloak>
+                        <p class="mb-1.5 text-xs font-semibold text-primary-700 dark:text-primary-300">{{ __('reports.messages.reason_hint_label') }}</p>
+                        <p class="rounded-(--radius-brand) border border-primary-100 bg-primary-50 p-4 text-sm leading-6 text-primary-900 dark:border-primary-500/20 dark:bg-primary-500/10 dark:text-primary-100" x-text="reasonHint"></p>
+                    </div>
+
+                    {{-- The raw provider message, kept verbatim for auditing. --}}
+                    <div>
+                        <p class="mb-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400">{{ __('reports.messages.reason_provider_label') }}</p>
+                        <p class="rounded-(--radius-brand) bg-gray-50 p-4 text-sm leading-6 break-words whitespace-pre-line text-gray-800 dark:bg-white/5 dark:text-gray-100" dir="ltr" x-text="reasonText"></p>
+                    </div>
                 </div>
 
                 <div class="flex items-center justify-end border-t border-gray-100 px-6 py-4 dark:border-white/10">

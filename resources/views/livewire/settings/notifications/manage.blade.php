@@ -9,7 +9,33 @@
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('notifications.settings.subtitle') }}</p>
     </div>
 
-    <form wire:submit="save" class="space-y-6">
+    <form
+        wire:submit="save"
+        class="space-y-6"
+        x-data="{ tab: @js($errors->hasAny(['senderName', 'taqnyatApiKeyInput', 'oktaBaseUrl', 'oktaChannelId', 'oktaTokenInput']) ? 'connections' : 'messages') }"
+    >
+        {{-- Two groups: message content (templates + confirmation body) and
+             connection/provider settings (channels + Taqnyat + Okta). --}}
+        <div class="flex gap-1 border-b border-gray-200 dark:border-white/10">
+            <button
+                type="button"
+                x-on:click="tab = 'messages'"
+                :class="tab === 'messages' ? 'border-primary text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                class="-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors"
+            >
+                {{ __('notifications.settings.tab_messages') }}
+            </button>
+            <button
+                type="button"
+                x-on:click="tab = 'connections'"
+                :class="tab === 'connections' ? 'border-primary text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'"
+                class="-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors"
+            >
+                {{ __('notifications.settings.tab_connections') }}
+            </button>
+        </div>
+
+        <div x-show="tab === 'messages'" class="space-y-6">
         <x-ui.card>
             <x-slot:header>
                 <div>
@@ -73,6 +99,33 @@
         <x-ui.card>
             <x-slot:header>
                 <div>
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_confirmation_title') }}</h2>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('notifications.settings.section_confirmation_description') }}</p>
+                </div>
+            </x-slot:header>
+
+            <div>
+                <label for="confirmationBody" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('notifications.settings.field_confirmation_body') }}</label>
+                <textarea
+                    id="confirmationBody"
+                    wire:model="confirmationBody"
+                    rows="3"
+                    maxlength="480"
+                    dir="rtl"
+                    class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary dark:border-white/10 dark:bg-white/5 dark:text-white"
+                ></textarea>
+                @error('confirmationBody')
+                    <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                @enderror
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.field_confirmation_body_hint') }}</p>
+            </div>
+        </x-ui.card>
+        </div>{{-- /messages tab --}}
+
+        <div x-show="tab === 'connections'" x-cloak class="space-y-6">
+        <x-ui.card>
+            <x-slot:header>
+                <div>
                     <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_channels_title') }}</h2>
                     <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('notifications.settings.section_channels_description') }}</p>
                 </div>
@@ -96,31 +149,6 @@
                     </span>
                     <span class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('notifications.settings.field_whatsapp_enabled') }}</span>
                 </label>
-            </div>
-        </x-ui.card>
-
-        <x-ui.card>
-            <x-slot:header>
-                <div>
-                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_confirmation_title') }}</h2>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('notifications.settings.section_confirmation_description') }}</p>
-                </div>
-            </x-slot:header>
-
-            <div>
-                <label for="confirmationBody" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('notifications.settings.field_confirmation_body') }}</label>
-                <textarea
-                    id="confirmationBody"
-                    wire:model="confirmationBody"
-                    rows="3"
-                    maxlength="480"
-                    dir="rtl"
-                    class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-primary focus:ring-1 focus:ring-primary dark:border-white/10 dark:bg-white/5 dark:text-white"
-                ></textarea>
-                @error('confirmationBody')
-                    <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
-                @enderror
-                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.field_confirmation_body_hint') }}</p>
             </div>
         </x-ui.card>
 
@@ -405,6 +433,7 @@
                 @endif
             </div>
         </x-ui.card>
+        </div>{{-- /connections tab --}}
 
         <div class="flex items-center justify-end gap-3">
             <x-ui.button type="submit" variant="primary" wire:target="save">

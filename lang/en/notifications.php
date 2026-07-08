@@ -41,6 +41,9 @@ return [
         'subtitle' => 'Manage message templates, delivery channels, and the SMS sender name',
         'saved' => 'Notification settings saved successfully',
 
+        'tab_messages' => 'Message templates',
+        'tab_connections' => 'Connection settings',
+
         'section_templates_title' => 'Message templates',
         'section_templates_description' => 'The text sent to a beneficiary for each aid event and delivery channel',
 
