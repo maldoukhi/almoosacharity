@@ -18,7 +18,7 @@ return [
     'field_aids_count' => 'Number of Aids',
     'field_active' => 'Status',
 
-    'default_flow' => 'Default Flow',
+    'default_flow' => 'None (use system default)',
 
     'search_placeholder' => 'Search by program name...',
 

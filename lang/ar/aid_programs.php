@@ -18,7 +18,7 @@ return [
     'field_aids_count' => 'عدد الإعانات',
     'field_active' => 'الحالة',
 
-    'default_flow' => 'المسار الافتراضي',
+    'default_flow' => 'بدون تخصيص (يُستخدم الافتراضي)',
 
     'search_placeholder' => 'ابحث باسم البرنامج...',
 
