@@ -33,6 +33,7 @@ return [
 
     'empty_title' => 'No surveys',
     'empty_description' => 'Start by creating a new survey to collect beneficiary feedback',
+    'results_count' => '{0} No results|{1} 1 result|[2,*] :count results',
 
     'question_type' => [
         'short_text' => 'Short text',

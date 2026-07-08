@@ -174,6 +174,7 @@ return [
         'status_inactive' => 'معطّل',
         'table_beneficiary_count' => 'عدد المستفيدين',
         'confirm_delete' => 'هل أنت متأكد من حذف هذا التصنيف؟',
+        'results_count' => '{0} لا نتائج|{1} نتيجة واحدة|[2,*] :count نتيجة',
     ],
 
     'status' => [

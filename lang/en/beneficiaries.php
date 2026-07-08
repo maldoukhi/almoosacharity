@@ -174,6 +174,7 @@ return [
         'status_inactive' => 'Inactive',
         'table_beneficiary_count' => 'Beneficiaries Count',
         'confirm_delete' => 'Are you sure you want to delete this category?',
+        'results_count' => '{0} No results|{1} 1 result|[2,*] :count results',
     ],
 
     'status' => [

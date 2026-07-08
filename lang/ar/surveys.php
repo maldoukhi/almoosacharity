@@ -33,6 +33,7 @@ return [
 
     'empty_title' => 'لا توجد استبيانات',
     'empty_description' => 'ابدأ بإنشاء استبيان جديد لجمع آراء المستفيدين',
+    'results_count' => '{0} لا نتائج|{1} نتيجة واحدة|[2,*] :count نتيجة',
 
     'question_type' => [
         'short_text' => 'نص قصير',

@@ -29,6 +29,7 @@ return [
     'filter_status' => 'Filter by Status',
     'empty_title' => 'No Users',
     'empty_description' => 'No users found. Start by creating a new user.',
+    'results_count' => '{0} No results|{1} 1 result|[2,*] :count results',
     'field_last_login' => 'Last Login',
     'never_logged_in' => 'Never logged in',
     'confirm_suspend' => 'Are you sure you want to suspend this user?',

@@ -21,6 +21,7 @@ return [
     'field_users_count' => 'عدد المستخدمين',
     'field_permissions_count' => 'عدد الصلاحيات',
     'confirm_delete' => 'هل أنت متأكد من رغبتك في حذف هذا الدور؟',
+    'results_count' => '{0} لا نتائج|{1} نتيجة واحدة|[2,*] :count نتيجة',
     'messages' => [
         'cannot_rename_default' => 'لا يمكن إعادة تسمية الأدوار الافتراضية.',
         'cannot_delete_default' => 'لا يمكن حذف الأدوار الافتراضية.',

@@ -52,6 +52,12 @@
         </x-ui.card>
 
         <x-ui.card class="lg:col-span-2">
+            <div class="mb-4">
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ trans_choice('beneficiaries.categories.results_count', $this->categories->count(), ['count' => $this->categories->count()]) }}
+                </p>
+            </div>
+
             @if ($this->categories->isEmpty())
                 <x-ui.empty-state :title="__('beneficiaries.categories.empty_title')" :description="__('beneficiaries.categories.empty_description')" />
             @else

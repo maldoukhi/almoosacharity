@@ -21,6 +21,7 @@ return [
     'field_users_count' => 'Number of Users',
     'field_permissions_count' => 'Number of Permissions',
     'confirm_delete' => 'Are you sure you want to delete this role?',
+    'results_count' => '{0} No results|{1} 1 result|[2,*] :count results',
     'messages' => [
         'cannot_rename_default' => 'Cannot rename default roles.',
         'cannot_delete_default' => 'Cannot delete default roles.',

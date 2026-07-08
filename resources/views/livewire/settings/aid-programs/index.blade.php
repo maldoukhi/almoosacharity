@@ -30,8 +30,8 @@
     <x-ui.card>
         <x-slot:header>
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <p class="text-sm font-medium text-gray-600 dark:text-gray-300">
-                    {{ trans_choice('aid_programs.count_label', $this->programs->count()) }}
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ trans_choice('aid_programs.count_label', $this->programs->count(), ['count' => $this->programs->count()]) }}
                 </p>
 
                 <div class="relative sm:w-72">
