@@ -1,10 +1,13 @@
 <?php
 
 use App\Actions\Beneficiaries\CreateBeneficiary;
+use App\Enums\MessageChannel;
+use App\Enums\NotificationEvent;
 use App\Jobs\Messaging\SendSmsMessage;
 use App\Livewire\Messaging\Broadcast;
 use App\Models\MessageLog;
 use App\Models\MessageTemplate;
+use App\Models\NotificationTemplate;
 use Illuminate\Support\Facades\Queue;
 use Livewire\Livewire;
 
@@ -30,6 +33,25 @@ it('forbids a user without messages.broadcast from mounting the screen', functio
     asResearcher();
 
     Livewire::test(Broadcast::class)->assertForbidden();
+});
+
+it('offers active notification templates in the picker and applies one as the body', function () {
+    NotificationTemplate::query()->create([
+        'event' => NotificationEvent::AidApproved,
+        'channel' => MessageChannel::Sms,
+        'body' => 'عزيزنا {name}، تمت الموافقة.',
+        'is_active' => true,
+    ]);
+    asManager();
+
+    $notif = NotificationTemplate::query()->first();
+
+    Livewire::test(Broadcast::class)
+        ->set('channel', 'sms')
+        ->tap(fn ($c) => expect($c->get('templateOptions'))->toHaveKey('notif:'.$notif->id))
+        ->set('selectedTemplate', 'notif:'.$notif->id)
+        ->call('applyTemplate')
+        ->assertSet('body', 'عزيزنا {name}، تمت الموافقة.');
 });
 
 it('throttles a manager after 5 broadcasts in a minute', function () {

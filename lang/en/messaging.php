@@ -7,6 +7,7 @@ return [
         'channel_label' => 'Channel',
         'template_label' => 'Saved Template',
         'template_placeholder' => 'No template',
+        'notification_template_label' => 'Template: :event',
         'apply_template' => 'Apply Template',
         'body_label' => 'Message Body',
         'body_placeholder' => 'Write the message here... use {name} to insert the beneficiary\'s name',

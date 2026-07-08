@@ -48,7 +48,7 @@
                         name="selectedTemplate"
                         wire:model="selectedTemplate"
                         :placeholder="__('messaging.broadcast.template_placeholder')"
-                        :options="$this->templates->pluck('name', 'id')"
+                        :options="$this->templateOptions"
                     />
 
                     <div class="mt-2 flex justify-end">

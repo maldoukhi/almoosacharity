@@ -7,6 +7,7 @@ use App\Enums\MessageChannel;
 use App\Models\Beneficiary;
 use App\Models\BeneficiaryCategory;
 use App\Models\MessageTemplate;
+use App\Models\NotificationTemplate;
 use App\Rules\SaudiMobile;
 use App\Support\MobileNumber;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,7 +52,11 @@ class Broadcast extends Component
 
     public string $body = '';
 
-    public ?int $selectedTemplate = null;
+    /**
+     * Selected template key: "msg:{id}" for a saved broadcast template or
+     * "notif:{id}" for an active notification template reused as a body.
+     */
+    public ?string $selectedTemplate = null;
 
     public bool $saveAsTemplate = false;
 
@@ -158,14 +163,10 @@ class Broadcast extends Component
 
     public function applyTemplate(): void
     {
-        if ($this->selectedTemplate === null) {
-            return;
-        }
+        $body = $this->resolveTemplate($this->selectedTemplate)['body'] ?? null;
 
-        $template = $this->templates->firstWhere('id', $this->selectedTemplate);
-
-        if ($template) {
-            $this->body = $template->body;
+        if ($body !== null) {
+            $this->body = $body;
         }
     }
 
@@ -233,7 +234,7 @@ class Broadcast extends Component
             beneficiaryIds: $this->selectedIds,
             channel: $this->channel,
             body: $this->body,
-            templateName: $this->selectedTemplate ? $this->templates->firstWhere('id', $this->selectedTemplate)?->name : null,
+            templateName: $this->resolveTemplate($this->selectedTemplate)['name'] ?? null,
             actor: Auth::user(),
             manualNumbers: $this->parsedManualNumbers(),
         );
@@ -291,6 +292,78 @@ class Broadcast extends Component
             ->forChannel(MessageChannel::from($this->channel))
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Active notification templates for the current channel, reusable as
+     * broadcast bodies. Keyed "notif:{id}" to distinguish them from saved
+     * broadcast templates in the picker.
+     *
+     * @return Collection<int, NotificationTemplate>
+     */
+    #[Computed]
+    public function notificationTemplates(): Collection
+    {
+        return NotificationTemplate::query()
+            ->where('channel', $this->channel)
+            ->where('is_active', true)
+            ->get();
+    }
+
+    /**
+     * Merged picker options (value => label): saved broadcast templates
+     * plus active notification templates, so the ready-made messages
+     * managed on the notification settings screen are usable here too.
+     *
+     * @return array<string, string>
+     */
+    #[Computed]
+    public function templateOptions(): array
+    {
+        $options = [];
+
+        foreach ($this->templates as $template) {
+            $options['msg:'.$template->id] = $template->name;
+        }
+
+        foreach ($this->notificationTemplates as $template) {
+            $options['notif:'.$template->id] = __('messaging.broadcast.notification_template_label', [
+                'event' => $template->event->label(),
+            ]);
+        }
+
+        return $options;
+    }
+
+    /**
+     * Resolve a "msg:{id}"/"notif:{id}" key to its body + display name.
+     *
+     * @return array{body: string, name: string}|null
+     */
+    private function resolveTemplate(?string $key): ?array
+    {
+        if ($key === null || ! str_contains($key, ':')) {
+            return null;
+        }
+
+        [$source, $id] = explode(':', $key, 2);
+
+        if ($source === 'msg') {
+            $template = $this->templates->firstWhere('id', (int) $id);
+
+            return $template ? ['body' => $template->body, 'name' => $template->name] : null;
+        }
+
+        if ($source === 'notif') {
+            $template = $this->notificationTemplates->firstWhere('id', (int) $id);
+
+            return $template ? [
+                'body' => $template->body,
+                'name' => __('messaging.broadcast.notification_template_label', ['event' => $template->event->label()]),
+            ] : null;
+        }
+
+        return null;
     }
 
     /**

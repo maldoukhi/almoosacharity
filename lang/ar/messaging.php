@@ -7,6 +7,7 @@ return [
         'channel_label' => 'القناة',
         'template_label' => 'قالب جاهز',
         'template_placeholder' => 'بدون قالب',
+        'notification_template_label' => 'قالب: :event',
         'apply_template' => 'تطبيق القالب',
         'body_label' => 'نص الرسالة',
         'body_placeholder' => 'اكتب نص الرسالة هنا... يمكنك استخدام {name} ليُستبدل باسم المستفيد',
