@@ -4,9 +4,12 @@ namespace App\Livewire;
 
 use App\Enums\AidStatus;
 use App\Enums\AidType;
+use App\Enums\BeneficiaryStatus;
 use App\Enums\ReceiptStatus;
 use App\Models\Aid;
+use App\Models\AidConfirmation;
 use App\Models\Beneficiary;
+use App\Models\RecurringAidPlan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -33,6 +36,19 @@ class Dashboard extends Component
         'rejected' => '#DC2626',
         'delivered' => '#44631F',
     ];
+
+    /**
+     * How many days without movement before an under-review aid / a
+     * beneficiary under review is flagged as "overdue" on the operational
+     * indicators row.
+     */
+    private const OVERDUE_DAYS = 7;
+
+    /**
+     * How many days ahead a recurring plan's next run is considered
+     * "due soon" on the operational indicators row.
+     */
+    private const UPCOMING_RECURRING_DAYS = 7;
 
     #[Computed]
     public function beneficiariesCount(): int
@@ -78,6 +94,84 @@ class Dashboard extends Component
             ->whereHas('currentStage', function (Builder $query) use ($user): void {
                 $query->whereIn('role', $user->getRoleNames());
             })
+            ->count();
+    }
+
+    /**
+     * Aids stuck under review for longer than {@see OVERDUE_DAYS} since
+     * they were submitted — the first "pending indicators" card. Zero for
+     * users without approvals.view (the card is also hidden by @can in the
+     * view; this is defense in depth, mirrors pendingForMyRole()).
+     */
+    #[Computed]
+    public function overdueApprovalsCount(): int
+    {
+        if (! Auth::user()->can('approvals.view')) {
+            return 0;
+        }
+
+        return Aid::query()
+            ->where('status', AidStatus::UnderReview->value)
+            ->whereNotNull('submitted_at')
+            ->where('submitted_at', '<', now()->subDays(self::OVERDUE_DAYS))
+            ->count();
+    }
+
+    /**
+     * Confirmation links that expired without the beneficiary responding,
+     * for aids that are still sitting in Delivered (i.e. never advanced to
+     * Confirmed) — signals deliveries that likely need a follow-up call or
+     * a resent link.
+     */
+    #[Computed]
+    public function expiredConfirmationsCount(): int
+    {
+        if (! Auth::user()->can('aids.view')) {
+            return 0;
+        }
+
+        return AidConfirmation::query()
+            ->whereNull('confirmed_at')
+            ->where('expires_at', '<', now())
+            ->whereHas('aid', function (Builder $query): void {
+                $query->where('status', AidStatus::Delivered->value);
+            })
+            ->count();
+    }
+
+    /**
+     * Active recurring aid plans whose next cycle is due within
+     * {@see UPCOMING_RECURRING_DAYS} — a heads-up before the aids they
+     * generate need review/approval.
+     */
+    #[Computed]
+    public function upcomingRecurringPlansCount(): int
+    {
+        if (! Auth::user()->can('aids.view')) {
+            return 0;
+        }
+
+        return RecurringAidPlan::query()
+            ->where('is_active', true)
+            ->whereNotNull('next_run_on')
+            ->where('next_run_on', '<=', now()->addDays(self::UPCOMING_RECURRING_DAYS)->toDateString())
+            ->count();
+    }
+
+    /**
+     * Beneficiaries whose case has sat under review for longer than
+     * {@see OVERDUE_DAYS} without an update — a case that may have stalled.
+     */
+    #[Computed]
+    public function overdueBeneficiaryReviewsCount(): int
+    {
+        if (! Auth::user()->can('beneficiaries.view')) {
+            return 0;
+        }
+
+        return Beneficiary::query()
+            ->where('status', BeneficiaryStatus::UnderReview->value)
+            ->where('updated_at', '<', now()->subDays(self::OVERDUE_DAYS))
             ->count();
     }
 
