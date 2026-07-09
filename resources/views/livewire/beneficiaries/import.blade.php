@@ -17,9 +17,22 @@
     @if ($step === 'upload')
         <x-ui.card>
             <div class="space-y-4">
-                <div>
-                    <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ __('beneficiaries.import.upload_title') }}</h2>
-                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('beneficiaries.import.upload_hint') }}</p>
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 class="text-lg font-medium text-gray-900 dark:text-white">{{ __('beneficiaries.import.upload_title') }}</h2>
+                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('beneficiaries.import.upload_hint') }}</p>
+                    </div>
+
+                    <x-ui.button wire:click="downloadTemplate" variant="secondary" size="sm" class="shrink-0">
+                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                        {{ __('beneficiaries.import.template_button') }}
+                    </x-ui.button>
+                </div>
+
+                <div class="rounded-(--radius-brand) bg-primary-50/60 px-4 py-3 text-xs leading-relaxed text-primary-800 dark:bg-primary-950/40 dark:text-primary-100">
+                    {{ __('beneficiaries.import.template_hint') }}
                 </div>
 
                 <label
@@ -89,6 +102,15 @@
                         @endif
                     </div>
                 </div>
+
+                @if ($officialTemplateDetected)
+                    <div class="flex items-center gap-2 rounded-(--radius-brand) border border-status-approved/20 bg-status-approved/5 px-4 py-3 text-sm text-status-approved">
+                        <svg class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                        </svg>
+                        <span>{{ __('beneficiaries.import.auto_detected_hint') }}</span>
+                    </div>
+                @endif
 
                 {{-- Hints --}}
                 <div class="rounded-(--radius-brand) bg-primary-50/60 px-4 py-3 text-xs leading-relaxed text-primary-800 dark:bg-primary-950/40 dark:text-primary-100">

@@ -3,12 +3,15 @@
 namespace App\Livewire\Beneficiaries;
 
 use App\Actions\Beneficiaries\ImportBeneficiaries;
+use App\Exports\BeneficiaryImportTemplateExport;
 use App\Imports\SpreadsheetReader;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
  * Smart beneficiary importer. The admin uploads an .xlsx/.xls/.csv, then
@@ -84,9 +87,30 @@ class Import extends Component
      */
     public ?array $summary = null;
 
+    /**
+     * True when the uploaded file's header row matched the official
+     * template ({@see BeneficiaryImportTemplateExport::headers()}) exactly
+     * (case/whitespace-insensitively) and the mapping was pre-filled
+     * automatically instead of via the looser field-name guessing in
+     * {@see autoGuessMapping()}.
+     */
+    public bool $officialTemplateDetected = false;
+
     public function mount(): void
     {
         Gate::authorize('beneficiaries.import');
+    }
+
+    /**
+     * Download the official import template: canonical Arabic headers for
+     * every importable field, one example row, and a note row on required
+     * fields. Uploading this file back unchanged auto-fills the mapping.
+     */
+    public function downloadTemplate(): BinaryFileResponse
+    {
+        Gate::authorize('beneficiaries.import');
+
+        return Excel::download(new BeneficiaryImportTemplateExport, 'beneficiary-import-template.xlsx');
     }
 
     /**
@@ -217,7 +241,17 @@ class Import extends Component
 
         $this->columnMapping = array_fill(0, $columnCount, '');
         $this->groupBy = '';
-        $this->autoGuessMapping();
+
+        $templateMapping = $this->detectOfficialTemplateMapping();
+        $this->officialTemplateDetected = $templateMapping !== null;
+
+        if ($templateMapping !== null) {
+            foreach ($templateMapping as $column => $field) {
+                $this->columnMapping[$column] = $field;
+            }
+        } else {
+            $this->autoGuessMapping();
+        }
 
         $this->step = 'review';
     }
@@ -325,6 +359,7 @@ class Import extends Component
         $this->deleteStored();
 
         $this->reset(['file', 'storedPath', 'headers', 'rows', 'columnMapping', 'included', 'groupBy', 'summary']);
+        $this->officialTemplateDetected = false;
         $this->step = 'upload';
     }
 
@@ -431,6 +466,57 @@ class Import extends Component
             fn (array $row): string => trim((string) ($row['cells'][(int) $column] ?? '')),
             $this->rows,
         );
+    }
+
+    /**
+     * When every uploaded header matches (case/whitespace-insensitively) one
+     * of the official template's canonical labels, and every canonical field
+     * is accounted for, return the full column => field mapping. Returns
+     * null the moment a header cannot be resolved (any unrecognized or
+     * missing column means this is not the official template — the admin
+     * falls back to {@see autoGuessMapping()} instead).
+     *
+     * @return array<int, string>|null
+     */
+    private function detectOfficialTemplateMapping(): ?array
+    {
+        $fieldByLabel = [];
+
+        foreach (BeneficiaryImportTemplateExport::headers() as $field => $label) {
+            $fieldByLabel[$this->normalizeHeaderLabel($label)] = $field;
+        }
+
+        $mapping = [];
+
+        foreach ($this->headers as $column => $label) {
+            $field = $fieldByLabel[$this->normalizeHeaderLabel($label)] ?? null;
+
+            if ($field === null) {
+                return null;
+            }
+
+            $mapping[$column] = $field;
+        }
+
+        $matchedFields = array_unique(array_values($mapping));
+
+        if (count($matchedFields) !== count($fieldByLabel)) {
+            return null;
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * Lower-case, whitespace-collapsed form of a header label used to
+     * compare an uploaded header against the official template's canonical
+     * labels regardless of case or stray spacing.
+     */
+    private function normalizeHeaderLabel(string $value): string
+    {
+        $value = preg_replace('/\s+/u', ' ', trim($value)) ?? $value;
+
+        return mb_strtolower($value);
     }
 
     /**

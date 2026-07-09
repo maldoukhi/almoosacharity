@@ -392,6 +392,13 @@ return [
         'unmapped_column' => 'Unmapped column',
         'no_rows' => 'The file has no data rows.',
 
+        'template_button' => 'Download official template',
+        'template_hint' => 'Use the official template to fill in your data — the system recognizes it automatically and maps its columns without any manual mapping.',
+        'template_example_note' => 'Example only — delete this row before uploading your real data.',
+        'template_required_hint' => 'This field is required.',
+        'template_note' => 'Note: the required fields are: :fields. Delete the example row before uploading your real data.',
+        'auto_detected_hint' => 'The official template was recognized automatically',
+
         'review_title' => 'Review & import',
         'review_hint' => 'Map each column to a field from the header, fix any rows with errors inline, and exclude anyone you do not want imported.',
         'map_columns_hint' => 'From each column header, pick the field it represents (or leave it as Skip). Fields marked with * are required.',
