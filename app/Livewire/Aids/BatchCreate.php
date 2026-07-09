@@ -158,13 +158,18 @@ class BatchCreate extends Component
 
     private function activeBeneficiariesQuery(): Builder
     {
-        // Eligible = anyone not suspended. Beneficiaries default to
-        // "under_study" on registration, so restricting to Active only made
-        // the batch list come back empty (they were all under study). A
-        // suspended beneficiary is the only one that must never receive an
-        // aid.
+        // Eligible = any beneficiary that isn't out of scope for aid.
+        // Restricting to Active only made the list come back empty, since a
+        // freshly registered/imported beneficiary sits at New / under_study /
+        // under_review well before it is approved (Active). Only the
+        // genuinely-excluded states (suspended, deactivated, rejected) are
+        // filtered out here.
         return Beneficiary::query()
-            ->whereNot('status', BeneficiaryStatus::Suspended->value)
+            ->whereNotIn('status', [
+                BeneficiaryStatus::Suspended->value,
+                BeneficiaryStatus::Deactivated->value,
+                BeneficiaryStatus::Rejected->value,
+            ])
             ->select(['id', 'first_name', 'second_name', 'third_name', 'last_name', 'national_id']);
     }
 
