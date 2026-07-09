@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
 use Livewire\Attributes\Computed;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 use LivewireUI\Modal\ModalComponent;
 
 /**
@@ -27,11 +29,16 @@ use LivewireUI\Modal\ModalComponent;
  */
 class ApprovalDecisionModal extends ModalComponent
 {
+    use WithFileUploads;
+
     public Aid $aid;
 
     public string $action = '';
 
     public string $note = '';
+
+    /** @var array<int, TemporaryUploadedFile> */
+    public array $documents = [];
 
     public function mount(Aid $aid, string $action): void
     {
@@ -54,6 +61,31 @@ class ApprovalDecisionModal extends ModalComponent
     public function requiresNote(): bool
     {
         return (bool) $this->approvalAction()?->requiresNote();
+    }
+
+    /**
+     * Whether the current stage forces the actor to attach at least one
+     * supporting document before the decision is accepted.
+     */
+    #[Computed]
+    public function documentsRequired(): bool
+    {
+        return (bool) $this->aid->currentStage?->documents_required;
+    }
+
+    /**
+     * The admin-defined labels of the document types expected at this
+     * stage, shown as a checklist hint on the upload field.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function requiredDocumentLabels(): array
+    {
+        return array_values(array_filter(
+            (array) ($this->aid->currentStage?->required_documents ?? []),
+            static fn ($label): bool => filled($label),
+        ));
     }
 
     #[Computed]
@@ -130,12 +162,22 @@ class ApprovalDecisionModal extends ModalComponent
             ]);
         }
 
+        // Files must always pass the type/size gate; when the stage requires
+        // documents at least one is mandatory, otherwise they are optional.
+        $this->validate([
+            'documents' => [$this->documentsRequired ? 'required' : 'nullable', 'array'],
+            'documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+        ], [
+            'documents.required' => __('approvals.decision.documents_required'),
+        ]);
+
         try {
             app(RecordApprovalDecision::class)->handle(
                 $this->aid,
                 Auth::user(),
                 $action,
                 $this->note !== '' ? $this->note : null,
+                $this->documents,
             );
         } catch (InvalidAidTransitionException|InvalidArgumentException|AuthorizationException $exception) {
             $this->dispatch('toast', type: 'error', message: $exception->getMessage());

@@ -25,7 +25,35 @@ return [
         'returned' => 'تم إرجاع الإعانة للتعديل بنجاح',
     ],
 
+    'stage_type' => [
+        'approval' => 'موافقة',
+        'document_upload' => 'رفع مستند',
+        'beneficiary_response' => 'رد المستفيد',
+    ],
+
+    'decision' => [
+        'documents_label' => 'المستندات الداعمة',
+        'documents_required' => 'يجب إرفاق مستند واحد على الأقل قبل اتخاذ القرار',
+        'documents_hint_required' => 'مطلوب رفع مستند واحد أو أكثر (PDF أو JPG أو PNG، بحد أقصى 5 ميجابايت لكل ملف).',
+        'documents_hint_optional' => 'يمكنك إرفاق مستندات داعمة اختياريًا (PDF أو JPG أو PNG، بحد أقصى 5 ميجابايت لكل ملف).',
+        'uploading' => 'جارٍ رفع الملفات…',
+    ],
+
     'flows' => [
+        'builder' => [
+            'field_stage_type' => 'نوع المرحلة',
+            'field_stage_type_hint' => 'طبيعة العمل المطلوب في هذه المرحلة.',
+            'field_notify_channels' => 'قنوات الإشعار',
+            'notify_channel' => [
+                'in_app' => 'داخل النظام',
+                'email' => 'البريد الإلكتروني',
+                'whatsapp' => 'واتساب',
+            ],
+            'field_documents_required' => 'طلب مستندات في هذه المرحلة',
+            'required_documents_hint' => 'حدد أنواع المستندات المطلوبة من صاحب القرار في هذه المرحلة.',
+            'document_type_placeholder' => 'مثال: صورة إثبات التسليم',
+            'add_document_type' => 'إضافة نوع مستند',
+        ],
         'messages' => [
             'at_least_one_stage' => 'يجب أن يحتوي مسار الموافقات على مرحلة واحدة على الأقل',
             'saved' => 'تم حفظ مسار الموافقات بنجاح',

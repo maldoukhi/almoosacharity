@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ApprovalAction;
+use App\Enums\ApprovalStageType;
 use App\Enums\UserStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
@@ -11,7 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
 
-#[Fillable(['approval_flow_id', 'name', 'order', 'role', 'assignee_user_ids', 'allowed_actions'])]
+#[Fillable([
+    'approval_flow_id', 'name', 'order', 'role', 'assignee_user_ids',
+    'allowed_actions', 'type', 'documents_required', 'required_documents',
+    'notify_channels',
+])]
 class ApprovalFlowStage extends Model
 {
     use LogsActivity;
@@ -25,6 +30,10 @@ class ApprovalFlowStage extends Model
             'order' => 'integer',
             'allowed_actions' => 'array',
             'assignee_user_ids' => 'array',
+            'type' => ApprovalStageType::class,
+            'documents_required' => 'boolean',
+            'required_documents' => 'array',
+            'notify_channels' => 'array',
         ];
     }
 

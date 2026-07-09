@@ -4,6 +4,7 @@ namespace App\Livewire\Settings\ApprovalFlows;
 
 use App\Actions\Settings\SaveApprovalFlow;
 use App\Enums\ApprovalAction;
+use App\Enums\ApprovalStageType;
 use App\Enums\UserStatus;
 use App\Models\ApprovalFlow;
 use App\Models\ApprovalFlowStage;
@@ -30,7 +31,10 @@ class Form extends Component
 
     public bool $is_active = true;
 
-    /** @var array<int, array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>}> */
+    /** The notification channels a stage may fan out on (persisted only; the notifications domain does the actual sending). */
+    public const NOTIFY_CHANNELS = ['in_app', 'email', 'whatsapp'];
+
+    /** @var array<int, array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, string>, notify_channels: array<int, string>}> */
     public array $stages = [];
 
     public function mount(?ApprovalFlow $flow = null): void
@@ -52,6 +56,10 @@ class Form extends Component
                     'role' => (string) $stage->role,
                     'assignee_user_ids' => $stage->assigneeUserIds(),
                     'allowed_actions' => $stage->allowed_actions ?? [],
+                    'type' => ($stage->type ?? ApprovalStageType::Approval)->value,
+                    'documents_required' => (bool) $stage->documents_required,
+                    'required_documents' => array_values($stage->required_documents ?? []),
+                    'notify_channels' => array_values($stage->notify_channels ?? []),
                 ])
                 ->all();
 
@@ -93,6 +101,50 @@ class Form extends Component
     public function availableActions(): array
     {
         return ApprovalAction::cases();
+    }
+
+    /**
+     * @return array<int, ApprovalStageType>
+     */
+    #[Computed]
+    public function stageTypes(): array
+    {
+        return ApprovalStageType::cases();
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function notifyChannels(): array
+    {
+        return self::NOTIFY_CHANNELS;
+    }
+
+    /**
+     * Append a blank required-document label row to a stage.
+     */
+    public function addDocumentType(int $index): void
+    {
+        if (! isset($this->stages[$index])) {
+            return;
+        }
+
+        $this->stages[$index]['required_documents'][] = '';
+    }
+
+    /**
+     * Remove a required-document label row from a stage.
+     */
+    public function removeDocumentType(int $index, int $documentIndex): void
+    {
+        if (! isset($this->stages[$index]['required_documents'][$documentIndex])) {
+            return;
+        }
+
+        unset($this->stages[$index]['required_documents'][$documentIndex]);
+
+        $this->stages[$index]['required_documents'] = array_values($this->stages[$index]['required_documents']);
     }
 
     public function addStage(): void
@@ -148,6 +200,12 @@ class Form extends Component
             'stages.*.assignee_user_ids.*' => ['integer', 'exists:users,id'],
             'stages.*.allowed_actions' => ['array', 'min:1'],
             'stages.*.allowed_actions.*' => [Rule::enum(ApprovalAction::class)],
+            'stages.*.type' => ['nullable', Rule::enum(ApprovalStageType::class)],
+            'stages.*.documents_required' => ['boolean'],
+            'stages.*.required_documents' => ['array'],
+            'stages.*.required_documents.*' => ['nullable', 'string', 'max:255'],
+            'stages.*.notify_channels' => ['array'],
+            'stages.*.notify_channels.*' => ['string', Rule::in(self::NOTIFY_CHANNELS)],
         ]);
 
         // Each stage must target a role, at least one user, or both.
@@ -169,6 +227,10 @@ class Form extends Component
                     'role' => $stage['role'] ?? '',
                     'assignee_user_ids' => array_map('intval', $stage['assignee_user_ids'] ?? []),
                     'allowed_actions' => array_values($stage['allowed_actions']),
+                    'type' => $stage['type'] ?? ApprovalStageType::Approval->value,
+                    'documents_required' => (bool) ($stage['documents_required'] ?? false),
+                    'required_documents' => array_values($stage['required_documents'] ?? []),
+                    'notify_channels' => array_values(array_intersect(self::NOTIFY_CHANNELS, $stage['notify_channels'] ?? [])),
                 ])
                 ->all(),
         ];
@@ -187,7 +249,7 @@ class Form extends Component
     }
 
     /**
-     * @return array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>}
+     * @return array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, string>, notify_channels: array<int, string>}
      */
     private function blankStage(): array
     {
@@ -197,6 +259,10 @@ class Form extends Component
             'role' => '',
             'assignee_user_ids' => [],
             'allowed_actions' => [],
+            'type' => ApprovalStageType::Approval->value,
+            'documents_required' => false,
+            'required_documents' => [],
+            'notify_channels' => ['in_app'],
         ];
     }
 

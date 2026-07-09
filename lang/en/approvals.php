@@ -25,7 +25,35 @@ return [
         'returned' => 'Aid returned for revision successfully',
     ],
 
+    'stage_type' => [
+        'approval' => 'Approval',
+        'document_upload' => 'Document Upload',
+        'beneficiary_response' => 'Beneficiary Response',
+    ],
+
+    'decision' => [
+        'documents_label' => 'Supporting Documents',
+        'documents_required' => 'At least one document must be attached before the decision',
+        'documents_hint_required' => 'One or more documents are required (PDF, JPG or PNG, up to 5 MB each).',
+        'documents_hint_optional' => 'You may optionally attach supporting documents (PDF, JPG or PNG, up to 5 MB each).',
+        'uploading' => 'Uploading files…',
+    ],
+
     'flows' => [
+        'builder' => [
+            'field_stage_type' => 'Stage Type',
+            'field_stage_type_hint' => 'The kind of work required at this stage.',
+            'field_notify_channels' => 'Notification Channels',
+            'notify_channel' => [
+                'in_app' => 'In-app',
+                'email' => 'Email',
+                'whatsapp' => 'WhatsApp',
+            ],
+            'field_documents_required' => 'Require documents at this stage',
+            'required_documents_hint' => 'Define the document types the decision-maker must provide at this stage.',
+            'document_type_placeholder' => 'e.g. Proof of delivery photo',
+            'add_document_type' => 'Add document type',
+        ],
         'messages' => [
             'at_least_one_stage' => 'An approval flow must have at least one stage',
             'saved' => 'Approval flow saved successfully',

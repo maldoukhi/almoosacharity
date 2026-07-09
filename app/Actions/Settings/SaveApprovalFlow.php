@@ -4,6 +4,7 @@ namespace App\Actions\Settings;
 
 use App\Enums\AidStatus;
 use App\Enums\ApprovalAction;
+use App\Enums\ApprovalStageType;
 use App\Enums\RoleName;
 use App\Models\ApprovalFlow;
 use Illuminate\Support\Facades\DB;
@@ -59,12 +60,23 @@ class SaveApprovalFlow
             foreach ($stages as $index => $stageData) {
                 $assigneeIds = array_values(array_unique(array_map('intval', $stageData['assignee_user_ids'] ?? [])));
 
+                $requiredDocuments = array_values(array_filter(array_map(
+                    static fn ($label): string => trim((string) $label),
+                    $stageData['required_documents'] ?? [],
+                ), static fn (string $label): bool => $label !== ''));
+
+                $notifyChannels = array_values($stageData['notify_channels'] ?? []);
+
                 $flow->stages()->create([
                     'name' => $stageData['name'],
                     'order' => $index + 1,
+                    'type' => ($stageData['type'] ?? '') !== '' ? $stageData['type'] : ApprovalStageType::Approval->value,
                     'role' => ($stageData['role'] ?? '') !== '' ? $stageData['role'] : null,
                     'assignee_user_ids' => $assigneeIds !== [] ? $assigneeIds : null,
                     'allowed_actions' => array_values($stageData['allowed_actions']),
+                    'documents_required' => (bool) ($stageData['documents_required'] ?? false),
+                    'required_documents' => $requiredDocuments !== [] ? $requiredDocuments : null,
+                    'notify_channels' => $notifyChannels !== [] ? $notifyChannels : null,
                 ]);
             }
 

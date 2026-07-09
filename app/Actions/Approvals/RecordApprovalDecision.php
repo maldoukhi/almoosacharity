@@ -11,6 +11,7 @@ use App\Models\Aid;
 use App\Models\ApprovalDecision;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use InvalidArgumentException;
@@ -28,11 +29,18 @@ class RecordApprovalDecision
      * - return: sends the aid back to Draft for the creator to rework
      *   (the approval_flow_id snapshot is kept for when it is resubmitted).
      *
+     * When the current stage has documents_required = true the actor must
+     * supply at least one uploaded file; any provided files (required or
+     * optional) are stored as media on the decision's private
+     * 'decision_documents' collection.
+     *
+     * @param  array<int, UploadedFile>  $documents
+     *
      * @throws InvalidAidTransitionException
      * @throws InvalidArgumentException
      * @throws AuthorizationException
      */
-    public function handle(Aid $aid, User $actor, ApprovalAction $action, ?string $note = null): Aid
+    public function handle(Aid $aid, User $actor, ApprovalAction $action, ?string $note = null, array $documents = []): Aid
     {
         if ($aid->status !== AidStatus::UnderReview || ! $aid->current_stage_id) {
             throw InvalidAidTransitionException::notUnderReview();
@@ -50,7 +58,16 @@ class RecordApprovalDecision
             throw new InvalidArgumentException(__('validation.custom.approval.note_required'));
         }
 
-        return DB::transaction(function () use ($aid, $actor, $action, $note, $stage): Aid {
+        $documents = array_values(array_filter(
+            $documents,
+            static fn ($file): bool => $file instanceof UploadedFile,
+        ));
+
+        if ($stage->documents_required && $documents === []) {
+            throw new InvalidArgumentException(__('approvals.decision.documents_required'));
+        }
+
+        return DB::transaction(function () use ($aid, $actor, $action, $note, $stage, $documents): Aid {
             // Re-read under a row lock: two concurrent decisions on the same
             // aid would otherwise both pass the pre-transaction status check
             // and record conflicting decisions.
@@ -60,7 +77,7 @@ class RecordApprovalDecision
                 throw InvalidAidTransitionException::notUnderReview();
             }
 
-            ApprovalDecision::create([
+            $decision = ApprovalDecision::create([
                 'aid_id' => $aid->id,
                 'approval_flow_stage_id' => $stage->id,
                 'stage_name' => $stage->name,
@@ -69,6 +86,13 @@ class RecordApprovalDecision
                 'note' => $note,
                 'decided_at' => now(),
             ]);
+
+            foreach ($documents as $file) {
+                $decision
+                    ->addMedia($file->getRealPath())
+                    ->usingName($file->getClientOriginalName())
+                    ->toMediaCollection('decision_documents');
+            }
 
             match ($action) {
                 ApprovalAction::Approve => $this->applyApprove($aid),

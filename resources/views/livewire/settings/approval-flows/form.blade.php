@@ -271,6 +271,79 @@
                                             @endforeach
                                         </div>
                                     </div>
+
+                                    {{-- Stage type --}}
+                                    <x-ui.select
+                                        :label="__('approvals.flows.builder.field_stage_type')"
+                                        name="stages.{{ $index }}.type"
+                                        wire:model="stages.{{ $index }}.type"
+                                        :options="collect($this->stageTypes)->mapWithKeys(fn ($type) => [$type->value => $type->label()])"
+                                        :hint="__('approvals.flows.builder.field_stage_type_hint')"
+                                    />
+
+                                    {{-- Notify channels --}}
+                                    <div>
+                                        <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('approvals.flows.builder.field_notify_channels') }}</p>
+
+                                        <div class="flex flex-wrap gap-3">
+                                            @foreach ($this->notifyChannels as $channel)
+                                                <label wire:key="stage-{{ $index }}-channel-{{ $channel }}" class="flex cursor-pointer items-center gap-2 text-sm text-gray-700 select-none dark:text-gray-200">
+                                                    <input
+                                                        type="checkbox"
+                                                        wire:model="stages.{{ $index }}.notify_channels"
+                                                        value="{{ $channel }}"
+                                                        class="rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary-500/30 dark:border-white/20 dark:bg-transparent"
+                                                    />
+                                                    {{ __('approvals.flows.builder.notify_channel.'.$channel) }}
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+
+                                    {{-- Required documents --}}
+                                    <div class="sm:col-span-2 rounded-(--radius-brand) border border-gray-200 p-3 dark:border-white/10">
+                                        <x-ui.toggle
+                                            wire:model.live="stages.{{ $index }}.documents_required"
+                                            name="stages.{{ $index }}.documents_required"
+                                            :label="__('approvals.flows.builder.field_documents_required')"
+                                        />
+
+                                        @if (data_get($stages, $index.'.documents_required'))
+                                            <div class="mt-3 space-y-2">
+                                                <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('approvals.flows.builder.required_documents_hint') }}</p>
+
+                                                @foreach (data_get($stages, $index.'.required_documents', []) as $docIndex => $docLabel)
+                                                    <div wire:key="stage-{{ $index }}-doc-{{ $docIndex }}" class="flex items-center gap-2">
+                                                        <input
+                                                            type="text"
+                                                            wire:model="stages.{{ $index }}.required_documents.{{ $docIndex }}"
+                                                            placeholder="{{ __('approvals.flows.builder.document_type_placeholder') }}"
+                                                            class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition duration-200 ease-out focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            wire:click="removeDocumentType({{ $index }}, {{ $docIndex }})"
+                                                            title="{{ __('common.delete') }}"
+                                                            class="rounded-full p-1.5 text-gray-400 transition duration-150 ease-out hover:bg-status-rejected/10 hover:text-status-rejected focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-status-rejected dark:hover:bg-status-rejected/20"
+                                                        >
+                                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                                            </svg>
+                                                            <span class="sr-only">{{ __('common.delete') }}</span>
+                                                        </button>
+                                                    </div>
+                                                @endforeach
+
+                                                <button
+                                                    type="button"
+                                                    wire:click="addDocumentType({{ $index }})"
+                                                    class="text-sm font-semibold text-primary-700 transition-colors duration-150 ease-out hover:text-primary-800 dark:text-primary-200 dark:hover:text-primary-100"
+                                                >
+                                                    + {{ __('approvals.flows.builder.add_document_type') }}
+                                                </button>
+                                            </div>
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>
