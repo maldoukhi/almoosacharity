@@ -3,8 +3,6 @@
         $case->value => $case->label(),
     ]);
 
-    $categoryOptions = $this->categories->mapWithKeys(fn ($category) => [$category->id => $category->name]);
-
     $statusOptions = collect(\App\Enums\BeneficiaryStatus::cases())->mapWithKeys(fn ($status) => [
         $status->value => $status->label(),
     ]);
@@ -244,13 +242,26 @@
                         :placeholder="__('beneficiaries.search_placeholder')"
                     />
 
-                    <x-ui.select
-                        :label="__('beneficiaries.filter_category')"
-                        name="categoryFilter"
-                        wire:model.live="categoryFilter"
-                        :placeholder="__('common.all')"
-                        :options="$categoryOptions"
-                    />
+                    <div>
+                        <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('beneficiaries.filter_category') }}</span>
+                        @if ($this->categories->isEmpty())
+                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('aid_batches.no_categories') }}</p>
+                        @else
+                            <div class="flex flex-wrap gap-2">
+                                @foreach ($this->categories as $category)
+                                    <label wire:key="mcat-{{ $category->id }}" class="inline-flex cursor-pointer items-center gap-2 rounded-(--radius-brand) border border-gray-300 px-3 py-1.5 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5">
+                                        <input
+                                            type="checkbox"
+                                            value="{{ $category->id }}"
+                                            wire:model.live="categoryFilters"
+                                            class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/20 dark:bg-primary-950/40"
+                                        />
+                                        {{ $category->name }}
+                                    </label>
+                                @endforeach
+                            </div>
+                        @endif
+                    </div>
 
                     <x-ui.select
                         :label="__('beneficiaries.filter_status')"

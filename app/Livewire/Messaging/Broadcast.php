@@ -55,7 +55,8 @@ class Broadcast extends Component
     public string $search = '';
 
     #[Url]
-    public string $categoryFilter = '';
+    /** @var array<int, int> Selected category ids — a beneficiary in ANY of them matches, listed once. */
+    public array $categoryFilters = [];
 
     #[Url]
     public string $statusFilter = '';
@@ -145,7 +146,7 @@ class Broadcast extends Component
         $this->resetPage();
     }
 
-    public function updatingCategoryFilter(): void
+    public function updatingCategoryFilters(): void
     {
         $this->resetPage();
     }
@@ -162,7 +163,7 @@ class Broadcast extends Component
 
     public function updated(string $property): void
     {
-        if (in_array($property, ['search', 'categoryFilter', 'statusFilter', 'cityFilter'], true) && $this->selectAllFiltered) {
+        if ((in_array($property, ['search', 'statusFilter', 'cityFilter'], true) || str_starts_with($property, 'categoryFilters')) && $this->selectAllFiltered) {
             $this->syncSelectionToFilters();
         }
     }
@@ -764,9 +765,13 @@ class Broadcast extends Component
                         ->orWhere('mobile', 'like', $term);
                 });
             })
-            ->when($this->categoryFilter !== '', function (Builder $query): void {
+            ->when($this->categoryFilters !== [], function (Builder $query): void {
+                // whereHas + whereIn matches a beneficiary in ANY selected
+                // category and returns each beneficiary once (no join fan-out
+                // duplication), so a person in several chosen categories is
+                // never listed twice.
                 $query->whereHas('categories', function (Builder $query): void {
-                    $query->where('beneficiary_categories.id', $this->categoryFilter);
+                    $query->whereIn('beneficiary_categories.id', $this->categoryFilters);
                 });
             })
             ->when($this->statusFilter !== '', function (Builder $query): void {
