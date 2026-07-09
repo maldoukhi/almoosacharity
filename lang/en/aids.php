@@ -42,6 +42,9 @@ return [
     'select_all_capped' => 'Only the first :count beneficiaries in the current search results were selected (the maximum for a single bulk selection). Narrow your search to select the rest.',
     'selected_count' => '{0} No beneficiary selected yet|{1} 1 beneficiary selected|[2,*] :count beneficiaries selected',
     'bulk_create_hint' => 'An independent aid will be created for each of the :count selected beneficiaries, using the same data entered above.',
+    'category_merge_hint' => 'Pick a category to add all eligible beneficiaries in it to the selection (suspended, deactivated and rejected are excluded). You can then add or remove individually.',
+    'override_amounts_title' => 'Per-beneficiary custom amounts',
+    'override_amounts_hint' => 'Leave blank to use the amount above, or set a different amount for a specific beneficiary.',
 
     'type_cash' => 'Cash Aid',
     'type_cash_hint' => 'Provide a specific amount in Saudi Riyals',

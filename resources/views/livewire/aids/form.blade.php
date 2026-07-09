@@ -33,6 +33,55 @@
                 :placeholder="__('aids.field_title_placeholder')"
             />
 
+            @if (! $isEdit)
+                {{-- Batch selection conveniences (ported from BatchCreate):
+                     categories + Excel national-id upload merge eligible
+                     beneficiaries into the picker below. --}}
+                <div class="space-y-5 rounded-(--radius-brand) border border-gray-200 bg-gray-50/50 p-4 dark:border-white/10 dark:bg-white/5">
+                    <div>
+                        <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aid_batches.categories') }}</span>
+                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.category_merge_hint') }}</p>
+                        <div class="flex flex-wrap gap-2">
+                            @forelse ($this->categories as $category)
+                                <label wire:key="aid-cat-{{ $category->id }}" class="inline-flex cursor-pointer items-center gap-2 rounded-(--radius-brand) border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition hover:bg-gray-50 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-200 dark:hover:bg-white/5">
+                                    <input
+                                        type="checkbox"
+                                        value="{{ $category->id }}"
+                                        wire:model.live="category_ids"
+                                        class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-white/20 dark:bg-primary-950/40"
+                                    />
+                                    {{ $category->name }}
+                                </label>
+                            @empty
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('aid_batches.no_categories') }}</p>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    <div class="border-t border-gray-200 pt-4 dark:border-white/10">
+                        <span class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aid_batches.excel_upload') }}</span>
+                        <p class="mb-2 text-xs text-gray-500 dark:text-gray-400">{{ __('aid_batches.excel_hint') }}</p>
+                        <input
+                            type="file"
+                            wire:model="nationalIdFile"
+                            accept=".xlsx,.xls,.csv"
+                            class="block w-full text-sm text-gray-700 file:me-4 file:rounded-(--radius-brand) file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-700 hover:file:bg-primary-100 dark:text-gray-200 dark:file:bg-primary-900/40 dark:file:text-primary-200"
+                        />
+                        <div wire:loading wire:target="nationalIdFile" class="mt-2 text-xs text-gray-500 dark:text-gray-400">{{ __('aid_batches.excel_reading') }}</div>
+                        @error('nationalIdFile')
+                            <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                        @enderror
+
+                        @if ($unmatchedNationalIds !== [])
+                            <div class="mt-3 rounded-(--radius-brand) border border-status-review/30 bg-status-review/5 p-3">
+                                <p class="text-xs font-medium text-status-review">{{ __('aid_batches.unmatched_title', ['count' => count($unmatchedNationalIds)]) }}</p>
+                                <p class="mt-1 font-mono text-xs text-gray-600 dark:text-gray-300">{{ implode('، ', $unmatchedNationalIds) }}</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 @if ($isEdit)
                     <x-ui.select
@@ -309,6 +358,50 @@
                             <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.no_items_yet') }}</p>
                         @endforelse
                     </div>
+                </div>
+            @endif
+
+            {{-- Per-beneficiary cash amount override (create mode, cash only).
+                 Each selected beneficiary can carry its own amount; a blank
+                 input falls back to the form amount above. --}}
+            @if (! $isEdit && $type === 'cash' && $this->selectedBeneficiaries->isNotEmpty())
+                <div class="space-y-2">
+                    <div>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aids.override_amounts_title') }}</p>
+                        <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.override_amounts_hint') }}</p>
+                    </div>
+
+                    <x-ui.table>
+                        <thead>
+                            <tr>
+                                <x-ui.table.th>{{ __('aids.field_beneficiary') }}</x-ui.table.th>
+                                <x-ui.table.th>{{ __('beneficiaries.field_national_id') }}</x-ui.table.th>
+                                <x-ui.table.th align="end">{{ __('aid_batches.amount_override') }}</x-ui.table.th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-white/10">
+                            @foreach ($this->selectedBeneficiaries as $beneficiary)
+                                <tr wire:key="aid-override-{{ $beneficiary->id }}">
+                                    <x-ui.table.td class="text-gray-900 dark:text-white">{{ $beneficiary->full_name }}</x-ui.table.td>
+                                    <x-ui.table.td class="font-mono tabular-nums text-gray-500 dark:text-gray-400">{{ $beneficiary->national_id }}</x-ui.table.td>
+                                    <x-ui.table.td align="end">
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0.01"
+                                            wire:model="overrideAmounts.{{ $beneficiary->id }}"
+                                            placeholder="{{ $amount ? number_format((float) $amount, 2) : __('aid_batches.default') }}"
+                                            class="w-32 rounded-(--radius-brand) border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
+                                        />
+                                    </x-ui.table.td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </x-ui.table>
+
+                    @error('overrideAmounts.*')
+                        <p class="text-xs text-status-rejected">{{ $message }}</p>
+                    @enderror
                 </div>
             @endif
 

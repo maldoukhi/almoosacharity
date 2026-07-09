@@ -8,11 +8,14 @@ use App\Actions\Aids\SubmitAid;
 use App\Actions\Aids\UpdateAid;
 use App\Enums\AidProgramType;
 use App\Enums\AidType;
+use App\Enums\BeneficiaryStatus;
 use App\Enums\RecurrenceFrequency;
 use App\Exceptions\InvalidAidTransitionException;
+use App\Imports\SpreadsheetReader;
 use App\Models\Aid;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
+use App\Models\BeneficiaryCategory;
 use App\Models\RecurringAidPlan;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -20,6 +23,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 use Livewire\Attributes\Computed;
@@ -47,6 +51,13 @@ class Form extends Component
      */
     private const int MAX_SELECT_ALL = 200;
 
+    /**
+     * Private disk the uploaded national-id workbook is parked on while we
+     * read it: such lists carry national ids and must never touch the public
+     * disk. Mirrors {@see BatchCreate}.
+     */
+    private const string DISK = 'local';
+
     public ?Aid $aid = null;
 
     /**
@@ -63,6 +74,38 @@ class Form extends Component
      * @var array<int, int>
      */
     public array $beneficiary_ids = [];
+
+    /**
+     * Create-mode batch conveniences (ported from
+     * {@see BatchCreate}). Selected beneficiary categories:
+     * ticking a category merges every eligible beneficiary in it into
+     * {@see $beneficiary_ids} (never removing an already-chosen id).
+     *
+     * @var array<int, int>
+     */
+    public array $category_ids = [];
+
+    /**
+     * Optional Excel/CSV of national ids to bulk-match into
+     * {@see $beneficiary_ids} (create mode only).
+     */
+    public mixed $nationalIdFile = null;
+
+    /**
+     * National ids from the last upload that matched no eligible beneficiary.
+     *
+     * @var array<int, string>
+     */
+    public array $unmatchedNationalIds = [];
+
+    /**
+     * Per-beneficiary cash amount override, keyed by beneficiary id. A blank
+     * entry falls back to the form's {@see $amount} at creation time. Only
+     * used for cash aids in create mode.
+     *
+     * @var array<int, mixed>
+     */
+    public array $overrideAmounts = [];
 
     public ?int $aid_program_id = null;
 
@@ -191,6 +234,22 @@ class Form extends Component
         return AidProgram::query()
             ->where('is_active', true)
             ->orderBy('sort_order')
+            ->get();
+    }
+
+    /**
+     * Active beneficiary categories offered as checkbox chips in create mode:
+     * ticking one merges every eligible beneficiary in it into the selection.
+     *
+     * @return Collection<int, BeneficiaryCategory>
+     */
+    #[Computed]
+    public function categories(): Collection
+    {
+        return BeneficiaryCategory::query()
+            ->where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('name')
             ->get();
     }
 
@@ -396,6 +455,135 @@ class Form extends Component
         $this->beneficiary_ids = [];
     }
 
+    /**
+     * Eligible beneficiaries for category/Excel selection: everyone except the
+     * genuinely-excluded states. Mirrors
+     * {@see BatchCreate::activeBeneficiariesQuery()} so the
+     * two screens gather the same population.
+     */
+    private function eligibleBeneficiariesQuery(): Builder
+    {
+        return Beneficiary::query()
+            ->whereNotIn('status', [
+                BeneficiaryStatus::Suspended->value,
+                BeneficiaryStatus::Deactivated->value,
+                BeneficiaryStatus::Rejected->value,
+            ]);
+    }
+
+    /**
+     * Merge a set of beneficiary ids into {@see $beneficiary_ids}, normalising
+     * to unique ints (DOM checkbox values arrive as strings) and never adding a
+     * duplicate. Returns the number of ids actually added.
+     *
+     * @param  array<int, int|string>  $ids
+     */
+    private function mergeBeneficiaryIds(array $ids): int
+    {
+        $before = count($this->beneficiary_ids);
+
+        $this->beneficiary_ids = array_values(array_unique([
+            ...array_map('intval', $this->beneficiary_ids),
+            ...array_map('intval', $ids),
+        ]));
+
+        return count($this->beneficiary_ids) - $before;
+    }
+
+    /**
+     * Ticking a category chip merges every eligible beneficiary in the chosen
+     * categories into {@see $beneficiary_ids}. Capped at {@see MAX_SELECT_ALL}
+     * ids per change for safety, with a toast when the match count exceeds it.
+     */
+    public function updatedCategoryIds(): void
+    {
+        $this->category_ids = array_values(array_unique(
+            array_map('intval', $this->category_ids),
+        ));
+
+        if ($this->category_ids === []) {
+            return;
+        }
+
+        $query = $this->eligibleBeneficiariesQuery()
+            ->whereHas('categories', fn (Builder $q): Builder => $q
+                ->whereIn('beneficiary_categories.id', $this->category_ids));
+
+        $total = (clone $query)->count();
+
+        $ids = (clone $query)
+            ->orderBy('first_name')
+            ->limit(self::MAX_SELECT_ALL)
+            ->pluck('id')
+            ->all();
+
+        $this->mergeBeneficiaryIds($ids);
+
+        if ($total > self::MAX_SELECT_ALL) {
+            $this->dispatch('toast', type: 'info', message: __('aids.select_all_capped', ['count' => self::MAX_SELECT_ALL]));
+        }
+    }
+
+    /**
+     * Read the uploaded workbook, pull out every Saudi national id it contains,
+     * match them to eligible beneficiaries, merge the matches into the
+     * selection and report the national ids that matched nothing. Ported from
+     * {@see BatchCreate::updatedNationalIdFile()}.
+     */
+    public function updatedNationalIdFile(): void
+    {
+        Gate::authorize('create', Aid::class);
+
+        $this->validate([
+            'nationalIdFile' => ['required', 'file', 'mimes:xlsx,xls,csv,txt', 'max:10240'],
+        ]);
+
+        $path = $this->nationalIdFile->store('imports', self::DISK);
+
+        try {
+            $rows = SpreadsheetReader::rows($path, self::DISK);
+        } finally {
+            if (Storage::disk(self::DISK)->exists($path)) {
+                Storage::disk(self::DISK)->delete($path);
+            }
+        }
+
+        // Collect every cell that looks like a Saudi national id, so header
+        // labels and stray text never enter the matching set.
+        $candidates = collect($rows)
+            ->flatten()
+            ->map(fn ($cell): string => trim((string) $cell))
+            ->filter(fn (string $cell): bool => preg_match('/^[12]\d{9}$/', $cell) === 1)
+            ->unique()
+            ->values();
+
+        if ($candidates->isEmpty()) {
+            $this->unmatchedNationalIds = [];
+            $this->reset('nationalIdFile');
+            $this->addError('nationalIdFile', __('aid_batches.excel_no_ids'));
+
+            return;
+        }
+
+        $matched = $this->eligibleBeneficiariesQuery()
+            ->whereIn('national_id', $candidates->all())
+            ->get(['id', 'national_id']);
+
+        $this->mergeBeneficiaryIds($matched->pluck('id')->all());
+
+        $this->unmatchedNationalIds = $candidates
+            ->diff($matched->pluck('national_id'))
+            ->values()
+            ->all();
+
+        $this->reset('nationalIdFile');
+
+        $this->dispatch('toast', type: 'success', message: __('aid_batches.excel_matched', [
+            'matched' => $matched->count(),
+            'unmatched' => count($this->unmatchedNationalIds),
+        ]));
+    }
+
     #[Computed]
     public function isInKind(): bool
     {
@@ -462,6 +650,7 @@ class Form extends Component
 
         $this->amount = null;
         $this->purpose = '';
+        $this->overrideAmounts = [];
     }
 
     public function save(): void
@@ -586,12 +775,39 @@ class Form extends Component
         $beneficiaryIds = $validated['beneficiary_ids'];
         unset($validated['beneficiary_ids']);
 
+        // Write-path eligibility re-check (preserves the guard the batch flow
+        // enforced before it was folded into this screen): beneficiary_ids is
+        // a client-controllable property, so drop any id that isn't an eligible
+        // (non-suspended/deactivated/rejected) beneficiary before raising aids,
+        // so a crafted request can't aid an ineligible beneficiary.
+        $beneficiaryIds = $this->eligibleBeneficiariesQuery()
+            ->whereIn('id', $beneficiaryIds)
+            ->pluck('id')
+            ->all();
+
+        if ($beneficiaryIds === []) {
+            $this->addError('beneficiary_ids', __('aid_batches.no_eligible_selected'));
+
+            return null;
+        }
+
+        $isCash = ($validated['type'] ?? null) === AidType::Cash->value;
+
         $createdAids = collect($beneficiaryIds)
-            ->map(function (int $beneficiaryId) use ($validated): Aid {
-                $aid = app(CreateAid::class)->handle(
-                    [...$validated, 'beneficiary_id' => $beneficiaryId],
-                    Auth::user(),
-                );
+            ->map(function (int $beneficiaryId) use ($validated, $isCash): Aid {
+                $data = [...$validated, 'beneficiary_id' => $beneficiaryId];
+
+                // Per-beneficiary cash override wins over the form amount; a
+                // blank/absent override falls back to $validated['amount'].
+                if ($isCash) {
+                    $override = $this->overrideAmounts[$beneficiaryId] ?? null;
+
+                    if ($override !== null && $override !== '') {
+                        $data['amount'] = (float) $override;
+                    }
+                }
+
+                $aid = app(CreateAid::class)->handle($data, Auth::user());
 
                 $this->syncRecurringPlan($aid);
                 $this->storeDocuments($aid);
@@ -746,6 +962,11 @@ class Form extends Component
                 'integer',
                 Rule::exists('beneficiaries', 'id')->whereNull('deleted_at'),
             ];
+
+            // Per-beneficiary cash override (create mode only).
+            if (! $isInKind) {
+                $rules['overrideAmounts.*'] = ['nullable', 'numeric', 'min:0.01'];
+            }
         }
 
         return $rules;

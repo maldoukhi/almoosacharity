@@ -5,7 +5,6 @@ use App\Livewire\Admin\Roles\Form as RoleForm;
 use App\Livewire\Admin\Roles\Index as RoleIndex;
 use App\Livewire\Admin\Users\Form as UserForm;
 use App\Livewire\Admin\Users\Index as UserIndex;
-use App\Livewire\Aids\BatchCreate as AidBatchCreate;
 use App\Livewire\Aids\Form as AidForm;
 use App\Livewire\Aids\Index as AidIndex;
 use App\Livewire\Aids\RecurringPlans\Index as RecurringPlanIndex;
@@ -158,7 +157,9 @@ Route::middleware(['auth', 'active'])->group(function (): void {
         Route::get('/', AidIndex::class)->name('index')->middleware('permission:aids.view');
         Route::get('/recurring-plans', RecurringPlanIndex::class)->name('recurring-plans.index')->middleware('permission:aids.recurring.manage');
         Route::get('/create', AidForm::class)->name('create')->middleware('permission:aids.create');
-        Route::get('/batch', AidBatchCreate::class)->name('batch')->middleware('permission:aids.create');
+        // Batch creation was unified into the single aid create screen; keep
+        // the named route so any old link still resolves, now redirecting there.
+        Route::redirect('/batch', '/aids/create')->name('batch')->middleware('permission:aids.create');
         Route::get('/{aid}/edit', AidForm::class)->name('edit')->middleware('permission:aids.update');
         Route::get('/{aid}', AidShow::class)->name('show')->middleware('permission:aids.view');
     });

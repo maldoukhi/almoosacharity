@@ -149,7 +149,16 @@ class BeneficiaryFactory extends Factory
             'bank_name' => $hasIban ? $this->faker->randomElement(self::BANKS) : null,
             'iban' => $hasIban ? $this->generateValidIban() : null,
             'bank_account_holder' => $hasIban ? $this->faker->name(gender: $gender === Gender::Male ? 'male' : 'female') : null,
-            'status' => $this->faker->randomElement(BeneficiaryStatus::cases()),
+            // Default to an eligible (non-blocked) status: a random deactivated/
+            // suspended/rejected default would make every beneficiary randomly
+            // ineligible to receive aids. Tests that need a blocked status set
+            // it explicitly.
+            'status' => $this->faker->randomElement([
+                BeneficiaryStatus::New,
+                BeneficiaryStatus::UnderStudy,
+                BeneficiaryStatus::UnderReview,
+                BeneficiaryStatus::Active,
+            ]),
             'notes' => $this->faker->boolean(20) ? $this->faker->sentence() : null,
             'created_by' => User::query()->whereHas('roles', fn ($q) => $q->whereIn('name', ['system-admin', 'data-entry']))->inRandomOrder()->first()?->id ?? 1,
         ];
