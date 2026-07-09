@@ -5,6 +5,7 @@ use App\Livewire\Admin\Roles\Form as RoleForm;
 use App\Livewire\Admin\Roles\Index as RoleIndex;
 use App\Livewire\Admin\Users\Form as UserForm;
 use App\Livewire\Admin\Users\Index as UserIndex;
+use App\Livewire\Aids\BatchCreate as AidBatchCreate;
 use App\Livewire\Aids\Form as AidForm;
 use App\Livewire\Aids\Index as AidIndex;
 use App\Livewire\Aids\Show as AidShow;
@@ -146,6 +147,7 @@ Route::middleware(['auth', 'active'])->group(function (): void {
     Route::prefix('aids')->name('aids.')->group(function (): void {
         Route::get('/', AidIndex::class)->name('index')->middleware('permission:aids.view');
         Route::get('/create', AidForm::class)->name('create')->middleware('permission:aids.create');
+        Route::get('/batch', AidBatchCreate::class)->name('batch')->middleware('permission:aids.create');
         Route::get('/{aid}/edit', AidForm::class)->name('edit')->middleware('permission:aids.update');
         Route::get('/{aid}', AidShow::class)->name('show')->middleware('permission:aids.view');
     });
