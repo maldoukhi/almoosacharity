@@ -45,6 +45,7 @@ return [
     'category_merge_hint' => 'Pick a category to add all eligible beneficiaries in it to the selection (suspended, deactivated and rejected are excluded). You can then add or remove individually.',
     'override_amounts_title' => 'Per-beneficiary custom amounts',
     'override_amounts_hint' => 'Leave blank to use the amount above, or set a different amount for a specific beneficiary.',
+    'selected_list_hint' => 'Review the matched beneficiaries below and remove anyone who should be excluded.',
 
     'type_cash' => 'Cash Aid',
     'type_cash_hint' => 'Provide a specific amount in Saudi Riyals',

@@ -364,40 +364,69 @@
             {{-- Per-beneficiary cash amount override (create mode, cash only).
                  Each selected beneficiary can carry its own amount; a blank
                  input falls back to the form amount above. --}}
-            @if (! $isEdit && $type === 'cash' && $this->selectedBeneficiaries->isNotEmpty())
+            @if (! $isEdit && $this->selectedBeneficiaries->isNotEmpty())
                 <div class="space-y-2">
-                    <div>
-                        <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aids.override_amounts_title') }}</p>
-                        <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.override_amounts_hint') }}</p>
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                {{ __('aid_batches.step_beneficiaries') }}
+                                <span class="ms-1 text-xs font-normal text-gray-500 dark:text-gray-400">({{ $this->selectedBeneficiaries->count() }})</span>
+                            </p>
+                            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                {{ $type === 'cash' ? __('aids.override_amounts_hint') : __('aids.selected_list_hint') }}
+                            </p>
+                        </div>
+                        <button type="button" wire:click="clearBeneficiaries" class="shrink-0 text-xs font-medium text-status-rejected hover:underline">
+                            {{ __('aids.clear_selection') }}
+                        </button>
                     </div>
 
-                    <x-ui.table>
-                        <thead>
-                            <tr>
-                                <x-ui.table.th>{{ __('aids.field_beneficiary') }}</x-ui.table.th>
-                                <x-ui.table.th>{{ __('beneficiaries.field_national_id') }}</x-ui.table.th>
-                                <x-ui.table.th align="end">{{ __('aid_batches.amount_override') }}</x-ui.table.th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100 dark:divide-white/10">
-                            @foreach ($this->selectedBeneficiaries as $beneficiary)
-                                <tr wire:key="aid-override-{{ $beneficiary->id }}">
-                                    <x-ui.table.td class="text-gray-900 dark:text-white">{{ $beneficiary->full_name }}</x-ui.table.td>
-                                    <x-ui.table.td class="font-mono tabular-nums text-gray-500 dark:text-gray-400">{{ $beneficiary->national_id }}</x-ui.table.td>
-                                    <x-ui.table.td align="end">
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0.01"
-                                            wire:model="overrideAmounts.{{ $beneficiary->id }}"
-                                            placeholder="{{ $amount ? number_format((float) $amount, 2) : __('aid_batches.default') }}"
-                                            class="w-32 rounded-(--radius-brand) border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
-                                        />
-                                    </x-ui.table.td>
+                    <div class="max-h-80 overflow-y-auto rounded-(--radius-brand) border border-gray-200 dark:border-white/10">
+                        <x-ui.table>
+                            <thead>
+                                <tr>
+                                    <x-ui.table.th>{{ __('aids.field_beneficiary') }}</x-ui.table.th>
+                                    <x-ui.table.th>{{ __('beneficiaries.field_national_id') }}</x-ui.table.th>
+                                    @if ($type === 'cash')
+                                        <x-ui.table.th align="end">{{ __('aid_batches.amount_override') }}</x-ui.table.th>
+                                    @endif
+                                    <x-ui.table.th align="end">{{ __('common.actions') }}</x-ui.table.th>
                                 </tr>
-                            @endforeach
-                        </tbody>
-                    </x-ui.table>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 dark:divide-white/10">
+                                @foreach ($this->selectedBeneficiaries as $beneficiary)
+                                    <tr wire:key="aid-selected-{{ $beneficiary->id }}">
+                                        <x-ui.table.td class="text-gray-900 dark:text-white">{{ $beneficiary->full_name }}</x-ui.table.td>
+                                        <x-ui.table.td class="font-mono tabular-nums text-gray-500 dark:text-gray-400">{{ $beneficiary->national_id }}</x-ui.table.td>
+                                        @if ($type === 'cash')
+                                            <x-ui.table.td align="end">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0.01"
+                                                    wire:model="overrideAmounts.{{ $beneficiary->id }}"
+                                                    placeholder="{{ $amount ? number_format((float) $amount, 2) : __('aid_batches.default') }}"
+                                                    class="w-32 rounded-(--radius-brand) border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
+                                                />
+                                            </x-ui.table.td>
+                                        @endif
+                                        <x-ui.table.td align="end">
+                                            <button
+                                                type="button"
+                                                wire:click="removeBeneficiary({{ $beneficiary->id }})"
+                                                class="inline-flex items-center gap-1 text-xs font-medium text-status-rejected transition hover:underline"
+                                            >
+                                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                                </svg>
+                                                {{ __('common.delete') }}
+                                            </button>
+                                        </x-ui.table.td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </x-ui.table>
+                    </div>
 
                     @error('overrideAmounts.*')
                         <p class="text-xs text-status-rejected">{{ $message }}</p>

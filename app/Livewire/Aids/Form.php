@@ -414,6 +414,20 @@ class Form extends Component
     public function removeBeneficiary(int $id): void
     {
         $this->beneficiary_ids = array_values(array_diff($this->beneficiary_ids, [$id]));
+
+        unset($this->overrideAmounts[$id]);
+    }
+
+    /**
+     * Clear the whole create-mode selection at once (the "clear" action on the
+     * selected-beneficiaries list), including any per-beneficiary amount
+     * overrides and the category chips that fed it.
+     */
+    public function clearBeneficiaries(): void
+    {
+        $this->beneficiary_ids = [];
+        $this->overrideAmounts = [];
+        $this->category_ids = [];
     }
 
     /**
