@@ -133,6 +133,7 @@ return [
         'field_test_email_placeholder' => 'Enter an address to send a test message to',
         'action_send_test_email' => 'Send test email',
         'test_email_subject' => 'Test message from the Al-Moosa Charity system',
+        'test_email_throttled' => 'Too many test emails sent — wait a minute and try again.',
         'test_email_body' => "Hello,\n\nThis is a test message from the aid management system to verify the email (SMTP) settings.\n\nIf you received this message, the settings are working correctly.\n\nAl-Moosa Charity Association.",
         'test_email_success' => 'The test email was sent successfully to :email',
         'test_email_failed' => 'Sending the test email failed: :message',

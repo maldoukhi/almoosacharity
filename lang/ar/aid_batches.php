@@ -48,4 +48,5 @@ return [
     'summary_title' => 'تمت العملية بنجاح',
     'summary_body' => 'تم إنشاء :cash إعانة نقدية و:in_kind إعانة عينية لـ :beneficiaries مستفيد.',
     'created' => 'تم إنشاء الإعانات لـ :beneficiaries مستفيد',
+    'no_eligible_selected' => 'لا يوجد مستفيدون مؤهَّلون ضمن المحدَّدين (المستبعَدون: موقوف/معطّل/مرفوض).',
 ];

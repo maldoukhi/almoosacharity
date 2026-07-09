@@ -12,8 +12,10 @@ use App\Services\Messaging\Drivers\OktaWhatsAppGateway;
 use App\Services\Messaging\Drivers\TaqnyatSmsGateway;
 use App\Support\Settings;
 use Database\Seeders\NotificationTemplateSeeder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -402,6 +404,18 @@ class Manage extends Component
     public function sendTestEmail(): void
     {
         Gate::authorize('notifications.settings.manage');
+
+        // Cheap abuse guard: even an admin shouldn't be able to fire unbounded
+        // synchronous test emails to arbitrary addresses.
+        $throttleKey = 'test-email:'.(Auth::id() ?? request()->ip());
+
+        if (RateLimiter::tooManyAttempts($throttleKey, maxAttempts: 5)) {
+            $this->addError('testEmailAddress', __('notifications.settings.test_email_throttled'));
+
+            return;
+        }
+
+        RateLimiter::hit($throttleKey, decaySeconds: 60);
 
         $this->validate([
             'testEmailAddress' => ['required', 'email', 'max:255'],

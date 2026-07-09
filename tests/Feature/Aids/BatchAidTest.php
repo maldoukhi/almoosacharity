@@ -139,6 +139,29 @@ it('lists under-study beneficiaries (the default status) and excludes suspended 
         ->not->toContain($suspended->id);
 });
 
+it('never raises an aid for an ineligible beneficiary even if its id is injected into selected_ids', function () {
+    asDataEntry();
+    seedAidCatalog();
+
+    $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
+
+    $eligible = Beneficiary::factory()->create(['status' => BeneficiaryStatus::Active]);
+    $deactivated = Beneficiary::factory()->create(['status' => BeneficiaryStatus::Deactivated]);
+
+    Livewire::test(BatchCreate::class)
+        ->set('aid_program_id', $program->id)
+        ->set('mode', AidType::Cash->value)
+        ->set('default_amount', 300)
+        ->set('default_purpose', 'سلة')
+        // Craft the client-controllable list to include a deactivated id.
+        ->set('selected_ids', [$eligible->id, $deactivated->id])
+        ->call('create')
+        ->assertHasNoErrors();
+
+    expect(Aid::query()->where('beneficiary_id', $deactivated->id)->exists())->toBeFalse();
+    expect(Aid::query()->where('beneficiary_id', $eligible->id)->exists())->toBeTrue();
+});
+
 it('matches beneficiaries by national id from an uploaded Excel/CSV and reports the unmatched ones', function () {
     seedAidCatalog();
     asDataEntry();

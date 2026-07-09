@@ -348,7 +348,23 @@ class BatchCreate extends Component
             }
         }
 
-        $beneficiaries = collect($this->selected_ids)
+        // Re-check eligibility on the write path: selected_ids is a
+        // client-controllable property, so never trust it — drop any id that
+        // is not an eligible (non-suspended/deactivated/rejected) beneficiary
+        // before raising aids, so a crafted request can't aid an ineligible
+        // beneficiary.
+        $eligibleIds = $this->activeBeneficiariesQuery()
+            ->whereIn('id', $this->selected_ids)
+            ->pluck('id')
+            ->all();
+
+        if ($eligibleIds === []) {
+            $this->addError('selected_ids', __('aid_batches.no_eligible_selected'));
+
+            return;
+        }
+
+        $beneficiaries = collect($eligibleIds)
             ->map(function (int $id): array {
                 $override = $this->overrideAmounts[$id] ?? null;
 

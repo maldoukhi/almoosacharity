@@ -48,4 +48,5 @@ return [
     'summary_title' => 'Done',
     'summary_body' => 'Created :cash cash and :in_kind in-kind aids for :beneficiaries beneficiaries.',
     'created' => 'Aids created for :beneficiaries beneficiaries',
+    'no_eligible_selected' => 'None of the selected beneficiaries are eligible (suspended/deactivated/rejected are excluded).',
 ];
