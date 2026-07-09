@@ -112,6 +112,33 @@ it('creates both a cash and an in-kind aid per beneficiary in "both" mode, all l
         ->toEqual($aids->pluck('id')->sort()->values()->all());
 });
 
+it('lists under-study beneficiaries (the default status) and excludes suspended ones', function () {
+    asDataEntry();
+
+    $category = BeneficiaryCategory::create(['name' => 'أسرة محتاجة', 'is_active' => true, 'sort_order' => 1]);
+
+    // Beneficiaries default to "under_study" on registration — they must
+    // appear in the batch list (regression: they were filtered out when the
+    // list only showed Active). A suspended one must never appear.
+    $underStudy = Beneficiary::factory()->create(['status' => BeneficiaryStatus::UnderStudy]);
+    $active = Beneficiary::factory()->create(['status' => BeneficiaryStatus::Active]);
+    $suspended = Beneficiary::factory()->create(['status' => BeneficiaryStatus::Suspended]);
+
+    foreach ([$underStudy, $active, $suspended] as $b) {
+        $b->categories()->attach($category->id);
+    }
+
+    $ids = Livewire::test(BatchCreate::class)
+        ->set('category_ids', [$category->id])
+        ->get('beneficiaries')
+        ->pluck('id')
+        ->all();
+
+    expect($ids)->toContain($underStudy->id)
+        ->toContain($active->id)
+        ->not->toContain($suspended->id);
+});
+
 it('matches beneficiaries by national id from an uploaded Excel/CSV and reports the unmatched ones', function () {
     seedAidCatalog();
     asDataEntry();
