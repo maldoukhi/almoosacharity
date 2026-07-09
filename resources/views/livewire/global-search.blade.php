@@ -38,22 +38,11 @@
     x-on:keydown.window.ctrl.k.prevent="openPalette()"
     x-on:keydown.window.meta.k.prevent="openPalette()"
     x-on:keydown.window.escape="closePalette()"
+    x-on:open-global-search.window="openPalette()"
 >
-    {{-- Trigger button --}}
-    <button
-        type="button"
-        x-on:click="openPalette()"
-        title="{{ __('search.trigger') }}"
-        class="inline-flex items-center gap-2 rounded-(--radius-brand) px-3 py-2 text-sm text-gray-500 transition duration-150 hover:bg-gray-100 hover:text-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-500 dark:text-gray-300 dark:hover:bg-white/10 dark:hover:text-white"
-    >
-        <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-        </svg>
-        <span class="sr-only sm:not-sr-only">{{ __('search.trigger') }}</span>
-        <kbd dir="ltr" class="hidden items-center gap-0.5 rounded border border-gray-200 bg-gray-50 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400 sm:inline-flex dark:border-white/10 dark:bg-white/5 dark:text-gray-500">
-            Ctrl K
-        </kbd>
-    </button>
+    {{-- The trigger button lives in the topbar (it dispatches
+         open-global-search); this component only renders the centered
+         overlay, from the layout root so `fixed` spans the viewport. --}}
 
     {{-- Overlay palette --}}
     <div

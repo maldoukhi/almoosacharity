@@ -50,6 +50,13 @@
 
     <x-ui.confirm-dialog />
 
+    {{-- At the layout root (not inside the topbar): the sticky header's
+         backdrop-blur creates a containing block that traps fixed overlays,
+         so the palette must live outside it to center over the viewport. --}}
+    @auth
+        <livewire:global-search />
+    @endauth
+
     @livewire('wire-elements-modal')
 </body>
 </html>
