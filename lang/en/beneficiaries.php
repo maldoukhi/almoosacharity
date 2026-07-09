@@ -10,6 +10,15 @@ return [
     'create_button' => 'New Beneficiary',
     'search_placeholder' => 'Search by name, ID number or phone...',
 
+    'charts' => [
+        'title' => 'Aid overview',
+        'total_aids' => 'Total aids',
+        'delivered' => 'Delivered',
+        'cash_total' => 'Cash disbursed',
+        'by_status' => 'Aids by status',
+        'by_type' => 'Aids by type',
+    ],
+
     'tab' => [
         'basic' => 'Basic Information',
         'contact_work' => 'Contact & Work',

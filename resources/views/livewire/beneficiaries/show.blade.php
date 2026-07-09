@@ -156,6 +156,54 @@
         @endif
     </x-ui.card>
 
+    @if ($this->hasAids)
+        <x-ui.card>
+            <x-slot:header>
+                <h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ __('beneficiaries.charts.title') }}</h2>
+            </x-slot:header>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div class="rounded-lg bg-gray-50 p-4 dark:bg-white/5">
+                    <div class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('beneficiaries.charts.total_aids') }}</div>
+                    <div class="mt-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{{ number_format($this->aidSummary['total']) }}</div>
+                </div>
+                <div class="rounded-lg bg-gray-50 p-4 dark:bg-white/5">
+                    <div class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('beneficiaries.charts.delivered') }}</div>
+                    <div class="mt-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{{ number_format($this->aidSummary['delivered']) }}</div>
+                </div>
+                <div class="rounded-lg bg-gray-50 p-4 dark:bg-white/5">
+                    <div class="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('beneficiaries.charts.cash_total') }}</div>
+                    <div class="mt-1 text-2xl font-bold tabular-nums text-gray-900 dark:text-white">{{ number_format($this->aidSummary['cash_total'], 2) }} <span class="text-sm font-normal text-gray-500 dark:text-gray-400">{{ __('aids.currency_sar') }}</span></div>
+                </div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
+                <div>
+                    <h3 class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('beneficiaries.charts.by_status') }}</h3>
+                    <x-ui.chart
+                        type="donut"
+                        :series="$this->aidsByStatus['series']"
+                        :labels="$this->aidsByStatus['labels']"
+                        :colors="$this->aidsByStatus['colors']"
+                        :height="260"
+                        wire:key="ben-aids-status-{{ $beneficiary->id }}"
+                    />
+                </div>
+                <div>
+                    <h3 class="mb-2 text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">{{ __('beneficiaries.charts.by_type') }}</h3>
+                    <x-ui.chart
+                        type="donut"
+                        :series="$this->aidsByType['series']"
+                        :labels="$this->aidsByType['labels']"
+                        :colors="$this->aidsByType['colors']"
+                        :height="260"
+                        wire:key="ben-aids-type-{{ $beneficiary->id }}"
+                    />
+                </div>
+            </div>
+        </x-ui.card>
+    @endif
+
     <x-ui.card>
         <x-ui.tabs :tabs="$tabs" :active="$activeTab" wireClick="setTab" />
 

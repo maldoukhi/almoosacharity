@@ -13,6 +13,7 @@ return [
     'categories' => 'التصنيفات',
     'aid_programs' => 'برامج الإعانات',
     'approval_flows' => 'مسارات الموافقات',
+    'beneficiary_flows' => 'مسارات حالة المستفيد',
     'logout' => 'تسجيل الخروج',
     'surveys' => 'الاستبيانات',
     'notification_settings' => 'إعدادات الإشعارات',

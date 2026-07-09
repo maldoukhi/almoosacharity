@@ -13,6 +13,7 @@ return [
     'categories' => 'Categories',
     'aid_programs' => 'Aid Programs',
     'approval_flows' => 'Approval Flows',
+    'beneficiary_flows' => 'Beneficiary Status Flows',
     'logout' => 'Logout',
     'surveys' => 'Surveys',
     'notification_settings' => 'Notification Settings',

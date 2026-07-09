@@ -41,7 +41,7 @@ return [
     'default' => 'Default',
 
     'empty_title' => 'No beneficiaries',
-    'empty_description' => 'Pick a category or upload a national-id file to list beneficiaries',
+    'empty_description' => 'No matching beneficiaries. Clear the filters or pick another category, or upload an id file.',
 
     'selection_capped' => 'A single batch can target at most :count beneficiaries',
 
@@ -49,4 +49,5 @@ return [
     'summary_body' => 'Created :cash cash and :in_kind in-kind aids for :beneficiaries beneficiaries.',
     'created' => 'Aids created for :beneficiaries beneficiaries',
     'no_eligible_selected' => 'None of the selected beneficiaries are eligible (suspended/deactivated/rejected are excluded).',
+    'search_placeholder' => 'Search by name or national id...',
 ];

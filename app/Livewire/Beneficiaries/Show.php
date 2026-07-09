@@ -4,6 +4,8 @@ namespace App\Livewire\Beneficiaries;
 
 use App\Actions\BeneficiaryFlows\DeactivateBeneficiary;
 use App\Actions\BeneficiaryFlows\SubmitBeneficiary;
+use App\Enums\AidStatus;
+use App\Enums\AidType;
 use App\Enums\ApprovalAction;
 use App\Enums\BeneficiaryStatus;
 use App\Enums\RelationKind;
@@ -34,7 +36,7 @@ class Show extends Component
      *
      * @var array<int, string>
      */
-    private const TABS = ['basic', 'family', 'housing-income', 'bank', 'documents', 'activity'];
+    private const TABS = ['basic', 'family', 'housing_income', 'bank', 'documents', 'activity'];
 
     public Beneficiary $beneficiary;
 
@@ -180,6 +182,129 @@ class Show extends Component
             'y' => $y,
             'tier' => $tier,
         ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Aid charts (this beneficiary's aid history)
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Hex values for the semantic status color tokens, mirroring the
+     * Dashboard's palette so the beneficiary-profile donut matches the
+     * fixed --color-status-* mapping documented in CLAUDE.md.
+     *
+     * @var array<string, string>
+     */
+    private const STATUS_COLOR_HEX = [
+        'draft' => '#6B7280',
+        'review' => '#D97706',
+        'approved' => '#16A34A',
+        'rejected' => '#DC2626',
+        'delivered' => '#44631F',
+    ];
+
+    /**
+     * Whether this beneficiary has any aids at all — gates the charts card.
+     */
+    #[Computed]
+    public function hasAids(): bool
+    {
+        return $this->beneficiary->aids()->exists();
+    }
+
+    /**
+     * This beneficiary's aid counts grouped by status, shaped for x-ui.chart.
+     * Only statuses that actually occur are included (a per-beneficiary
+     * history is small, so an all-zero slice would just be noise).
+     *
+     * @return array{labels: array<int, string>, series: array<int, int>, colors: array<int, string>}
+     */
+    #[Computed]
+    public function aidsByStatus(): array
+    {
+        $counts = $this->beneficiary->aids()
+            ->selectRaw('status, count(*) as aggregate')
+            ->groupBy('status')
+            ->pluck('aggregate', 'status');
+
+        $labels = [];
+        $series = [];
+        $colors = [];
+
+        foreach (AidStatus::cases() as $status) {
+            $count = (int) ($counts[$status->value] ?? 0);
+
+            if ($count === 0) {
+                continue;
+            }
+
+            $labels[] = $status->label();
+            $series[] = $count;
+            $colors[] = self::STATUS_COLOR_HEX[$status->color()];
+        }
+
+        return ['labels' => $labels, 'series' => $series, 'colors' => $colors];
+    }
+
+    /**
+     * This beneficiary's aid counts grouped by type (cash / in-kind).
+     *
+     * @return array{labels: array<int, string>, series: array<int, int>, colors: array<int, string>}
+     */
+    #[Computed]
+    public function aidsByType(): array
+    {
+        $counts = $this->beneficiary->aids()
+            ->selectRaw('type, count(*) as aggregate')
+            ->groupBy('type')
+            ->pluck('aggregate', 'type');
+
+        $labels = [];
+        $series = [];
+
+        foreach (AidType::cases() as $type) {
+            $count = (int) ($counts[$type->value] ?? 0);
+
+            if ($count === 0) {
+                continue;
+            }
+
+            $labels[] = $type->label();
+            $series[] = $count;
+        }
+
+        // Brand primary/secondary tokens (CLAUDE.md).
+        return ['labels' => $labels, 'series' => $series, 'colors' => ['#1C545E', '#85BF40']];
+    }
+
+    /**
+     * Headline aid figures for the profile: total aids, count delivered/
+     * confirmed, and the summed cash amount actually disbursed.
+     *
+     * @return array{total: int, delivered: int, cash_total: float}
+     */
+    #[Computed]
+    public function aidSummary(): array
+    {
+        $aids = $this->beneficiary->aids()
+            ->selectRaw('status, type, count(*) as aggregate, coalesce(sum(amount), 0) as amount_total')
+            ->groupBy('status', 'type')
+            ->get();
+
+        $total = (int) $aids->sum('aggregate');
+
+        $delivered = (int) $aids
+            ->whereIn('status', [AidStatus::Delivered, AidStatus::Confirmed])
+            ->sum('aggregate');
+
+        $cashTotal = (float) $aids
+            ->where('type', AidType::Cash)
+            ->whereIn('status', [AidStatus::Delivered, AidStatus::Confirmed])
+            ->sum('amount_total');
+
+        return ['total' => $total, 'delivered' => $delivered, 'cash_total' => $cashTotal];
     }
 
     /*

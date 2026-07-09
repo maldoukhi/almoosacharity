@@ -50,7 +50,12 @@ class Beneficiary extends Model implements HasMedia
             'gender' => Gender::class,
             'marital_status' => MaritalStatus::class,
             'id_type' => IdType::class,
-            'housing_type' => HousingType::class,
+            // housing_type is intentionally NOT cast here: a legacy/import
+            // blank ('') would make the framework enum cast throw a
+            // ValueError the moment the attribute is read, 500-ing the
+            // profile. The resilient housingType() accessor below resolves
+            // it with tryFrom() (invalid -> null) so bad data can never
+            // break the page, regardless of whether the scrub migration ran.
             'status' => BeneficiaryStatus::class,
             'submitted_at' => 'datetime',
             'decided_at' => 'datetime',
@@ -109,6 +114,14 @@ class Beneficiary extends Model implements HasMedia
     }
 
     /**
+     * @return HasMany<Aid, $this>
+     */
+    public function aids(): HasMany
+    {
+        return $this->hasMany(Aid::class);
+    }
+
+    /**
      * @return BelongsToMany<BeneficiaryCategory, $this>
      */
     public function categories(): BelongsToMany
@@ -154,6 +167,23 @@ class Beneficiary extends Model implements HasMedia
     public function decisions(): HasMany
     {
         return $this->hasMany(BeneficiaryDecision::class)->latest('decided_at');
+    }
+
+    /**
+     * Resilient housing_type accessor: resolves the stored value with
+     * tryFrom() so an invalid/blank legacy value (e.g. '' from an old
+     * import) yields null instead of throwing the ValueError the default
+     * enum cast would. Writing accepts a HousingType, a valid backing
+     * string, or null/'' (stored as null).
+     */
+    protected function housingType(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value): ?HousingType => HousingType::tryFrom((string) $value),
+            set: fn ($value): ?string => $value instanceof HousingType
+                ? $value->value
+                : (($value === null || $value === '') ? null : (string) $value),
+        );
     }
 
     /**

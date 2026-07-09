@@ -49,6 +49,9 @@ class BatchCreate extends Component
     /** @var array<int, int> */
     public array $category_ids = [];
 
+    /** Free-text search over the beneficiary name / national id. */
+    public string $search = '';
+
     public ?int $aid_program_id = null;
 
     /** cash | in_kind | both */
@@ -132,26 +135,40 @@ class BatchCreate extends Component
     #[Computed]
     public function beneficiaries(): Collection
     {
-        $byCategory = $this->category_ids !== []
-            ? $this->activeBeneficiariesQuery()
-                ->whereHas('categories', fn (Builder $query) => $query
-                    ->whereIn('beneficiary_categories.id', $this->category_ids))
-                ->orderBy('first_name')
-                ->limit(self::MAX_BENEFICIARIES)
-                ->get()
-            : collect();
+        // The category checkboxes and the search box are OPTIONAL filters,
+        // not a prerequisite: with neither set we still list every eligible
+        // beneficiary (capped) so the table is never mysteriously empty just
+        // because a beneficiary hasn't been assigned to a category.
+        $query = $this->activeBeneficiariesQuery()->orderBy('first_name');
 
-        $missingIds = array_diff($this->selected_ids, $byCategory->pluck('id')->all());
+        if ($this->category_ids !== []) {
+            $query->whereHas('categories', fn (Builder $q) => $q
+                ->whereIn('beneficiary_categories.id', $this->category_ids));
+        }
+
+        if (trim($this->search) !== '') {
+            $term = '%'.trim($this->search).'%';
+            $query->where(fn (Builder $q) => $q
+                ->where('first_name', 'like', $term)
+                ->orWhere('last_name', 'like', $term)
+                ->orWhere('national_id', 'like', $term));
+        }
+
+        $listed = $query->limit(self::MAX_BENEFICIARIES)->get();
+
+        // Keep already-selected beneficiaries visible even when a filter
+        // would otherwise hide them, so a selection never silently vanishes.
+        $missingIds = array_diff($this->selected_ids, $listed->pluck('id')->all());
 
         if ($missingIds !== []) {
             $missing = $this->activeBeneficiariesQuery()
                 ->whereIn('id', $missingIds)
                 ->get();
 
-            $byCategory = $missing->concat($byCategory);
+            $listed = $missing->concat($listed);
         }
 
-        return $byCategory
+        return $listed
             ->unique('id')
             ->values();
     }

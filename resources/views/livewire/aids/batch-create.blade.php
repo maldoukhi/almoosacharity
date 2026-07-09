@@ -192,6 +192,14 @@
             </div>
         </div>
 
+        <div class="mb-4">
+            <x-ui.input
+                name="search"
+                wire:model.live.debounce.300ms="search"
+                :placeholder="__('aid_batches.search_placeholder')"
+            />
+        </div>
+
         @if ($this->beneficiaries->isEmpty())
             <x-ui.empty-state :title="__('aid_batches.empty_title')" :description="__('aid_batches.empty_description')">
                 <x-slot:icon>
@@ -233,7 +241,7 @@
                                             step="0.01"
                                             min="0.01"
                                             wire:model="overrideAmounts.{{ $beneficiary->id }}"
-                                            placeholder="{{ __('aid_batches.default') }}"
+                                            placeholder="{{ $default_amount ? number_format((float) $default_amount, 2) : __('aid_batches.default') }}"
                                             class="w-32 rounded-(--radius-brand) border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
                                         />
                                     @else
