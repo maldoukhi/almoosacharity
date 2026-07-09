@@ -182,6 +182,52 @@ class Index extends Component
     }
 
     /**
+     * Fill the title-template field with the default template.
+     */
+    public function useDefaultTitleTemplate(): void
+    {
+        $this->editTitleTemplate = RecurringAidPlan::DEFAULT_TITLE_TEMPLATE;
+    }
+
+    /**
+     * A live preview of the title the next generated aid would carry, from the
+     * current template + the plan's source program/beneficiary + the due (or
+     * start) date, for the next cycle. Null when nothing to show.
+     */
+    #[Computed]
+    public function editTitlePreview(): ?string
+    {
+        if ($this->editingPlanId === null || $this->editTitleTemplate === null || trim($this->editTitleTemplate) === '') {
+            return null;
+        }
+
+        $plan = RecurringAidPlan::query()
+            ->with(['aid.program', 'aid.beneficiary'])
+            ->withCount('aids')
+            ->find($this->editingPlanId);
+
+        if ($plan === null) {
+            return null;
+        }
+
+        $anchor = $this->editDueOn ?: $this->editStartsOn;
+
+        try {
+            $due = $anchor ? CarbonImmutable::parse($anchor) : CarbonImmutable::now();
+        } catch (\Exception) {
+            $due = CarbonImmutable::now();
+        }
+
+        return RecurringAidPlan::renderTitleTemplate(
+            $this->editTitleTemplate,
+            $plan->aid?->program?->name,
+            $plan->aid?->beneficiary?->short_name,
+            $due,
+            (int) $plan->aids_count + 1,
+        );
+    }
+
+    /**
      * Persist the edit modal. Requires aids.update.
      */
     public function saveEdit(): void

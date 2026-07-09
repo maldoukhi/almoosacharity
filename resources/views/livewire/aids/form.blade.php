@@ -427,12 +427,26 @@
                                 :hint="__('aids.recurrence.due_on_hint')"
                             />
 
-                            <x-ui.input
-                                :label="__('aids.recurrence.title_template')"
-                                name="recurrenceTitleTemplate"
-                                wire:model="recurrenceTitleTemplate"
-                                :hint="__('aids.recurrence.title_template_hint')"
-                            />
+                            <div>
+                                <x-ui.input
+                                    :label="__('aids.recurrence.title_template')"
+                                    name="recurrenceTitleTemplate"
+                                    wire:model.live.debounce.400ms="recurrenceTitleTemplate"
+                                    :hint="__('aids.recurrence.title_template_hint')"
+                                />
+                                <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                    <button type="button" wire:click="useDefaultTitleTemplate" class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-300">
+                                        {{ __('aids.recurrence.title_use_default') }}
+                                    </button>
+                                    @if ($this->titlePreview)
+                                        <span class="text-xs text-gray-400 dark:text-gray-500">·</span>
+                                        <span class="text-xs text-gray-500 dark:text-gray-400">
+                                            {{ __('aids.recurrence.title_preview') }}
+                                            <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $this->titlePreview }}</span>
+                                        </span>
+                                    @endif
+                                </div>
+                            </div>
 
                             <x-ui.input
                                 :label="__('aids.recurrence.ends_on')"

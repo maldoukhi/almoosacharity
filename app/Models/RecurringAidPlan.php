@@ -27,6 +27,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class RecurringAidPlan extends Model
 {
     /**
+     * A sensible starting point offered on the recurring-plan / recurring-aid
+     * forms so the title field is never blank: the program name followed by
+     * the cycle's month and year (e.g. "سداد إيجار — يوليو 2026").
+     */
+    public const DEFAULT_TITLE_TEMPLATE = '{program} — {month} {year}';
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -52,21 +59,41 @@ class RecurringAidPlan extends Model
      */
     public function renderTitle(int $cycle, CarbonInterface $dueDate): ?string
     {
-        if ($this->title_template === null || trim($this->title_template) === '') {
+        $source = $this->relationLoaded('aid') ? $this->aid : $this->aid()->with('program', 'beneficiary')->first();
+
+        return self::renderTitleTemplate(
+            $this->title_template,
+            $source?->program?->name,
+            $source?->beneficiary?->short_name,
+            $dueDate,
+            $cycle,
+        );
+    }
+
+    /**
+     * Pure placeholder substitution shared by {@see renderTitle} and the live
+     * preview shown on the recurring forms, so what the user previews is
+     * exactly what the generator will produce. Returns null for a blank
+     * template.
+     */
+    public static function renderTitleTemplate(
+        ?string $template,
+        ?string $program,
+        ?string $beneficiary,
+        CarbonInterface $dueDate,
+        int $cycle,
+    ): ?string {
+        if ($template === null || trim($template) === '') {
             return null;
         }
 
-        $source = $this->relationLoaded('aid') ? $this->aid : $this->aid()->with('program', 'beneficiary')->first();
-
-        $replacements = [
-            '{program}' => $source?->program?->name ?? '',
-            '{beneficiary}' => $source?->beneficiary?->short_name ?? '',
+        return trim(strtr($template, [
+            '{program}' => $program ?? '',
+            '{beneficiary}' => $beneficiary ?? '',
             '{month}' => $dueDate->translatedFormat('F'),
             '{year}' => $dueDate->format('Y'),
             '{n}' => (string) $cycle,
-        ];
-
-        return trim(strtr($this->title_template, $replacements));
+        ]));
     }
 
     /**

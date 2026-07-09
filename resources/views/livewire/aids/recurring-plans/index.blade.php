@@ -198,14 +198,28 @@
                             />
                         </div>
 
-                        <x-ui.input
-                            :label="__('aids.recurrence.title_template')"
-                            name="editTitleTemplate"
-                            type="text"
-                            maxlength="255"
-                            wire:model="editTitleTemplate"
-                            :hint="__('aids.recurrence.title_template_hint')"
-                        />
+                        <div>
+                            <x-ui.input
+                                :label="__('aids.recurrence.title_template')"
+                                name="editTitleTemplate"
+                                type="text"
+                                maxlength="255"
+                                wire:model.live.debounce.400ms="editTitleTemplate"
+                                :hint="__('aids.recurrence.title_template_hint')"
+                            />
+                            <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                <button type="button" wire:click="useDefaultTitleTemplate" class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-300">
+                                    {{ __('aids.recurrence.title_use_default') }}
+                                </button>
+                                @if ($this->editTitlePreview)
+                                    <span class="text-xs text-gray-400 dark:text-gray-500">·</span>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">
+                                        {{ __('aids.recurrence.title_preview') }}
+                                        <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $this->editTitlePreview }}</span>
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
 
                         <x-ui.toggle
                             :label="__('aids.recurrence.active')"

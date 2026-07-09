@@ -177,6 +177,8 @@ return [
         'lead_days_hint' => 'Days before the due date the aid is generated (0 = on the due date itself).',
         'title_template' => 'Title template (optional)',
         'title_template_hint' => 'Titles each generated aid. Placeholders: {program}, {beneficiary}, {month}, {year}, {n}.',
+        'title_preview' => 'Preview:',
+        'title_use_default' => 'Use default template',
         'active' => 'Schedule active',
         'active_hint' => 'Turn off to pause recurrence without deleting it.',
         'frequency' => [

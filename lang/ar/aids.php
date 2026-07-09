@@ -178,6 +178,8 @@ return [
         'lead_days_hint' => 'عدد الأيام قبل موعد الاستحقاق التي تُنشأ فيها الإعانة (0 = في تاريخ الاستحقاق ذاته).',
         'title_template' => 'قالب العنوان (اختياري)',
         'title_template_hint' => 'يُعنون كل إعانة مولّدة. المتغيرات: {program} و{beneficiary} و{month} و{year} و{n}.',
+        'title_preview' => 'معاينة:',
+        'title_use_default' => 'استخدم القالب الافتراضي',
         'active' => 'الجدولة مفعّلة',
         'active_hint' => 'أوقفها لتعليق التكرار دون حذفه.',
         'frequency' => [

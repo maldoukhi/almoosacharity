@@ -195,6 +195,65 @@ class Form extends Component
     }
 
     /**
+     * When recurrence is switched on, offer the default title template if the
+     * field is still blank — so a recurring aid always gets a meaningful title
+     * out of the box, while leaving any template the user already typed alone.
+     */
+    public function updatedIsRecurring(bool $value): void
+    {
+        if ($value && ($this->recurrenceTitleTemplate === null || trim($this->recurrenceTitleTemplate) === '')) {
+            $this->recurrenceTitleTemplate = RecurringAidPlan::DEFAULT_TITLE_TEMPLATE;
+        }
+    }
+
+    /**
+     * Fill the title-template field with the default template (button on the
+     * form).
+     */
+    public function useDefaultTitleTemplate(): void
+    {
+        $this->recurrenceTitleTemplate = RecurringAidPlan::DEFAULT_TITLE_TEMPLATE;
+    }
+
+    /**
+     * A live preview of the title each generated aid will carry, rendered from
+     * the current template + the selected program/first beneficiary + the due
+     * (or start) date, for the first cycle. Null when there is nothing to show.
+     */
+    #[Computed]
+    public function titlePreview(): ?string
+    {
+        if (! $this->isRecurring || $this->recurrenceTitleTemplate === null || trim($this->recurrenceTitleTemplate) === '') {
+            return null;
+        }
+
+        $program = $this->aid_program_id
+            ? $this->programs->firstWhere('id', $this->aid_program_id)?->name
+            : null;
+
+        $firstBeneficiaryId = $this->beneficiary_id ?: ($this->beneficiary_ids[0] ?? null);
+        $beneficiary = $firstBeneficiaryId
+            ? Beneficiary::query()->find($firstBeneficiaryId)?->short_name
+            : null;
+
+        $anchor = $this->recurrenceDueOn ?: $this->recurrenceStartsOn;
+
+        try {
+            $due = $anchor ? CarbonImmutable::parse($anchor) : CarbonImmutable::now();
+        } catch (\Exception) {
+            $due = CarbonImmutable::now();
+        }
+
+        return RecurringAidPlan::renderTitleTemplate(
+            $this->recurrenceTitleTemplate,
+            $program,
+            $beneficiary,
+            $due,
+            1,
+        );
+    }
+
+    /**
      * The first 20 beneficiaries matching {@see $beneficiarySearch} by name
      * or national ID, always including every currently selected beneficiary
      * (the single {@see $beneficiary_id} in edit mode, or the whole
