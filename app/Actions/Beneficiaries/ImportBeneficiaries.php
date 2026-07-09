@@ -5,7 +5,6 @@ namespace App\Actions\Beneficiaries;
 use App\Enums\Gender;
 use App\Enums\HousingType;
 use App\Enums\MaritalStatus;
-use App\Imports\SpreadsheetReader;
 use App\Models\Beneficiary;
 use App\Models\BeneficiaryCategory;
 use App\Models\User;
@@ -20,11 +19,15 @@ use Illuminate\Validation\Rule;
 use Throwable;
 
 /**
- * Flexible Excel/CSV importer for beneficiaries. The admin maps each
- * beneficiary field to whichever spreadsheet column it lives in (or skips
- * it); this action then parses every data row against that mapping,
- * validates it, and creates a Beneficiary — collecting per-row failures
- * instead of ever aborting the whole batch on a single bad cell.
+ * Flexible Excel/CSV importer for beneficiaries. The admin maps each column
+ * of the uploaded sheet to a beneficiary field (or skips it), reviews every
+ * row inline — fixing bad cells, excluding people/groups, and seeing which
+ * national ids are already in the system — and then imports.
+ *
+ * The heavy lifting lives in pure, side-effect-light methods ({@see mapRow},
+ * {@see validateData}, {@see analyze}) so the live review screen and the
+ * final {@see handleRows} import share one source of truth: what the admin
+ * previews is exactly what gets created.
  */
 class ImportBeneficiaries
 {
@@ -57,62 +60,132 @@ class ImportBeneficiaries
     ];
 
     /**
-     * Run the import.
+     * Import the given in-memory rows honouring the admin's mapping,
+     * per-row exclusions, and both flavours of duplicate detection.
      *
-     * @param  array<string, int|string|null>  $mapping  field => column index (or null/'' to skip)
+     * Nothing is ever fatal: each valid row is created in its own
+     * transaction and any failure is captured against that row only.
+     *
+     * @param  array<int, array{line: int, cells: array<int, string>}>  $rows
+     * @param  array<string, int|string|null>  $mapping  field => column index (or '' to skip)
+     * @param  array<int, bool>  $excluded  row index => excluded?
      */
-    public function handle(string $path, string $disk, array $mapping, User $actor): BeneficiaryImportResult
+    public function handleRows(array $rows, array $mapping, array $excluded, User $actor): BeneficiaryImportResult
     {
         $result = new BeneficiaryImportResult;
 
-        $rows = SpreadsheetReader::rows($path, $disk);
-
-        // Row 0 is the header; data starts at row 1. Cache the active
-        // categories once (lower-cased name => id) for name matching.
+        $existingIds = $this->existingNationalIds($this->candidateNationalIds($rows, $mapping));
+        $analysis = $this->analyze($rows, $mapping, $excluded, $existingIds);
         $categoryLookup = $this->categoryLookup();
 
         foreach ($rows as $index => $row) {
-            if ($index === 0) {
+            $state = $analysis[$index] ?? null;
+
+            if ($state === null) {
                 continue;
             }
 
-            // 1-based line number as the admin sees it in their spreadsheet.
-            $lineNumber = $index + 1;
+            switch ($state['status']) {
+                case 'excluded':
+                    $result->recordExcluded();
+                    break;
 
-            if ($this->isBlankRow($row)) {
-                continue;
+                case 'duplicate_system':
+                    $result->recordDuplicate();
+                    break;
+
+                case 'duplicate_file':
+                    $result->recordFileDuplicate();
+                    break;
+
+                case 'error':
+                    $result->recordError($row['line'], (string) $state['error']);
+                    break;
+
+                case 'valid':
+                    $this->createRow($row['cells'], $mapping, $categoryLookup, $actor, $result, $row['line']);
+                    break;
             }
-
-            $this->importRow($row, $lineNumber, $mapping, $categoryLookup, $actor, $result);
         }
 
         return $result;
     }
 
     /**
-     * @param  array<int, mixed>  $row
+     * Classify every row for both the live review table and the import run.
+     *
+     * Precedence per row: an admin exclusion wins first, then a validation
+     * error, then an already-in-system national id, then an in-file repeat,
+     * otherwise the row is valid. In-file duplicates are decided in document
+     * order — the first occurrence of a national id imports, later ones are
+     * flagged.
+     *
+     * @param  array<int, array{line: int, cells: array<int, string>}>  $rows
      * @param  array<string, int|string|null>  $mapping
-     * @param  array<string, int>  $categoryLookup
+     * @param  array<int, bool>  $excluded
+     * @param  array<int, string>  $existingIds  national ids already in the system
+     * @return array<int, array{status: string, error: string|null, national_id: string, line: int}>
      */
-    private function importRow(
-        array $row,
-        int $lineNumber,
-        array $mapping,
-        array $categoryLookup,
-        User $actor,
-        BeneficiaryImportResult $result,
-    ): void {
-        $get = function (string $field) use ($row, $mapping): string {
+    public function analyze(array $rows, array $mapping, array $excluded, array $existingIds): array
+    {
+        $existing = array_fill_keys($existingIds, true);
+        $claimed = [];
+        $states = [];
+
+        foreach ($rows as $index => $row) {
+            $cells = $row['cells'];
+            $data = $this->mapRow($cells, $mapping);
+            $nationalId = $data['national_id'];
+            $error = $this->validateData($data);
+
+            if ($excluded[$index] ?? false) {
+                $status = 'excluded';
+            } elseif ($error !== null) {
+                $status = 'error';
+            } elseif ($nationalId !== '' && isset($existing[$nationalId])) {
+                $status = 'duplicate_system';
+            } elseif ($nationalId !== '' && isset($claimed[$nationalId])) {
+                $status = 'duplicate_file';
+            } else {
+                $status = 'valid';
+
+                if ($nationalId !== '') {
+                    $claimed[$nationalId] = true;
+                }
+            }
+
+            $states[$index] = [
+                'status' => $status,
+                'error' => $error,
+                'national_id' => $nationalId,
+                'line' => $row['line'],
+            ];
+        }
+
+        return $states;
+    }
+
+    /**
+     * Parse one row's raw cells into the beneficiary field shape using the
+     * current mapping. Pure: no validation, no persistence.
+     *
+     * @param  array<int, string>  $cells
+     * @param  array<string, int|string|null>  $mapping
+     * @return array<string, mixed>
+     */
+    public function mapRow(array $cells, array $mapping): array
+    {
+        $get = function (string $field) use ($cells, $mapping): string {
             $column = $mapping[$field] ?? null;
 
             if ($column === null || $column === '') {
                 return '';
             }
 
-            return isset($row[(int) $column]) ? trim((string) $row[(int) $column]) : '';
+            return isset($cells[(int) $column]) ? trim((string) $cells[(int) $column]) : '';
         };
 
-        $data = [
+        return [
             'first_name' => $get('first_name'),
             'second_name' => $get('second_name'),
             'third_name' => $get('third_name'),
@@ -134,7 +207,16 @@ class ImportBeneficiaries
             'notes' => $get('notes'),
             'birth_date' => $this->parseDate($get('birth_date')),
         ];
+    }
 
+    /**
+     * Validate a single parsed row. Returns the first human-readable error
+     * message, or null when the row is importable.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function validateData(array $data): ?string
+    {
         $validator = Validator::make($data, [
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
@@ -147,21 +229,72 @@ class ImportBeneficiaries
             'birth_date' => ['nullable', 'date', 'before:today'],
         ]);
 
-        if ($validator->fails()) {
-            $result->recordError($lineNumber, $validator->errors()->first());
+        return $validator->fails() ? $validator->errors()->first() : null;
+    }
 
-            return;
+    /**
+     * Which of the given national ids already exist in the beneficiaries
+     * table — soft-deleted included, so we never hit the unique constraint.
+     *
+     * @param  array<int, string>  $ids
+     * @return array<int, string>
+     */
+    public function existingNationalIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_filter($ids, fn (string $id): bool => $id !== '')));
+
+        if ($ids === []) {
+            return [];
         }
 
-        // De-dupe on national id (including soft-deleted rows so we never
-        // hit the unique constraint): skip existing by default and report.
-        if (Beneficiary::withTrashed()->where('national_id', $data['national_id'])->exists()) {
-            $result->recordDuplicate();
+        return Beneficiary::withTrashed()
+            ->whereIn('national_id', $ids)
+            ->pluck('national_id')
+            ->map(fn ($id): string => (string) $id)
+            ->all();
+    }
 
-            return;
+    /**
+     * The mapped national id of every row (blank for rows with no id yet).
+     *
+     * @param  array<int, array{line: int, cells: array<int, string>}>  $rows
+     * @param  array<string, int|string|null>  $mapping
+     * @return array<int, string>
+     */
+    private function candidateNationalIds(array $rows, array $mapping): array
+    {
+        $column = $mapping['national_id'] ?? null;
+
+        if ($column === null || $column === '') {
+            return [];
         }
 
-        $categoryIds = $this->resolveCategoryIds($this->rawCell($row, $mapping, 'categories'), $categoryLookup);
+        return array_map(
+            fn (array $row): string => isset($row['cells'][(int) $column])
+                ? trim((string) $row['cells'][(int) $column])
+                : '',
+            $rows,
+        );
+    }
+
+    /**
+     * Create one validated row and its category links, capturing any failure
+     * against the row instead of aborting the batch.
+     *
+     * @param  array<int, string>  $cells
+     * @param  array<string, int|string|null>  $mapping
+     * @param  array<string, int>  $categoryLookup
+     */
+    private function createRow(
+        array $cells,
+        array $mapping,
+        array $categoryLookup,
+        User $actor,
+        BeneficiaryImportResult $result,
+        int $line,
+    ): void {
+        $data = $this->mapRow($cells, $mapping);
+        $categoryIds = $this->resolveCategoryIds($this->rawCell($cells, $mapping, 'categories'), $categoryLookup);
 
         try {
             DB::transaction(function () use ($data, $categoryIds, $actor): void {
@@ -178,18 +311,18 @@ class ImportBeneficiaries
 
             $result->recordCreated();
         } catch (Throwable $e) {
-            $result->recordError($lineNumber, $e->getMessage());
+            $result->recordError($line, $e->getMessage());
         }
     }
 
     /**
-     * The raw (untrimmed-then-trimmed) cell value for a mapped field, or ''
-     * when the field is skipped / out of range.
+     * The trimmed cell value for a mapped field, or '' when the field is
+     * skipped / out of range.
      *
-     * @param  array<int, mixed>  $row
+     * @param  array<int, string>  $cells
      * @param  array<string, int|string|null>  $mapping
      */
-    private function rawCell(array $row, array $mapping, string $field): string
+    private function rawCell(array $cells, array $mapping, string $field): string
     {
         $column = $mapping[$field] ?? null;
 
@@ -197,7 +330,7 @@ class ImportBeneficiaries
             return '';
         }
 
-        return isset($row[(int) $column]) ? trim((string) $row[(int) $column]) : '';
+        return isset($cells[(int) $column]) ? trim((string) $cells[(int) $column]) : '';
     }
 
     /**
@@ -239,8 +372,8 @@ class ImportBeneficiaries
     /**
      * Resolve a free-text spreadsheet value to a backing enum value by
      * matching (case/space-insensitively) against the enum's backing values
-     * and its localized Arabic/English labels. Returns '' when nothing
-     * matches so the row fails enum validation with a clear message.
+     * and its localized Arabic/English labels. Returns the raw value when
+     * nothing matches so the row fails enum validation with a clear message.
      *
      * @param  class-string  $enum
      */
@@ -251,7 +384,7 @@ class ImportBeneficiaries
             // stores null rather than '' — an empty string is not a valid
             // enum backing value and would blow up the model's enum cast on
             // read. Required enum fields fail their 'required' rule on null
-            // and the row is skipped, exactly as before.
+            // and the row is flagged, exactly as before.
             return null;
         }
 
@@ -312,20 +445,6 @@ class ImportBeneficiaries
         $value = preg_replace('/\s+/u', ' ', trim($value)) ?? $value;
 
         return mb_strtolower($value);
-    }
-
-    /**
-     * @param  array<int, mixed>  $row
-     */
-    private function isBlankRow(array $row): bool
-    {
-        foreach ($row as $cell) {
-            if (trim((string) $cell) !== '') {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /**
