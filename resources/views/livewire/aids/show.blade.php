@@ -14,6 +14,10 @@
                 <x-ui.badge :color="$aid->status->color()">{{ $aid->status->label() }}</x-ui.badge>
             </div>
 
+            @if ($aid->title)
+                <p class="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{{ $aid->title }}</p>
+            @endif
+
             <p class="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
                 <a href="{{ route('admin.beneficiaries.show', $aid->beneficiary) }}" wire:navigate class="text-primary-700 hover:underline dark:text-primary-300">
                     {{ $aid->beneficiary?->full_name }}
@@ -117,6 +121,32 @@
                     </div>
                 </dl>
             </x-ui.card>
+
+            @if ($aid->isRecurringInstance() || $aid->recurringPlan)
+                <x-ui.card>
+                    <x-slot:header>
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('aids.recurring_series.title') }}</h2>
+                            <x-ui.badge color="primary">{{ __('aids.recurring_series.badge') }}</x-ui.badge>
+                        </div>
+                    </x-slot:header>
+
+                    <div class="space-y-3 text-sm">
+                        @if ($aid->isRecurringInstance())
+                            <p class="text-gray-700 dark:text-gray-200">{{ __('aids.recurring_series.instance') }}</p>
+                            @if ($this->recurringCycle)
+                                <p class="text-gray-500 dark:text-gray-400">{{ __('aids.recurring_series.cycle', ['n' => $this->recurringCycle]) }}</p>
+                            @endif
+                        @elseif ($aid->recurringPlan)
+                            <p class="text-gray-700 dark:text-gray-200">{{ __('aids.recurring_series.origin') }}</p>
+                        @endif
+
+                        <a href="{{ route('aids.recurring-plans.index') }}" wire:navigate class="inline-flex items-center gap-1 font-medium text-primary-700 hover:underline dark:text-primary-300">
+                            {{ __('aids.recurring_series.view_plan') }}
+                        </a>
+                    </div>
+                </x-ui.card>
+            @endif
 
             <x-ui.card>
                 <x-slot:header>

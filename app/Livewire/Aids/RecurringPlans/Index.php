@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Aids\RecurringPlans;
 
+use App\Actions\Aids\GenerateRecurringAids;
 use App\Enums\RecurrenceFrequency;
 use App\Models\Aid;
 use App\Models\RecurringAidPlan;
@@ -51,6 +52,10 @@ class Index extends Component
     public ?int $editIntervalMonths = null;
 
     public ?string $editStartsOn = null;
+
+    public ?string $editDueOn = null;
+
+    public ?string $editTitleTemplate = null;
 
     public ?string $editEndsOn = null;
 
@@ -163,6 +168,8 @@ class Index extends Component
         $this->editFrequency = $plan->frequency->value;
         $this->editIntervalMonths = $plan->interval_months;
         $this->editStartsOn = $plan->starts_on?->toDateString();
+        $this->editDueOn = $plan->due_on?->toDateString();
+        $this->editTitleTemplate = $plan->title_template;
         $this->editEndsOn = $plan->ends_on?->toDateString();
         $this->editLeadDays = $plan->lead_days;
         $this->editActive = $plan->is_active;
@@ -170,7 +177,7 @@ class Index extends Component
 
     public function closeEdit(): void
     {
-        $this->reset(['editingPlanId', 'editIntervalMonths', 'editStartsOn', 'editEndsOn']);
+        $this->reset(['editingPlanId', 'editIntervalMonths', 'editStartsOn', 'editDueOn', 'editTitleTemplate', 'editEndsOn']);
         $this->resetValidation();
     }
 
@@ -192,6 +199,8 @@ class Index extends Component
                 Rule::requiredIf($this->editFrequency === RecurrenceFrequency::CustomMonths->value),
             ],
             'editStartsOn' => ['required', 'date'],
+            'editDueOn' => ['nullable', 'date'],
+            'editTitleTemplate' => ['nullable', 'string', 'max:255'],
             'editEndsOn' => ['nullable', 'date', 'after_or_equal:editStartsOn'],
             'editLeadDays' => ['required', 'integer', 'min:0', 'max:365'],
         ]);
@@ -200,20 +209,27 @@ class Index extends Component
 
         $frequency = RecurrenceFrequency::from($validated['editFrequency']);
         $startsOn = CarbonImmutable::parse($validated['editStartsOn'])->startOfDay();
+        $dueOn = ! empty($validated['editDueOn'])
+            ? CarbonImmutable::parse($validated['editDueOn'])->startOfDay()
+            : null;
         $endsOn = ! empty($validated['editEndsOn'])
             ? CarbonImmutable::parse($validated['editEndsOn'])->startOfDay()
             : null;
 
-        // Keep the already-advanced next_run_on unless the start date moved;
-        // a moved start re-anchors the schedule on the new start date.
-        $nextRunOn = $plan->starts_on?->toDateString() === $startsOn->toDateString()
-            ? $plan->next_run_on
-            : $startsOn;
+        // Keep the already-advanced next_run_on unless the start or due date
+        // moved; a moved anchor re-seeds the schedule on due_on ?? starts_on.
+        $startMoved = $plan->starts_on?->toDateString() !== $startsOn->toDateString();
+        $dueMoved = $plan->due_on?->toDateString() !== $dueOn?->toDateString();
+        $nextRunOn = ($startMoved || $dueMoved)
+            ? ($dueOn ?? $startsOn)
+            : $plan->next_run_on;
 
         $plan->update([
             'frequency' => $frequency,
             'interval_months' => $frequency->isCustom() ? $validated['editIntervalMonths'] : null,
             'starts_on' => $startsOn,
+            'due_on' => $dueOn,
+            'title_template' => $validated['editTitleTemplate'] ?: null,
             'ends_on' => $endsOn,
             'next_run_on' => $nextRunOn,
             'lead_days' => (int) $validated['editLeadDays'],
@@ -299,6 +315,41 @@ class Index extends Component
         unset($this->plans, $this->seriesPlan);
 
         $this->dispatch('toast', type: 'success', message: __('recurring_aids.messages.paused'));
+    }
+
+    /**
+     * Add an extra, off-cycle aid to a plan's series for special cases —
+     * clone the source aid into a fresh draft linked to the series WITHOUT
+     * advancing the schedule. Requires aids.update.
+     */
+    public function addManual(int $planId): void
+    {
+        $this->authorizeManage();
+
+        $plan = $this->scopedPlan($planId);
+        $plan->load(['aid.items', 'aid.program', 'aid.beneficiary']);
+
+        if ($plan->aid === null) {
+            $this->dispatch('toast', type: 'error', message: __('recurring_aids.messages.source_missing'));
+
+            return;
+        }
+
+        app(GenerateRecurringAids::class)->cloneIntoSeries(
+            $plan,
+            Auth::user(),
+            $plan->next_run_on?->toImmutable() ?? CarbonImmutable::now()->startOfDay(),
+        );
+
+        activity()
+            ->performedOn($plan)
+            ->causedBy(Auth::user())
+            ->event('manual_added')
+            ->log('recurring_aid_plan.manual_added');
+
+        unset($this->plans, $this->seriesPlan, $this->seriesAids);
+
+        $this->dispatch('toast', type: 'success', message: __('recurring_aids.messages.manual_added'));
     }
 
     /**

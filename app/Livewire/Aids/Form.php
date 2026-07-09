@@ -66,6 +66,13 @@ class Form extends Component
 
     public ?int $aid_program_id = null;
 
+    /**
+     * Optional human label for the aid (e.g. "Rent payment — July"), shown in
+     * the aid header and lists. Passed through to {@see CreateAid} on create
+     * and written onto the aid on update.
+     */
+    public ?string $title = null;
+
     public string $type = 'cash';
 
     public ?float $amount = null;
@@ -101,6 +108,19 @@ class Form extends Component
 
     public ?string $recurrenceStartsOn = null;
 
+    /**
+     * First due (entitlement) date for the schedule, distinct from
+     * {@see $recurrenceStartsOn}. When left blank the plan falls back to the
+     * start date for its first cycle.
+     */
+    public ?string $recurrenceDueOn = null;
+
+    /**
+     * Optional title template applied to every aid this plan generates
+     * (see {@see RecurringAidPlan::renderTitle()} for its placeholders).
+     */
+    public ?string $recurrenceTitleTemplate = null;
+
     public ?string $recurrenceEndsOn = null;
 
     /**
@@ -135,6 +155,7 @@ class Form extends Component
 
         $this->beneficiary_id = $this->aid->beneficiary_id;
         $this->aid_program_id = $this->aid->aid_program_id;
+        $this->title = $this->aid->title;
         $this->type = $this->aid->type->value;
         $this->amount = $this->aid->amount !== null ? (float) $this->aid->amount : null;
         $this->purpose = (string) $this->aid->purpose;
@@ -151,6 +172,8 @@ class Form extends Component
             $this->recurrenceFrequency = $plan->frequency->value;
             $this->recurrenceIntervalMonths = $plan->interval_months;
             $this->recurrenceStartsOn = $plan->starts_on?->toDateString();
+            $this->recurrenceDueOn = $plan->due_on?->toDateString();
+            $this->recurrenceTitleTemplate = $plan->title_template;
             $this->recurrenceEndsOn = $plan->ends_on?->toDateString();
             $this->recurrenceLeadDays = $plan->lead_days;
             $this->recurrenceActive = $plan->is_active;
@@ -488,6 +511,9 @@ class Form extends Component
                 return null;
             }
 
+            // UpdateAid doesn't own the optional title, so persist it here.
+            $aid->update(['title' => $validated['title'] ?? null]);
+
             $this->aid = $aid;
 
             $this->syncRecurringPlan($aid);
@@ -546,23 +572,37 @@ class Form extends Component
         $frequency = RecurrenceFrequency::from($this->recurrenceFrequency);
         $intervalMonths = $frequency->isCustom() ? $this->recurrenceIntervalMonths : null;
         $startsOn = CarbonImmutable::parse($this->recurrenceStartsOn)->startOfDay();
+        $dueOn = $this->recurrenceDueOn !== null && $this->recurrenceDueOn !== ''
+            ? CarbonImmutable::parse($this->recurrenceDueOn)->startOfDay()
+            : null;
         $endsOn = $this->recurrenceEndsOn !== null && $this->recurrenceEndsOn !== ''
             ? CarbonImmutable::parse($this->recurrenceEndsOn)->startOfDay()
             : null;
+        $titleTemplate = $this->recurrenceTitleTemplate !== null && trim($this->recurrenceTitleTemplate) !== ''
+            ? $this->recurrenceTitleTemplate
+            : null;
+
+        // The first cycle fires on the due date when one is given, otherwise
+        // on the schedule start date.
+        $anchor = $dueOn ?? $startsOn;
 
         $existing = $aid->recurringPlan;
 
-        // Preserve an already-advanced next_run_on on edit unless the start
-        // date itself moved; a brand-new plan simply fires first on its
-        // start date.
-        $nextRunOn = $existing !== null && $existing->starts_on?->toDateString() === $startsOn->toDateString()
+        // Preserve an already-advanced next_run_on on edit unless the anchor
+        // (due date, or start date when no due date) itself moved; a brand-new
+        // plan simply fires first on its anchor date.
+        $existingAnchor = $existing?->due_on ?? $existing?->starts_on;
+
+        $nextRunOn = $existing !== null && $existingAnchor?->toDateString() === $anchor->toDateString()
             ? $existing->next_run_on
-            : $startsOn;
+            : $anchor;
 
         $aid->recurringPlan()->updateOrCreate([], [
             'frequency' => $frequency,
             'interval_months' => $intervalMonths,
             'starts_on' => $startsOn,
+            'due_on' => $dueOn,
+            'title_template' => $titleTemplate,
             'ends_on' => $endsOn,
             'next_run_on' => $nextRunOn,
             'lead_days' => max(0, $this->recurrenceLeadDays),
@@ -607,6 +647,7 @@ class Form extends Component
                 'integer',
                 Rule::exists('aid_programs', 'id')->where('is_active', true)->whereNull('deleted_at'),
             ],
+            'title' => ['nullable', 'string', 'max:255'],
             'type' => ['required', Rule::enum(AidType::class)],
             'amount' => ['nullable', 'numeric', 'min:0.01', 'required_if:type,cash'],
             'purpose' => ['nullable', 'string', 'max:255', 'required_if:type,cash'],
@@ -628,6 +669,8 @@ class Form extends Component
                 Rule::requiredIf($this->recurrenceFrequency === RecurrenceFrequency::CustomMonths->value),
             ];
             $rules['recurrenceStartsOn'] = ['required', 'date'];
+            $rules['recurrenceDueOn'] = ['nullable', 'date'];
+            $rules['recurrenceTitleTemplate'] = ['nullable', 'string', 'max:255'];
             $rules['recurrenceEndsOn'] = ['nullable', 'date', 'after_or_equal:recurrenceStartsOn'];
             $rules['recurrenceLeadDays'] = ['required', 'integer', 'min:0', 'max:365'];
         }

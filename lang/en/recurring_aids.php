@@ -63,5 +63,6 @@ return [
         'deleted' => 'Recurring plan deleted',
         'saved' => 'Changes saved successfully',
         'manual_added' => 'A new aid was added to the series',
+        'source_missing' => 'Could not add the aid: this plan\'s source aid is unavailable.',
     ],
 ];

@@ -210,6 +210,25 @@ class Show extends Component
     }
 
     /**
+     * The 1-based position of this aid within its recurring series (ordered
+     * by creation), or null when the aid is not a generated series instance.
+     * Counts the series aids raised on or before this one — cheap enough to
+     * surface the cycle number on the detail card.
+     */
+    #[Computed]
+    public function recurringCycle(): ?int
+    {
+        if (! $this->aid->isRecurringInstance()) {
+            return null;
+        }
+
+        return Aid::query()
+            ->where('recurring_aid_plan_id', $this->aid->recurring_aid_plan_id)
+            ->where('created_at', '<=', $this->aid->created_at)
+            ->count();
+    }
+
+    /**
      * The aid's single delivery-confirmation-link record, once its
      * disbursement has been recorded as delivered (phase 6b) — null
      * before that point.
@@ -388,6 +407,8 @@ class Show extends Component
             'createdBy',
             'approvalFlow.stages',
             'confirmation',
+            'recurringPlan',
+            'recurringPlanSeries',
         ]);
     }
 
@@ -416,6 +437,7 @@ class Show extends Component
             $this->canSubmit,
             $this->canCancel,
             $this->latestReturnNote,
+            $this->recurringCycle,
             $this->confirmation,
             $this->canResendConfirmation,
             $this->surveyResponse,

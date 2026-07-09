@@ -168,6 +168,15 @@
                                 name="editStartsOn"
                                 type="date"
                                 wire:model="editStartsOn"
+                                :hint="__('aids.recurrence.starts_on_hint')"
+                            />
+
+                            <x-ui.input
+                                :label="__('aids.recurrence.due_on')"
+                                name="editDueOn"
+                                type="date"
+                                wire:model="editDueOn"
+                                :hint="__('aids.recurrence.due_on_hint')"
                             />
 
                             <x-ui.input
@@ -188,6 +197,15 @@
                                 :hint="__('aids.recurrence.lead_days_hint')"
                             />
                         </div>
+
+                        <x-ui.input
+                            :label="__('aids.recurrence.title_template')"
+                            name="editTitleTemplate"
+                            type="text"
+                            maxlength="255"
+                            wire:model="editTitleTemplate"
+                            :hint="__('aids.recurrence.title_template_hint')"
+                        />
 
                         <x-ui.toggle
                             :label="__('aids.recurrence.active')"
@@ -235,6 +253,7 @@
                                 <thead>
                                     <tr>
                                         <x-ui.table.th>{{ __('recurring_aids.col_reference') }}</x-ui.table.th>
+                                        <x-ui.table.th>{{ __('recurring_aids.col_title') }}</x-ui.table.th>
                                         <x-ui.table.th>{{ __('aids.field_status') }}</x-ui.table.th>
                                         <x-ui.table.th align="end">{{ __('recurring_aids.col_amount') }}</x-ui.table.th>
                                         <x-ui.table.th>{{ __('recurring_aids.col_created_at') }}</x-ui.table.th>
@@ -247,6 +266,9 @@
                                                 <a href="{{ route('aids.show', $seriesAid) }}" wire:navigate class="font-mono font-medium text-primary-700 underline-offset-2 hover:underline dark:text-primary-300">
                                                     {{ $seriesAid->reference }}
                                                 </a>
+                                            </x-ui.table.td>
+                                            <x-ui.table.td class="text-gray-900 dark:text-white">
+                                                {{ $seriesAid->title ?: __('common.dash') }}
                                             </x-ui.table.td>
                                             <x-ui.table.td>
                                                 <x-ui.badge :color="$seriesAid->status->color()">{{ $seriesAid->status->label() }}</x-ui.badge>
@@ -268,23 +290,41 @@
                         @endif
                     </div>
 
-                    <div class="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4 dark:border-white/10">
+                    <div class="flex flex-col gap-3 border-t border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
                         @can('aids.update')
-                            @if ($this->seriesPlan->is_active)
+                            <div class="flex items-center gap-2">
                                 <x-ui.button
                                     type="button"
-                                    variant="ghost"
-                                    data-confirm="{{ __('recurring_aids.confirm_pause') }}"
-                                    x-on:click="uiConfirm($el.dataset.confirm, () => $wire.pauseFromSeries({{ $this->seriesPlan->id }}))"
+                                    variant="secondary"
+                                    data-confirm="{{ __('recurring_aids.series_modal.confirm_add') }}"
+                                    x-on:click="uiConfirm($el.dataset.confirm, () => $wire.addManual({{ $this->seriesPlan->id }}))"
                                 >
-                                    {{ __('recurring_aids.series_modal.pause_button') }}
+                                    {{ __('recurring_aids.series_modal.add_button') }}
                                 </x-ui.button>
-                            @endif
+                                <span class="hidden text-xs text-gray-500 sm:inline dark:text-gray-400">{{ __('recurring_aids.series_modal.add_hint') }}</span>
+                            </div>
+                        @else
+                            <span></span>
                         @endcan
 
-                        <x-ui.button type="button" variant="primary" wire:click="closeSeries">
-                            {{ __('common.close') }}
-                        </x-ui.button>
+                        <div class="flex items-center justify-end gap-3">
+                            @can('aids.update')
+                                @if ($this->seriesPlan->is_active)
+                                    <x-ui.button
+                                        type="button"
+                                        variant="ghost"
+                                        data-confirm="{{ __('recurring_aids.confirm_pause') }}"
+                                        x-on:click="uiConfirm($el.dataset.confirm, () => $wire.pauseFromSeries({{ $this->seriesPlan->id }}))"
+                                    >
+                                        {{ __('recurring_aids.series_modal.pause_button') }}
+                                    </x-ui.button>
+                                @endif
+                            @endcan
+
+                            <x-ui.button type="button" variant="primary" wire:click="closeSeries">
+                                {{ __('common.close') }}
+                            </x-ui.button>
+                        </div>
                     </div>
                 </div>
             </div>

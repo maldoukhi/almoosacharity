@@ -25,6 +25,14 @@
 
     <x-ui.card>
         <form wire:submit="save" class="space-y-6">
+            <x-ui.input
+                :label="__('aids.field_title')"
+                name="title"
+                wire:model="title"
+                :hint="__('aids.field_title_hint')"
+                :placeholder="__('aids.field_title_placeholder')"
+            />
+
             <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 @if ($isEdit)
                     <x-ui.select
@@ -408,6 +416,22 @@
                                 name="recurrenceStartsOn"
                                 type="date"
                                 wire:model="recurrenceStartsOn"
+                                :hint="__('aids.recurrence.starts_on_hint')"
+                            />
+
+                            <x-ui.input
+                                :label="__('aids.recurrence.due_on')"
+                                name="recurrenceDueOn"
+                                type="date"
+                                wire:model="recurrenceDueOn"
+                                :hint="__('aids.recurrence.due_on_hint')"
+                            />
+
+                            <x-ui.input
+                                :label="__('aids.recurrence.title_template')"
+                                name="recurrenceTitleTemplate"
+                                wire:model="recurrenceTitleTemplate"
+                                :hint="__('aids.recurrence.title_template_hint')"
                             />
 
                             <x-ui.input
@@ -491,26 +515,50 @@
                     <div class="px-6 py-5">
                         <dl class="divide-y divide-gray-100 rounded-(--radius-brand) border border-gray-100 dark:divide-white/10 dark:border-white/10">
                             <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_title') }}</dt>
+                                <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ filled($title) ? $title : __('aids.submit_confirm.none') }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_program') }}</dt>
+                                <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ $programOptions[$aid_program_id] ?? __('aids.submit_confirm.none') }}</dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
                                 <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_type') }}</dt>
                                 <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ \App\Enums\AidType::from($type)->label() }}</dd>
                             </div>
-                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
-                                <dt class="text-sm text-gray-500 dark:text-gray-400">
-                                    {{ $type === \App\Enums\AidType::Cash->value ? __('aids.field_amount') : __('aids.field_items') }}
-                                </dt>
-                                <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
-                                    @if ($type === \App\Enums\AidType::Cash->value)
+                            @if ($type === \App\Enums\AidType::Cash->value)
+                                <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                    <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_amount') }}</dt>
+                                    <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
                                         {{ __('aids.currency_sar') }} {{ number_format((float) $amount, 2) }}
-                                    @else
-                                        {{ trans_choice('aids.items_count', count($items), ['count' => count($items)]) }}
-                                    @endif
-                                </dd>
-                            </div>
+                                    </dd>
+                                </div>
+                                <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                    <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_purpose') }}</dt>
+                                    <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ filled($purpose) ? $purpose : __('aids.submit_confirm.none') }}</dd>
+                                </div>
+                            @else
+                                <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                    <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_items') }}</dt>
+                                    <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+                                        {{ trans_choice('aids.submit_confirm.items_count', count($items), ['count' => count($items)]) }}
+                                    </dd>
+                                </div>
+                            @endif
                             <div class="flex items-center justify-between gap-3 px-4 py-2.5">
                                 <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_beneficiaries') }}</dt>
                                 <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">{{ $confirmCount }}</dd>
                             </div>
                         </dl>
+
+                        @if ($isRecurring)
+                            <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                                {{ __('aids.submit_confirm.recurring_note', [
+                                    'frequency' => \App\Enums\RecurrenceFrequency::from($recurrenceFrequency)->label(),
+                                    'date' => filled($recurrenceDueOn) ? $recurrenceDueOn : $recurrenceStartsOn,
+                                ]) }}
+                            </p>
+                        @endif
 
                         @if (! $isEdit && $confirmCount > 1)
                             <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.submit_confirm.bulk_note', ['count' => $confirmCount]) }}</p>
