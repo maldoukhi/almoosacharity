@@ -6,12 +6,15 @@ use App\Actions\Confirmations\ResendConfirmationLink;
 use App\Enums\AidStatus;
 use App\Enums\ApprovalAction;
 use App\Enums\RoleName;
+use App\Enums\SurveyQuestionType;
 use App\Exceptions\Confirmations\AidConfirmationException;
 use App\Models\Aid;
 use App\Models\AidConfirmation;
 use App\Models\ApprovalDecision;
 use App\Models\ApprovalFlow;
 use App\Models\ApprovalFlowStage;
+use App\Models\SurveyQuestion;
+use App\Models\SurveyResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -184,6 +187,112 @@ class Show extends Component
         return $this->confirmation !== null && Gate::allows('resend', $this->confirmation);
     }
 
+    /**
+     * The single survey response the beneficiary submitted for THIS aid,
+     * resolved strictly through the aid's own confirmation link (never a
+     * global survey query) so the detail below can only ever surface an
+     * answer set that genuinely belongs to this aid. Works identically
+     * whether the answered survey is program-scoped or general, since the
+     * response itself already carries its survey_id. Null until a response
+     * exists.
+     */
+    #[Computed]
+    public function surveyResponse(): ?SurveyResponse
+    {
+        $confirmation = $this->aid->confirmation;
+
+        if (! $confirmation) {
+            return null;
+        }
+
+        return $confirmation->surveyResponses()
+            ->with(['survey.questions', 'answers'])
+            ->latest('submitted_at')
+            ->first();
+    }
+
+    /**
+     * Whether the survey-results card should be shown at all: either an
+     * answer set exists, or the aid has reached a delivery state where the
+     * (still-empty) survey card's empty state is meaningful.
+     */
+    #[Computed]
+    public function showsSurveyCard(): bool
+    {
+        return $this->surveyResponse !== null
+            || in_array($this->aid->status, [AidStatus::Delivered, AidStatus::Confirmed], true);
+    }
+
+    /**
+     * This aid's own survey answers — one entry per question in order, each
+     * carrying the beneficiary's actual answer shaped for its type (this is
+     * the per-aid detail, not the aggregate percentages on the survey
+     * results screen). Empty when no response exists yet.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function surveyDetail(): Collection
+    {
+        $response = $this->surveyResponse;
+
+        if (! $response || ! $response->survey) {
+            return collect();
+        }
+
+        $answers = $response->answers->keyBy('survey_question_id');
+
+        return $response->survey->questions->map(function (SurveyQuestion $question) use ($answers): array {
+            $value = $answers->get($question->id)?->value;
+            $answered = $value !== null && $value !== [];
+
+            $base = [
+                'id' => $question->id,
+                'label' => $question->label,
+                'type_label' => $question->type->label(),
+                'answered' => $answered,
+            ];
+
+            return match ($question->type) {
+                SurveyQuestionType::SingleChoice,
+                SurveyQuestionType::MultipleChoice => $base + [
+                    'kind' => 'choice',
+                    'labels' => $this->choiceLabels($question, $value),
+                ],
+                SurveyQuestionType::Rating => $base + [
+                    'kind' => 'rating',
+                    'rating' => $answered ? (int) $value : null,
+                    'max_stars' => (int) ($question->config['max_stars'] ?? 5),
+                ],
+                SurveyQuestionType::YesNo => $base + [
+                    'kind' => 'yes_no',
+                    'yes' => $answered ? (bool) $value : null,
+                ],
+                default => $base + [
+                    'kind' => 'text',
+                    'text' => $answered ? (string) $value : null,
+                ],
+            };
+        });
+    }
+
+    /**
+     * Map a choice question's stored value(s) to their human labels,
+     * falling back to the raw value when an option was later removed.
+     *
+     * @param  mixed  $value
+     * @return array<int, string>
+     */
+    private function choiceLabels(SurveyQuestion $question, $value): array
+    {
+        $values = is_array($value) ? $value : ($value === null ? [] : [$value]);
+        $options = collect($question->options ?? [])->keyBy('value');
+
+        return collect($values)
+            ->map(fn ($item): string => $options->get($item)['label'] ?? (string) $item)
+            ->all();
+    }
+
     public function resendConfirmation(): void
     {
         $confirmation = $this->confirmation;
@@ -246,6 +355,9 @@ class Show extends Component
             $this->latestReturnNote,
             $this->confirmation,
             $this->canResendConfirmation,
+            $this->surveyResponse,
+            $this->showsSurveyCard,
+            $this->surveyDetail,
         );
     }
 

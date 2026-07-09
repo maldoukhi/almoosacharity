@@ -257,6 +257,70 @@
                     @endif
                 </x-ui.card>
             @endif
+
+            @if ($this->showsSurveyCard)
+                <x-ui.card>
+                    <x-slot:header>
+                        <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('surveys.aid_detail.title') }}</h2>
+                    </x-slot:header>
+
+                    @if ($this->surveyResponse)
+                        <p class="mb-4 text-sm text-gray-500 dark:text-gray-400">
+                            {{ __('surveys.aid_detail.subtitle', ['survey' => $this->surveyResponse->survey?->title]) }}
+                            @if ($this->surveyResponse->submitted_at)
+                                <span class="mx-1">&middot;</span>
+                                <span class="tabular-nums">{{ __('surveys.aid_detail.submitted_at', ['date' => $this->surveyResponse->submitted_at->translatedFormat('Y/m/d')]) }}</span>
+                            @endif
+                        </p>
+
+                        <div class="space-y-4">
+                            @foreach ($this->surveyDetail as $item)
+                                <div wire:key="aid-survey-answer-{{ $item['id'] }}" class="rounded-(--radius-brand) border border-gray-100 bg-gray-50 px-3.5 py-3 dark:border-white/10 dark:bg-white/5">
+                                    <div class="mb-2 flex items-start justify-between gap-3">
+                                        <p class="text-sm font-medium text-gray-900 dark:text-white">{{ $item['label'] }}</p>
+                                        <x-ui.badge color="accent">{{ $item['type_label'] }}</x-ui.badge>
+                                    </div>
+
+                                    @if (! $item['answered'])
+                                        <p class="text-sm text-gray-400 dark:text-gray-500">{{ __('surveys.aid_detail.no_answer') }}</p>
+                                    @elseif ($item['kind'] === 'rating')
+                                        <div class="flex items-center gap-1.5">
+                                            <div class="flex items-center gap-0.5" aria-hidden="true">
+                                                @for ($star = 1; $star <= $item['max_stars']; $star++)
+                                                    <svg
+                                                        class="h-5 w-5 {{ $star <= $item['rating'] ? 'text-accent-500' : 'text-gray-200 dark:text-white/10' }}"
+                                                        fill="currentColor" viewBox="0 0 20 20"
+                                                    >
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.958a1 1 0 0 0 .95.69h4.162c.969 0 1.371 1.24.588 1.81l-3.367 2.446a1 1 0 0 0-.364 1.118l1.287 3.957c.3.922-.755 1.688-1.54 1.118l-3.366-2.446a1 1 0 0 0-1.176 0l-3.367 2.446c-.784.57-1.838-.196-1.539-1.118l1.286-3.957a1 1 0 0 0-.363-1.118L2.983 9.385c-.783-.57-.38-1.81.588-1.81h4.163a1 1 0 0 0 .95-.69l1.285-3.958Z" />
+                                                    </svg>
+                                                @endfor
+                                            </div>
+                                            <span class="text-sm tabular-nums text-gray-500 dark:text-gray-400">{{ $item['rating'] }}/{{ $item['max_stars'] }}</span>
+                                        </div>
+                                    @elseif ($item['kind'] === 'yes_no')
+                                        <x-ui.badge :color="$item['yes'] ? 'approved' : 'rejected'">
+                                            {{ $item['yes'] ? __('surveys.aid_detail.yes') : __('surveys.aid_detail.no') }}
+                                        </x-ui.badge>
+                                    @elseif ($item['kind'] === 'choice')
+                                        <div class="flex flex-wrap gap-1.5">
+                                            @foreach ($item['labels'] as $label)
+                                                <x-ui.badge color="primary">{{ $label }}</x-ui.badge>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <p class="whitespace-pre-line text-sm text-gray-700 dark:text-gray-200">{{ $item['text'] }}</p>
+                                    @endif
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <x-ui.empty-state
+                            :title="__('surveys.aid_detail.empty_title')"
+                            :description="__('surveys.aid_detail.empty_description')"
+                        />
+                    @endif
+                </x-ui.card>
+            @endif
         </div>
     </div>
 </div>

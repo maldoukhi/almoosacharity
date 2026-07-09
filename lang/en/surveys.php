@@ -87,6 +87,17 @@ return [
         'answers_count' => '{0} no answers|{1} one answer|[2,*] :count answers',
     ],
 
+    'aid_detail' => [
+        'title' => 'Beneficiary survey',
+        'subtitle' => "Beneficiary's answers to the “:survey” survey",
+        'submitted_at' => 'Submitted on :date',
+        'no_answer' => 'This question was not answered',
+        'yes' => 'Yes',
+        'no' => 'No',
+        'empty_title' => 'No answers yet',
+        'empty_description' => 'The beneficiary has not completed any survey linked to this aid yet',
+    ],
+
     'messages' => [
         'saved' => 'Survey saved successfully',
         'deleted' => 'Survey deleted successfully',
