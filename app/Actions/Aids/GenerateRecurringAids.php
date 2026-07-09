@@ -2,9 +2,11 @@
 
 namespace App\Actions\Aids;
 
+use App\Models\Aid;
 use App\Models\RecurringAidPlan;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -38,7 +40,7 @@ class GenerateRecurringAids
         // per-plan (lead_days lives on the row) so it is evaluated in PHP,
         // keeping the query SQLite/MySQL neutral.
         RecurringAidPlan::query()
-            ->with('aid.items', 'aid.createdBy')
+            ->with('aid.items', 'aid.createdBy', 'aid.program', 'aid.beneficiary')
             ->where('is_active', true)
             ->each(function (RecurringAidPlan $plan) use ($today, &$generated): void {
                 if ($this->isDue($plan, $today) && $this->processPlan($plan, $today)) {
@@ -51,14 +53,20 @@ class GenerateRecurringAids
 
     /**
      * A plan is due once "today" has reached its lead window: today is on or
-     * after (next_run_on minus lead_days). lead_days brings generation
-     * forward a configurable number of days before the due date; a lead of 0
-     * fires exactly on next_run_on. A plan whose window is still in the
-     * future is skipped, so a series is only ever built one cycle at a time —
-     * never the whole run upfront.
+     * after (next_run_on minus lead_days), and never before the schedule's
+     * own starts_on. lead_days brings generation forward a configurable number
+     * of days before the due date; a lead of 0 fires exactly on next_run_on.
+     * A plan whose window is still in the future is skipped, so a series is
+     * only ever built one cycle at a time — never the whole run upfront.
      */
     private function isDue(RecurringAidPlan $plan, CarbonImmutable $today): bool
     {
+        // The schedule never fires before its own start date, even if the
+        // lead window on the first due date would otherwise open earlier.
+        if ($plan->starts_on !== null && $today->lt($plan->starts_on->startOfDay())) {
+            return false;
+        }
+
         $trigger = $plan->next_run_on
             ->toImmutable()
             ->startOfDay()
@@ -91,25 +99,10 @@ class GenerateRecurringAids
         }
 
         $actor = $source->createdBy ?? User::query()->firstOrFail();
+        $dueDate = $plan->next_run_on->toImmutable();
 
-        DB::transaction(function () use ($plan, $source, $actor): void {
-            $clone = $this->createAid->handle([
-                'beneficiary_id' => $source->beneficiary_id,
-                'aid_program_id' => $source->aid_program_id,
-                'type' => $source->type->value,
-                'amount' => $source->amount !== null ? (float) $source->amount : null,
-                'purpose' => $source->purpose,
-                'notes' => $source->notes,
-                'items' => $source->items->map(fn ($item): array => [
-                    'name' => $item->name,
-                    'quantity' => $item->quantity,
-                    'estimated_value' => $item->estimated_value !== null ? (float) $item->estimated_value : null,
-                    'description' => $item->description,
-                ])->all(),
-            ], $actor);
-
-            // Link the clone into the plan's series (phase 10).
-            $clone->update(['recurring_aid_plan_id' => $plan->id]);
+        DB::transaction(function () use ($plan, $dueDate, $actor): void {
+            $this->cloneIntoSeries($plan, $actor, $dueDate);
 
             $next = $plan->frequency
                 ->nextDate($plan->next_run_on->toImmutable(), $plan->interval_months)
@@ -124,5 +117,43 @@ class GenerateRecurringAids
         });
 
         return true;
+    }
+
+    /**
+     * Clone a plan's source aid into a fresh draft aid linked to the plan's
+     * series, titled from the plan's title_template for the given cycle. Does
+     * NOT advance the plan's schedule — used both by the scheduled processor
+     * (which advances separately) and by the manual "add to series" action
+     * (which adds an off-cycle aid without disturbing the schedule).
+     *
+     * The cycle number is derived from how many series aids already exist, so
+     * the first generated aid is {n} = 1.
+     */
+    public function cloneIntoSeries(RecurringAidPlan $plan, User $actor, CarbonInterface $dueDate): Aid
+    {
+        $source = $plan->aid;
+
+        $cycle = $plan->aids()->count() + 1;
+
+        $clone = $this->createAid->handle([
+            'beneficiary_id' => $source->beneficiary_id,
+            'aid_program_id' => $source->aid_program_id,
+            'type' => $source->type->value,
+            'title' => $plan->renderTitle($cycle, $dueDate),
+            'amount' => $source->amount !== null ? (float) $source->amount : null,
+            'purpose' => $source->purpose,
+            'notes' => $source->notes,
+            'items' => $source->items->map(fn ($item): array => [
+                'name' => $item->name,
+                'quantity' => $item->quantity,
+                'estimated_value' => $item->estimated_value !== null ? (float) $item->estimated_value : null,
+                'description' => $item->description,
+            ])->all(),
+        ], $actor);
+
+        // Link the clone into the plan's series (phase 10).
+        $clone->update(['recurring_aid_plan_id' => $plan->id]);
+
+        return $clone;
     }
 }

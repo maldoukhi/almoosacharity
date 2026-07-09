@@ -124,6 +124,16 @@
             </a>
         @endcan
 
+        @canany(['users.view', 'roles.view'])
+            <p
+                x-show="! sidebarCollapsed"
+                x-transition.opacity.duration.150ms
+                class="px-3 pt-4 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500"
+            >
+                {{ __('nav.user_management_group') }}
+            </p>
+        @endcanany
+
         @can('users.view')
             <a
                 href="{{ route('admin.users.index') }}"

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Actions\Aids\GenerateRecurringAids;
 use App\Enums\RecurrenceFrequency;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,8 +21,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * generates is linked back through {@see aids()} — the plan's "series".
  */
 #[Fillable([
-    'aid_id', 'frequency', 'interval_months',
-    'starts_on', 'ends_on', 'next_run_on', 'lead_days', 'is_active',
+    'aid_id', 'frequency', 'interval_months', 'title_template',
+    'starts_on', 'due_on', 'ends_on', 'next_run_on', 'lead_days', 'is_active',
 ])]
 class RecurringAidPlan extends Model
 {
@@ -34,11 +35,38 @@ class RecurringAidPlan extends Model
             'frequency' => RecurrenceFrequency::class,
             'interval_months' => 'integer',
             'starts_on' => 'date',
+            'due_on' => 'date',
             'ends_on' => 'date',
             'next_run_on' => 'date',
             'lead_days' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Render this plan's title_template into a concrete aid title for one
+     * cycle. Supported placeholders (all optional): {program}, {beneficiary}
+     * (the source beneficiary's short name), {month} + {year} (of the cycle's
+     * due date), and {n} (1-based cycle number). Returns null when no
+     * template is set, so the generated aid simply carries no custom title.
+     */
+    public function renderTitle(int $cycle, CarbonInterface $dueDate): ?string
+    {
+        if ($this->title_template === null || trim($this->title_template) === '') {
+            return null;
+        }
+
+        $source = $this->relationLoaded('aid') ? $this->aid : $this->aid()->with('program', 'beneficiary')->first();
+
+        $replacements = [
+            '{program}' => $source?->program?->name ?? '',
+            '{beneficiary}' => $source?->beneficiary?->short_name ?? '',
+            '{month}' => $dueDate->translatedFormat('F'),
+            '{year}' => $dueDate->format('Y'),
+            '{n}' => (string) $cycle,
+        ];
+
+        return trim(strtr($this->title_template, $replacements));
     }
 
     /**

@@ -10,6 +10,7 @@ return [
     'aids' => 'الإعانات',
     'approvals_inbox' => 'صندوق الموافقات',
     'settings_group' => 'الإعدادات',
+    'user_management_group' => 'إدارة المستخدمين',
     'categories' => 'التصنيفات',
     'aid_programs' => 'برامج الإعانات',
     'approval_flows' => 'مسارات الموافقات',

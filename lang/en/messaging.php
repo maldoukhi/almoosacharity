@@ -4,6 +4,7 @@ return [
     'broadcast' => [
         'title' => 'Bulk Message',
         'subtitle' => 'Send an SMS or WhatsApp message to a group of beneficiaries at once.',
+        'messages_report_button' => 'Messages report',
         'channel_label' => 'Channel',
         'template_label' => 'Saved Template',
         'template_placeholder' => 'No template',

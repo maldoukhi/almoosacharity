@@ -4,6 +4,7 @@ return [
     'broadcast' => [
         'title' => 'رسالة جماعية',
         'subtitle' => 'أرسل رسالة نصية أو واتساب لمجموعة من المستفيدين دفعة واحدة.',
+        'messages_report_button' => 'تقرير الرسائل',
         'channel_label' => 'القناة',
         'template_label' => 'قالب جاهز',
         'template_placeholder' => 'بدون قالب',

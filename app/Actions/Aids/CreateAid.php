@@ -17,7 +17,7 @@ class CreateAid
     ) {}
 
     /**
-     * @param  array{beneficiary_id: int, aid_program_id: int, type: string, amount?: ?float, purpose?: ?string, notes?: ?string, items?: array<int, array{name: string, quantity: int, estimated_value?: ?float, description?: ?string}>}  $data
+     * @param  array{beneficiary_id: int, aid_program_id: int, type: string, title?: ?string, amount?: ?float, purpose?: ?string, notes?: ?string, items?: array<int, array{name: string, quantity: int, estimated_value?: ?float, description?: ?string}>}  $data
      */
     public function handle(array $data, User $actor): Aid
     {
@@ -26,8 +26,13 @@ class CreateAid
         $this->assertAidTypeMatchesProgram->handle(AidType::from($data['type']), $program);
 
         return DB::transaction(function () use ($data, $actor): Aid {
+            $title = isset($data['title']) && trim((string) $data['title']) !== ''
+                ? trim((string) $data['title'])
+                : null;
+
             $aid = Aid::create([
                 'reference' => $this->generateAidReference->handle(),
+                'title' => $title,
                 'beneficiary_id' => $data['beneficiary_id'],
                 'aid_program_id' => $data['aid_program_id'],
                 'type' => $data['type'],

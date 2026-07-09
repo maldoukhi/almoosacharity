@@ -49,12 +49,19 @@ return [
         'subtitle' => 'Aids generated from this plan.',
         'pause_button' => 'Pause plan',
         'empty' => 'No aid has been generated from this plan yet.',
+        'add_button' => 'Add aid manually',
+        'add_hint' => 'For special cases: add an extra aid to this series now, without waiting for the schedule.',
+        'confirm_add' => 'Add a new aid to this series now? It will be created as a draft, off the regular schedule.',
     ],
+
+    'col_title' => 'Title',
+    'col_due' => 'Due date',
 
     'messages' => [
         'paused' => 'Recurring plan paused',
         'resumed' => 'Recurring plan resumed',
         'deleted' => 'Recurring plan deleted',
         'saved' => 'Changes saved successfully',
+        'manual_added' => 'A new aid was added to the series',
     ],
 ];
