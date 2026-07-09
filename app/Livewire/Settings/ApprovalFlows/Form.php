@@ -34,7 +34,7 @@ class Form extends Component
     /** The notification channels a stage may fan out on (persisted only; the notifications domain does the actual sending). */
     public const NOTIFY_CHANNELS = ['in_app', 'email', 'whatsapp'];
 
-    /** @var array<int, array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, string>, notify_channels: array<int, string>}> */
+    /** @var array<int, array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, array{label: string, required: bool}>, notify_channels: array<int, string>}> */
     public array $stages = [];
 
     public function mount(?ApprovalFlow $flow = null): void
@@ -58,7 +58,9 @@ class Form extends Component
                     'allowed_actions' => $stage->allowed_actions ?? [],
                     'type' => ($stage->type ?? ApprovalStageType::Approval)->value,
                     'documents_required' => (bool) $stage->documents_required,
-                    'required_documents' => array_values($stage->required_documents ?? []),
+                    // Normalize to {label, required} objects, tolerating legacy
+                    // plain-string entries (treated as mandatory).
+                    'required_documents' => $stage->requiredDocumentTypes(),
                     'notify_channels' => array_values($stage->notify_channels ?? []),
                 ])
                 ->all();
@@ -122,7 +124,8 @@ class Form extends Component
     }
 
     /**
-     * Append a blank required-document label row to a stage.
+     * Append a blank required-document row to a stage. New rows default to
+     * mandatory; the builder toggle lets the admin mark them optional.
      */
     public function addDocumentType(int $index): void
     {
@@ -130,7 +133,7 @@ class Form extends Component
             return;
         }
 
-        $this->stages[$index]['required_documents'][] = '';
+        $this->stages[$index]['required_documents'][] = ['label' => '', 'required' => true];
     }
 
     /**
@@ -203,7 +206,9 @@ class Form extends Component
             'stages.*.type' => ['nullable', Rule::enum(ApprovalStageType::class)],
             'stages.*.documents_required' => ['boolean'],
             'stages.*.required_documents' => ['array'],
-            'stages.*.required_documents.*' => ['nullable', 'string', 'max:255'],
+            'stages.*.required_documents.*' => ['array'],
+            'stages.*.required_documents.*.label' => ['nullable', 'string', 'max:255'],
+            'stages.*.required_documents.*.required' => ['boolean'],
             'stages.*.notify_channels' => ['array'],
             'stages.*.notify_channels.*' => ['string', Rule::in(self::NOTIFY_CHANNELS)],
         ]);
@@ -229,7 +234,12 @@ class Form extends Component
                     'allowed_actions' => array_values($stage['allowed_actions']),
                     'type' => $stage['type'] ?? ApprovalStageType::Approval->value,
                     'documents_required' => (bool) ($stage['documents_required'] ?? false),
-                    'required_documents' => array_values($stage['required_documents'] ?? []),
+                    'required_documents' => collect($stage['required_documents'] ?? [])
+                        ->map(fn ($document): array => is_array($document)
+                            ? ['label' => (string) ($document['label'] ?? ''), 'required' => (bool) ($document['required'] ?? true)]
+                            // Tolerate a legacy plain-string row that slipped through.
+                            : ['label' => (string) $document, 'required' => true])
+                        ->all(),
                     'notify_channels' => array_values(array_intersect(self::NOTIFY_CHANNELS, $stage['notify_channels'] ?? [])),
                 ])
                 ->all(),
@@ -249,7 +259,7 @@ class Form extends Component
     }
 
     /**
-     * @return array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, string>, notify_channels: array<int, string>}
+     * @return array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, array{label: string, required: bool}>, notify_channels: array<int, string>}
      */
     private function blankStage(): array
     {

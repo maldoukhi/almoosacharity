@@ -312,25 +312,34 @@
                                             <div class="mt-3 space-y-2">
                                                 <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('approvals.flows.builder.required_documents_hint') }}</p>
 
-                                                @foreach (data_get($stages, $index.'.required_documents', []) as $docIndex => $docLabel)
-                                                    <div wire:key="stage-{{ $index }}-doc-{{ $docIndex }}" class="flex items-center gap-2">
+                                                @foreach (data_get($stages, $index.'.required_documents', []) as $docIndex => $docRow)
+                                                    <div wire:key="stage-{{ $index }}-doc-{{ $docIndex }}" class="flex flex-col gap-2 rounded-(--radius-brand) border border-gray-100 p-2 sm:flex-row sm:items-center dark:border-white/5">
                                                         <input
                                                             type="text"
-                                                            wire:model="stages.{{ $index }}.required_documents.{{ $docIndex }}"
+                                                            wire:model="stages.{{ $index }}.required_documents.{{ $docIndex }}.label"
                                                             placeholder="{{ __('approvals.flows.builder.document_type_placeholder') }}"
                                                             class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm transition duration-200 ease-out focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
                                                         />
-                                                        <button
-                                                            type="button"
-                                                            wire:click="removeDocumentType({{ $index }}, {{ $docIndex }})"
-                                                            title="{{ __('common.delete') }}"
-                                                            class="rounded-full p-1.5 text-gray-400 transition duration-150 ease-out hover:bg-status-rejected/10 hover:text-status-rejected focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-status-rejected dark:hover:bg-status-rejected/20"
-                                                        >
-                                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                                            </svg>
-                                                            <span class="sr-only">{{ __('common.delete') }}</span>
-                                                        </button>
+
+                                                        <div class="flex items-center justify-between gap-2 sm:justify-start">
+                                                            <x-ui.toggle
+                                                                wire:model="stages.{{ $index }}.required_documents.{{ $docIndex }}.required"
+                                                                name="stages.{{ $index }}.required_documents.{{ $docIndex }}.required"
+                                                                :label="__('approvals.flows.builder.document_required_toggle')"
+                                                            />
+
+                                                            <button
+                                                                type="button"
+                                                                wire:click="removeDocumentType({{ $index }}, {{ $docIndex }})"
+                                                                title="{{ __('common.delete') }}"
+                                                                class="rounded-full p-1.5 text-gray-400 transition duration-150 ease-out hover:bg-status-rejected/10 hover:text-status-rejected focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-status-rejected dark:hover:bg-status-rejected/20"
+                                                            >
+                                                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                                                </svg>
+                                                                <span class="sr-only">{{ __('common.delete') }}</span>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 @endforeach
 

@@ -25,9 +25,13 @@ beforeEach(function () {
 
 /**
  * Builds an under_review cash aid pinned at stage 1 of the default flow,
- * with that stage's documents_required flag set as requested.
+ * with that stage's documents_required flag and required document types set
+ * as requested. When $requiredDocuments is null a single legacy plain-string
+ * document type is used (so the legacy shape is exercised end-to-end).
+ *
+ * @param  array<int, mixed>|null  $requiredDocuments
  */
-function docStageAid(bool $documentsRequired): Aid
+function docStageAid(bool $documentsRequired, ?array $requiredDocuments = null): Aid
 {
     seedAidCatalog();
 
@@ -35,7 +39,9 @@ function docStageAid(bool $documentsRequired): Aid
     $stage = $flow->stages()->where('order', 1)->firstOrFail();
     $stage->update([
         'documents_required' => $documentsRequired,
-        'required_documents' => $documentsRequired ? ['صورة إثبات التسليم'] : null,
+        'required_documents' => $documentsRequired
+            ? ($requiredDocuments ?? ['صورة إثبات التسليم'])
+            : null,
     ]);
 
     $program = AidProgram::query()->where('type', AidProgramType::Cash)->firstOrFail();
@@ -54,7 +60,7 @@ function docStageAid(bool $documentsRequired): Aid
     ]);
 }
 
-it('round-trips a stage type, required documents and notify channels through the builder', function () {
+it('round-trips mixed mandatory/optional document types through the builder', function () {
     asAdmin();
     $approver = User::factory()->create();
 
@@ -68,7 +74,11 @@ it('round-trips a stage type, required documents and notify channels through the
             'allowed_actions' => ['approve', 'reject'],
             'type' => ApprovalStageType::DocumentUpload->value,
             'documents_required' => true,
-            'required_documents' => ['صورة الهوية', '  ', 'إثبات دخل'],
+            'required_documents' => [
+                ['label' => 'صورة الهوية', 'required' => true],
+                ['label' => '  ', 'required' => true],
+                ['label' => 'إثبات دخل', 'required' => false],
+            ],
             'notify_channels' => ['in_app', 'whatsapp'],
         ]])
         ->call('save')
@@ -78,31 +88,57 @@ it('round-trips a stage type, required documents and notify channels through the
 
     expect($stage->type)->toBe(ApprovalStageType::DocumentUpload)
         ->and($stage->documents_required)->toBeTrue()
-        // blank labels are trimmed away
-        ->and($stage->required_documents)->toBe(['صورة الهوية', 'إثبات دخل'])
+        // blank labels are trimmed away; label + required persist per type
+        ->and($stage->required_documents)->toBe([
+            ['label' => 'صورة الهوية', 'required' => true],
+            ['label' => 'إثبات دخل', 'required' => false],
+        ])
         ->and($stage->notify_channels)->toBe(['in_app', 'whatsapp']);
 });
 
-it('rejects a decision on a documents-required stage when no file is attached', function () {
+it('loads a legacy plain-string required_documents and re-saves it as required:true objects', function () {
+    asAdmin();
+
+    seedAidCatalog();
+
+    $flow = ApprovalFlow::query()->default()->where('is_active', true)->firstOrFail();
+    $stage = $flow->stages()->where('order', 1)->firstOrFail();
+    $stage->update([
+        'documents_required' => true,
+        'required_documents' => ['مستند قديم', 'مستند آخر'],
+    ]);
+
+    Livewire::test(Form::class, ['flow' => $flow])
+        ->call('save')
+        ->assertHasNoErrors();
+
+    $reloaded = $flow->fresh()->stages()->where('order', 1)->firstOrFail();
+
+    expect($reloaded->required_documents)->toBe([
+        ['label' => 'مستند قديم', 'required' => true],
+        ['label' => 'مستند آخر', 'required' => true],
+    ]);
+});
+
+it('rejects a decision when a mandatory document slot is empty', function () {
     asResearcher(); // holds the default stage-1 role
     $aid = docStageAid(documentsRequired: true);
 
     Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'approve'])
-        ->set('documents', [])
         ->call('confirm')
-        ->assertHasErrors('documents');
+        ->assertHasErrors('typedDocuments.0');
 
     expect($aid->fresh()->status)->toBe(AidStatus::UnderReview)
         ->and($aid->fresh()->current_stage_id)->toBe($aid->current_stage_id)
         ->and(ApprovalDecision::query()->where('aid_id', $aid->id)->count())->toBe(0);
 });
 
-it('accepts a decision on a documents-required stage and stores the file on the private collection', function () {
+it('accepts a decision when the mandatory slot is filled and tags the file with its label', function () {
     asResearcher();
     $aid = docStageAid(documentsRequired: true);
 
     Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'approve'])
-        ->set('documents', [UploadedFile::fake()->create('proof.pdf', 120, 'application/pdf')])
+        ->set('typedDocuments.0', UploadedFile::fake()->create('proof.pdf', 120, 'application/pdf'))
         ->call('confirm')
         ->assertHasNoErrors();
 
@@ -113,7 +149,42 @@ it('accepts a decision on a documents-required stage and stores the file on the 
     $media = $decision->getMedia('decision_documents');
 
     expect($media)->toHaveCount(1)
-        ->and($media->first()->disk)->toBe('local');
+        ->and($media->first()->disk)->toBe('local')
+        ->and($media->first()->getCustomProperty('document_label'))->toBe('صورة إثبات التسليم');
+});
+
+it('lets an optional slot stay empty while the mandatory one is filled', function () {
+    asResearcher();
+    $aid = docStageAid(documentsRequired: true, requiredDocuments: [
+        ['label' => 'الهوية', 'required' => true],
+        ['label' => 'كشف حساب', 'required' => false],
+    ]);
+
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'approve'])
+        ->set('typedDocuments.0', UploadedFile::fake()->create('id.pdf', 100, 'application/pdf'))
+        ->call('confirm')
+        ->assertHasNoErrors();
+
+    $decision = ApprovalDecision::query()->where('aid_id', $aid->id)->latest('id')->firstOrFail();
+    $media = $decision->getMedia('decision_documents');
+
+    expect($media)->toHaveCount(1)
+        ->and($media->first()->getCustomProperty('document_label'))->toBe('الهوية');
+});
+
+it('rejects a mixed stage when the mandatory slot is empty even if the optional one is filled', function () {
+    asResearcher();
+    $aid = docStageAid(documentsRequired: true, requiredDocuments: [
+        ['label' => 'الهوية', 'required' => true],
+        ['label' => 'كشف حساب', 'required' => false],
+    ]);
+
+    Livewire::test(ApprovalDecisionModal::class, ['aid' => $aid, 'action' => 'approve'])
+        ->set('typedDocuments.1', UploadedFile::fake()->create('statement.pdf', 100, 'application/pdf'))
+        ->call('confirm')
+        ->assertHasErrors('typedDocuments.0');
+
+    expect(ApprovalDecision::query()->where('aid_id', $aid->id)->count())->toBe(0);
 });
 
 it('throws when the action is invoked directly without documents on a required stage', function () {

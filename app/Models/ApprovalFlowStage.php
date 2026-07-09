@@ -77,6 +77,37 @@ class ApprovalFlowStage extends Model
     }
 
     /**
+     * The stage's required document types, normalized to a list of
+     * ['label' => string, 'required' => bool] entries with blank labels
+     * dropped. Tolerates legacy rows persisted as plain label strings —
+     * those are treated as mandatory (required = true).
+     *
+     * @return array<int, array{label: string, required: bool}>
+     */
+    public function requiredDocumentTypes(): array
+    {
+        $types = [];
+
+        foreach ((array) ($this->required_documents ?? []) as $entry) {
+            if (is_array($entry)) {
+                $label = trim((string) ($entry['label'] ?? ''));
+                $required = (bool) ($entry['required'] ?? true);
+            } else {
+                $label = trim((string) $entry);
+                $required = true;
+            }
+
+            if ($label === '') {
+                continue;
+            }
+
+            $types[] = ['label' => $label, 'required' => $required];
+        }
+
+        return $types;
+    }
+
+    /**
      * Whether the given user may act on this stage: either they hold the
      * stage's role, or they are one of its specifically-assigned users.
      * (The `approvals.act` permission is still enforced separately by the

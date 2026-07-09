@@ -67,52 +67,92 @@
             <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.decision_note_hint') }}</p>
         </div>
 
-        {{-- Supporting documents (required or optional per current stage) --}}
-        <div>
-            <label for="decisionModalDocuments" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                {{ __('approvals.decision.documents_label') }}
-                @if ($this->documentsRequired)
-                    <span class="text-status-rejected">*</span>
-                @endif
-            </label>
+        {{-- Supporting documents --}}
+        @if (! empty($this->documentTypes))
+            {{-- One labelled slot per admin-defined document type. --}}
+            <div>
+                <p class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {{ __('approvals.decision.documents_label') }}
+                </p>
 
-            @if (! empty($this->requiredDocumentLabels))
-                <ul class="mb-2 space-y-1">
-                    @foreach ($this->requiredDocumentLabels as $label)
-                        <li wire:key="req-doc-{{ $loop->index }}" class="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                            <svg class="size-3.5 shrink-0 text-secondary-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                            </svg>
-                            {{ $label }}
-                        </li>
+                <div class="space-y-3">
+                    @foreach ($this->documentTypes as $i => $type)
+                        <div wire:key="typed-doc-{{ $i }}" class="rounded-(--radius-brand) border border-gray-200 p-3 dark:border-white/10">
+                            <div class="mb-1.5 flex items-center justify-between gap-2">
+                                <span class="text-sm font-medium text-gray-800 dark:text-gray-100">
+                                    {{ $type['label'] }}
+                                    @if ($type['required'])
+                                        <span class="text-status-rejected">*</span>
+                                    @endif
+                                </span>
+
+                                <span @class([
+                                    'rounded-full px-2 py-0.5 text-xs font-medium',
+                                    'bg-status-rejected/10 text-status-rejected' => $type['required'],
+                                    'bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400' => ! $type['required'],
+                                ])>
+                                    {{ $type['required'] ? __('approvals.decision.mandatory') : __('approvals.decision.optional') }}
+                                </span>
+                            </div>
+
+                            <input
+                                id="typedDocument{{ $i }}"
+                                type="file"
+                                wire:model="typedDocuments.{{ $i }}"
+                                accept=".pdf,.jpg,.jpeg,.png"
+                                class="block w-full cursor-pointer rounded-(--radius-brand) border border-gray-300 bg-white text-sm text-gray-900 shadow-sm transition duration-200 ease-out file:me-3 file:border-0 file:bg-gray-50 file:px-3.5 file:py-2.5 file:text-sm file:font-medium file:text-primary-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100 dark:file:bg-white/5 dark:file:text-primary-200"
+                            />
+
+                            <div wire:loading wire:target="typedDocuments.{{ $i }}" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                                {{ __('approvals.decision.uploading') }}
+                            </div>
+
+                            @error("typedDocuments.{$i}")
+                                <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                            @enderror
+                        </div>
                     @endforeach
-                </ul>
-            @endif
+                </div>
 
-            <input
-                id="decisionModalDocuments"
-                type="file"
-                wire:model="documents"
-                multiple
-                accept=".pdf,.jpg,.jpeg,.png"
-                class="block w-full cursor-pointer rounded-(--radius-brand) border border-gray-300 bg-white text-sm text-gray-900 shadow-sm transition duration-200 ease-out file:me-3 file:border-0 file:bg-gray-50 file:px-3.5 file:py-2.5 file:text-sm file:font-medium file:text-primary-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100 dark:file:bg-white/5 dark:file:text-primary-200"
-            />
-
-            <div wire:loading wire:target="documents" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ __('approvals.decision.uploading') }}
+                <p class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    {{ __('approvals.decision.typed_documents_hint') }}
+                </p>
             </div>
+        @else
+            {{-- No named types: one anonymous multi-file field (required or optional). --}}
+            <div>
+                <label for="decisionModalDocuments" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                    {{ __('approvals.decision.documents_label') }}
+                    @if ($this->documentsRequired)
+                        <span class="text-status-rejected">*</span>
+                    @endif
+                </label>
 
-            @error('documents')
-                <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
-            @enderror
-            @error('documents.*')
-                <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
-            @enderror
+                <input
+                    id="decisionModalDocuments"
+                    type="file"
+                    wire:model="documents"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    class="block w-full cursor-pointer rounded-(--radius-brand) border border-gray-300 bg-white text-sm text-gray-900 shadow-sm transition duration-200 ease-out file:me-3 file:border-0 file:bg-gray-50 file:px-3.5 file:py-2.5 file:text-sm file:font-medium file:text-primary-700 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100 dark:file:bg-white/5 dark:file:text-primary-200"
+                />
 
-            <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                {{ $this->documentsRequired ? __('approvals.decision.documents_hint_required') : __('approvals.decision.documents_hint_optional') }}
-            </p>
-        </div>
+                <div wire:loading wire:target="documents" class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ __('approvals.decision.uploading') }}
+                </div>
+
+                @error('documents')
+                    <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                @enderror
+                @error('documents.*')
+                    <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                @enderror
+
+                <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    {{ $this->documentsRequired ? __('approvals.decision.documents_hint_required') : __('approvals.decision.documents_hint_optional') }}
+                </p>
+            </div>
+        @endif
 
         {{-- What happens: notification preview --}}
         <div class="rounded-(--radius-brand) border {{ $tone['box'] }} p-4">

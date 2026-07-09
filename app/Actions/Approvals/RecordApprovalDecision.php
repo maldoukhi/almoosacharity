@@ -29,18 +29,25 @@ class RecordApprovalDecision
      * - return: sends the aid back to Draft for the creator to rework
      *   (the approval_flow_id snapshot is kept for when it is resubmitted).
      *
-     * When the current stage has documents_required = true the actor must
-     * supply at least one uploaded file; any provided files (required or
-     * optional) are stored as media on the decision's private
-     * 'decision_documents' collection.
+     * Supporting documents come in two flavours:
+     * - When the current stage defines required document *types*, each file
+     *   is supplied labelled (['label' => ..., 'file' => UploadedFile]) via
+     *   $labeledDocuments and every MANDATORY type must have a file.
+     * - Otherwise, when the stage merely has documents_required = true, the
+     *   actor must supply at least one anonymous file via $documents.
+     * Any provided file (labelled or anonymous, required or optional) is
+     * stored as media on the decision's private 'decision_documents'
+     * collection; labelled files carry their document label as a media
+     * custom property so which file is which stays recoverable.
      *
      * @param  array<int, UploadedFile>  $documents
+     * @param  array<int, array{label: string, file: UploadedFile}>  $labeledDocuments
      *
      * @throws InvalidAidTransitionException
      * @throws InvalidArgumentException
      * @throws AuthorizationException
      */
-    public function handle(Aid $aid, User $actor, ApprovalAction $action, ?string $note = null, array $documents = []): Aid
+    public function handle(Aid $aid, User $actor, ApprovalAction $action, ?string $note = null, array $documents = [], array $labeledDocuments = []): Aid
     {
         if ($aid->status !== AidStatus::UnderReview || ! $aid->current_stage_id) {
             throw InvalidAidTransitionException::notUnderReview();
@@ -63,11 +70,42 @@ class RecordApprovalDecision
             static fn ($file): bool => $file instanceof UploadedFile,
         ));
 
-        if ($stage->documents_required && $documents === []) {
+        $labeledDocuments = array_values(array_filter(
+            $labeledDocuments,
+            static fn ($entry): bool => is_array($entry) && ($entry['file'] ?? null) instanceof UploadedFile,
+        ));
+
+        $documentTypes = $stage->requiredDocumentTypes();
+
+        if ($documentTypes !== []) {
+            // Stage defines document *types*: every mandatory type must have a
+            // labelled file. Optional types may be omitted.
+            foreach ($documentTypes as $type) {
+                if (! $type['required']) {
+                    continue;
+                }
+
+                $satisfied = false;
+
+                foreach ($labeledDocuments as $entry) {
+                    if ((string) $entry['label'] === $type['label']) {
+                        $satisfied = true;
+
+                        break;
+                    }
+                }
+
+                if (! $satisfied) {
+                    throw new InvalidArgumentException(__('approvals.decision.documents_required'));
+                }
+            }
+        } elseif ($stage->documents_required && $documents === []) {
+            // Stage requires documents but names no specific types: at least
+            // one anonymous file is mandatory.
             throw new InvalidArgumentException(__('approvals.decision.documents_required'));
         }
 
-        return DB::transaction(function () use ($aid, $actor, $action, $note, $stage, $documents): Aid {
+        return DB::transaction(function () use ($aid, $actor, $action, $note, $stage, $documents, $labeledDocuments): Aid {
             // Re-read under a row lock: two concurrent decisions on the same
             // aid would otherwise both pass the pre-transaction status check
             // and record conflicting decisions.
@@ -86,6 +124,16 @@ class RecordApprovalDecision
                 'note' => $note,
                 'decided_at' => now(),
             ]);
+
+            foreach ($labeledDocuments as $entry) {
+                $file = $entry['file'];
+
+                $decision
+                    ->addMedia($file->getRealPath())
+                    ->usingName($file->getClientOriginalName())
+                    ->withCustomProperties(['document_label' => (string) $entry['label']])
+                    ->toMediaCollection('decision_documents');
+            }
 
             foreach ($documents as $file) {
                 $decision

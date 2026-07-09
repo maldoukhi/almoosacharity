@@ -36,6 +36,10 @@ return [
         'documents_required' => 'يجب إرفاق مستند واحد على الأقل قبل اتخاذ القرار',
         'documents_hint_required' => 'مطلوب رفع مستند واحد أو أكثر (PDF أو JPG أو PNG، بحد أقصى 5 ميجابايت لكل ملف).',
         'documents_hint_optional' => 'يمكنك إرفاق مستندات داعمة اختياريًا (PDF أو JPG أو PNG، بحد أقصى 5 ميجابايت لكل ملف).',
+        'typed_documents_hint' => 'أرفق كل مستند في خانته (PDF أو JPG أو PNG، بحد أقصى 5 ميجابايت لكل ملف). المستندات المعلَّمة بعلامة * إجبارية.',
+        'document_slot_required' => 'مستند «:label» إجباري ويجب إرفاقه',
+        'mandatory' => 'إجباري',
+        'optional' => 'اختياري',
         'uploading' => 'جارٍ رفع الملفات…',
     ],
 
@@ -50,8 +54,9 @@ return [
                 'whatsapp' => 'واتساب',
             ],
             'field_documents_required' => 'طلب مستندات في هذه المرحلة',
-            'required_documents_hint' => 'حدد أنواع المستندات المطلوبة من صاحب القرار في هذه المرحلة.',
+            'required_documents_hint' => 'حدد أنواع المستندات المطلوبة من صاحب القرار في هذه المرحلة، وهل كل مستند إجباري أم اختياري.',
             'document_type_placeholder' => 'مثال: صورة إثبات التسليم',
+            'document_required_toggle' => 'إجباري',
             'add_document_type' => 'إضافة نوع مستند',
         ],
         'messages' => [

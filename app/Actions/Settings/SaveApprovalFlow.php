@@ -60,10 +60,24 @@ class SaveApprovalFlow
             foreach ($stages as $index => $stageData) {
                 $assigneeIds = array_values(array_unique(array_map('intval', $stageData['assignee_user_ids'] ?? [])));
 
-                $requiredDocuments = array_values(array_filter(array_map(
-                    static fn ($label): string => trim((string) $label),
-                    $stageData['required_documents'] ?? [],
-                ), static fn (string $label): bool => $label !== ''));
+                $requiredDocuments = [];
+
+                foreach ($stageData['required_documents'] ?? [] as $document) {
+                    if (is_array($document)) {
+                        $label = trim((string) ($document['label'] ?? ''));
+                        $required = (bool) ($document['required'] ?? true);
+                    } else {
+                        // Legacy plain-string entry: a bare label, always mandatory.
+                        $label = trim((string) $document);
+                        $required = true;
+                    }
+
+                    if ($label === '') {
+                        continue;
+                    }
+
+                    $requiredDocuments[] = ['label' => $label, 'required' => $required];
+                }
 
                 $notifyChannels = array_values($stageData['notify_channels'] ?? []);
 

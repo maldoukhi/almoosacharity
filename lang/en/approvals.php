@@ -36,6 +36,10 @@ return [
         'documents_required' => 'At least one document must be attached before the decision',
         'documents_hint_required' => 'One or more documents are required (PDF, JPG or PNG, up to 5 MB each).',
         'documents_hint_optional' => 'You may optionally attach supporting documents (PDF, JPG or PNG, up to 5 MB each).',
+        'typed_documents_hint' => 'Attach each document in its own slot (PDF, JPG or PNG, up to 5 MB each). Documents marked with * are mandatory.',
+        'document_slot_required' => 'The ":label" document is mandatory and must be attached',
+        'mandatory' => 'Required',
+        'optional' => 'Optional',
         'uploading' => 'Uploading files…',
     ],
 
@@ -50,8 +54,9 @@ return [
                 'whatsapp' => 'WhatsApp',
             ],
             'field_documents_required' => 'Require documents at this stage',
-            'required_documents_hint' => 'Define the document types the decision-maker must provide at this stage.',
+            'required_documents_hint' => 'Define the document types the decision-maker must provide at this stage, and whether each one is mandatory or optional.',
             'document_type_placeholder' => 'e.g. Proof of delivery photo',
+            'document_required_toggle' => 'Mandatory',
             'add_document_type' => 'Add document type',
         ],
         'messages' => [

@@ -37,8 +37,21 @@ class ApprovalDecisionModal extends ModalComponent
 
     public string $note = '';
 
-    /** @var array<int, TemporaryUploadedFile> */
+    /**
+     * Anonymous supporting files — used only when the current stage requires
+     * documents but names no specific document types.
+     *
+     * @var array<int, TemporaryUploadedFile>
+     */
     public array $documents = [];
+
+    /**
+     * Per-document-type uploads, keyed by the document type's index in
+     * {@see self::documentTypes()}. Each slot holds a single file.
+     *
+     * @var array<int, TemporaryUploadedFile|null>
+     */
+    public array $typedDocuments = [];
 
     public function mount(Aid $aid, string $action): void
     {
@@ -74,18 +87,16 @@ class ApprovalDecisionModal extends ModalComponent
     }
 
     /**
-     * The admin-defined labels of the document types expected at this
-     * stage, shown as a checklist hint on the upload field.
+     * The admin-defined document types expected at this stage, each with its
+     * label and whether it is mandatory. When non-empty the modal renders a
+     * labelled file slot per type instead of a single anonymous field.
      *
-     * @return array<int, string>
+     * @return array<int, array{label: string, required: bool}>
      */
     #[Computed]
-    public function requiredDocumentLabels(): array
+    public function documentTypes(): array
     {
-        return array_values(array_filter(
-            (array) ($this->aid->currentStage?->required_documents ?? []),
-            static fn ($label): bool => filled($label),
-        ));
+        return $this->aid->currentStage?->requiredDocumentTypes() ?? [];
     }
 
     #[Computed]
@@ -162,14 +173,39 @@ class ApprovalDecisionModal extends ModalComponent
             ]);
         }
 
-        // Files must always pass the type/size gate; when the stage requires
-        // documents at least one is mandatory, otherwise they are optional.
-        $this->validate([
-            'documents' => [$this->documentsRequired ? 'required' : 'nullable', 'array'],
-            'documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
-        ], [
-            'documents.required' => __('approvals.decision.documents_required'),
-        ]);
+        $documentTypes = $this->documentTypes();
+        $labeledDocuments = [];
+
+        if ($documentTypes !== []) {
+            // Per-type slots: mandatory types must be filled, optional ones may
+            // be empty; every provided file passes the type/size gate.
+            $rules = [];
+            $messages = [];
+
+            foreach ($documentTypes as $i => $type) {
+                $rules["typedDocuments.{$i}"] = [$type['required'] ? 'required' : 'nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'];
+                $messages["typedDocuments.{$i}.required"] = __('approvals.decision.document_slot_required', ['label' => $type['label']]);
+            }
+
+            $this->validate($rules, $messages);
+
+            foreach ($documentTypes as $i => $type) {
+                $file = $this->typedDocuments[$i] ?? null;
+
+                if ($file instanceof TemporaryUploadedFile) {
+                    $labeledDocuments[] = ['label' => $type['label'], 'file' => $file];
+                }
+            }
+        } else {
+            // No named types: a single anonymous multi-file field. When the
+            // stage requires documents at least one is mandatory.
+            $this->validate([
+                'documents' => [$this->documentsRequired ? 'required' : 'nullable', 'array'],
+                'documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
+            ], [
+                'documents.required' => __('approvals.decision.documents_required'),
+            ]);
+        }
 
         try {
             app(RecordApprovalDecision::class)->handle(
@@ -177,7 +213,8 @@ class ApprovalDecisionModal extends ModalComponent
                 Auth::user(),
                 $action,
                 $this->note !== '' ? $this->note : null,
-                $this->documents,
+                $documentTypes === [] ? $this->documents : [],
+                $labeledDocuments,
             );
         } catch (InvalidAidTransitionException|InvalidArgumentException|AuthorizationException $exception) {
             $this->dispatch('toast', type: 'error', message: $exception->getMessage());
