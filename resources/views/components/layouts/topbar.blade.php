@@ -24,6 +24,9 @@
 
     <div class="flex shrink-0 items-center gap-2">
         @auth
+            {{-- Global search palette (Ctrl+K / Cmd+K) --}}
+            <livewire:global-search />
+
             {{-- Notifications bell --}}
             <livewire:notifications.bell />
         @endauth
