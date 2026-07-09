@@ -83,7 +83,15 @@ class Form extends Component
     /** @var array<int, int> */
     public array $selectedCategories = [];
 
-    public string $status = 'under_study';
+    /**
+     * The workflow status is no longer chosen freely on this form: a new
+     * beneficiary always starts at BeneficiaryStatus::New and then progresses
+     * only through the controlled review actions (submit / approve / reject /
+     * return) and the off-sequence suspend/deactivate/reactivate actions. The
+     * property is kept (defaulting to New) purely so an existing status is
+     * preserved on edit and never rewritten by this form.
+     */
+    public string $status = 'new';
 
     public function mount(?Beneficiary $beneficiary = null): void
     {
@@ -246,7 +254,10 @@ class Form extends Component
             'national_address' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
             'district' => ['nullable', 'string', 'max:255'],
-            'status' => ['required', Rule::enum(BeneficiaryStatus::class)],
+            // No workflow-status rule: status is never set from this form's
+            // free input. It is forced to New on create (below) and left
+            // untouched on update so the review workflow stays the sole owner
+            // of status progression.
             'selectedCategories' => ['array'],
             'selectedCategories.*' => ['integer', 'exists:beneficiary_categories,id'],
         ];
@@ -264,9 +275,17 @@ class Form extends Component
 
         $actor = Auth::user();
 
-        $beneficiary = $isUpdate
-            ? app(UpdateBeneficiary::class)->handle($this->beneficiary, $validated, $categoryIds, $actor)
-            : app(CreateBeneficiary::class)->handle($validated, $categoryIds, $actor);
+        if ($isUpdate) {
+            // Status is workflow-owned: it is never included in an update from
+            // this form, so an in-flight or approved beneficiary keeps its
+            // lifecycle state.
+            $beneficiary = app(UpdateBeneficiary::class)->handle($this->beneficiary, $validated, $categoryIds, $actor);
+        } else {
+            // Every new registration starts at New and enters the review
+            // workflow only via the explicit "submit for review" action.
+            $validated['status'] = BeneficiaryStatus::New->value;
+            $beneficiary = app(CreateBeneficiary::class)->handle($validated, $categoryIds, $actor);
+        }
 
         $this->dispatch('toast', type: 'success', message: __('beneficiaries.messages.saved'));
 

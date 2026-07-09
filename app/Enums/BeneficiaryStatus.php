@@ -4,9 +4,26 @@ namespace App\Enums;
 
 enum BeneficiaryStatus: string
 {
-    case Active = 'active';
-    case Suspended = 'suspended';
+    /** Just registered, not yet submitted into the review workflow. */
+    case New = 'new';
+
+    /** Legacy pre-workflow state, kept valid and treated like New. */
     case UnderStudy = 'under_study';
+
+    /** Moving through the configured beneficiary flow's stages. */
+    case UnderReview = 'under_review';
+
+    /** Approved and active (the successful terminal of the workflow). */
+    case Active = 'active';
+
+    /** Rejected during the workflow. */
+    case Rejected = 'rejected';
+
+    /** Temporarily suspended (off-sequence, reversible). */
+    case Suspended = 'suspended';
+
+    /** Deactivated (off-sequence): blocked from receiving new aids. */
+    case Deactivated = 'deactivated';
 
     /**
      * Human readable, translated label.
@@ -24,8 +41,60 @@ enum BeneficiaryStatus: string
     {
         return match ($this) {
             self::Active => 'approved',
-            self::Suspended => 'rejected',
-            self::UnderStudy => 'draft',
+            self::UnderReview => 'review',
+            self::Rejected, self::Suspended => 'rejected',
+            self::New, self::UnderStudy, self::Deactivated => 'draft',
         };
+    }
+
+    /**
+     * The full status transition graph for a beneficiary. Every action that
+     * changes a beneficiary's status (SubmitBeneficiary,
+     * RecordBeneficiaryDecision, DeactivateBeneficiary, ...) must only apply
+     * a transition allowed here.
+     *
+     * @return array<int, self>
+     */
+    public function allowedTransitions(): array
+    {
+        return match ($this) {
+            self::New, self::UnderStudy => [self::UnderReview, self::Deactivated],
+            self::UnderReview => [self::Active, self::Rejected, self::New, self::Deactivated],
+            self::Active => [self::Suspended, self::Deactivated],
+            self::Suspended => [self::Active, self::Deactivated],
+            self::Rejected => [self::New, self::Deactivated],
+            self::Deactivated => [self::Active, self::New],
+        };
+    }
+
+    public function canTransitionTo(self $to): bool
+    {
+        return in_array($to, $this->allowedTransitions(), true);
+    }
+
+    /**
+     * The states from which a beneficiary may be submitted into the review
+     * workflow (New and its legacy equivalent UnderStudy).
+     */
+    public function isSubmittable(): bool
+    {
+        return in_array($this, [self::New, self::UnderStudy], true);
+    }
+
+    /**
+     * Whether the beneficiary is currently moving through the workflow.
+     */
+    public function isUnderReview(): bool
+    {
+        return $this === self::UnderReview;
+    }
+
+    /**
+     * Deactivated beneficiaries are archived off-sequence and must not be
+     * granted new aids.
+     */
+    public function isDeactivated(): bool
+    {
+        return $this === self::Deactivated;
     }
 }

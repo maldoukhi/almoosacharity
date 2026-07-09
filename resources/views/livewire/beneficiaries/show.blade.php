@@ -66,6 +66,96 @@
         </div>
     </div>
 
+    {{-- سير حالة المستفيد (التسجيل ← المراجعة ← الاعتماد) --}}
+    <x-ui.card>
+        <x-slot:header>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('beneficiaries.flow.progress_title') }}</h2>
+                <x-ui.badge :color="$beneficiary->status->color()">{{ $beneficiary->status->label() }}</x-ui.badge>
+            </div>
+        </x-slot:header>
+
+        @if ($this->latestReturnNote)
+            <div class="mb-5 rounded-(--radius-brand) border border-status-review/20 bg-status-review/5 p-4">
+                <p class="text-sm font-semibold text-status-review">{{ __('beneficiaries.flow.returned_banner_title') }}</p>
+                <p class="mt-1 text-sm text-gray-700 dark:text-gray-200">{{ $this->latestReturnNote }}</p>
+            </div>
+        @endif
+
+        @if ($this->stages->isNotEmpty())
+            <x-ui.stepper :steps="$this->stages" :current="$this->currentStageIndex" :status="$this->finalStatus" />
+        @endif
+
+        <div class="mt-6 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-5 dark:border-white/10">
+            @if ($this->canSubmit)
+                <x-ui.button
+                    type="button"
+                    variant="primary"
+                    data-confirm="{{ __('beneficiaries.flow.confirm_submit') }}"
+                    x-on:click="uiConfirm($el.dataset.confirm, () => $wire.submitForReview())"
+                >
+                    {{ __('beneficiaries.flow.submit_button') }}
+                </x-ui.button>
+            @endif
+
+            @if ($this->canReview)
+                @foreach ($this->allowedActions as $action)
+                    <x-ui.button
+                        type="button"
+                        wire:key="review-action-{{ $action->value }}"
+                        variant="{{ match ($action->value) {
+                            'approve' => 'secondary',
+                            'reject' => 'danger',
+                            default => 'ghost',
+                        } }}"
+                        wire:click="$dispatch('openModal', { component: 'beneficiaries.beneficiary-decision-modal', arguments: { beneficiary: '{{ $beneficiary->hashid }}', action: '{{ $action->value }}' } })"
+                    >
+                        {{ $action->label() }}
+                    </x-ui.button>
+                @endforeach
+            @endif
+
+            @if ($this->canSuspend)
+                <x-ui.button
+                    type="button"
+                    variant="ghost"
+                    data-confirm="{{ __('beneficiaries.flow.confirm_suspend') }}"
+                    x-on:click="uiConfirm($el.dataset.confirm, () => $wire.suspend())"
+                >
+                    {{ __('beneficiaries.flow.suspend_button') }}
+                </x-ui.button>
+            @endif
+
+            @if ($this->canReactivate)
+                <x-ui.button type="button" variant="secondary" wire:click="reactivate">
+                    {{ __('beneficiaries.flow.reactivate_button') }}
+                </x-ui.button>
+            @endif
+
+            @if ($this->canDeactivate)
+                <x-ui.button
+                    type="button"
+                    variant="danger"
+                    data-confirm="{{ __('beneficiaries.flow.confirm_deactivate') }}"
+                    x-on:click="uiConfirm($el.dataset.confirm, () => $wire.deactivate(), { danger: true })"
+                >
+                    {{ __('beneficiaries.flow.deactivate_button') }}
+                </x-ui.button>
+            @endif
+
+            @if (! $this->canSubmit && ! $this->canReview && ! $this->canSuspend && ! $this->canReactivate && ! $this->canDeactivate)
+                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('beneficiaries.flow.no_actions') }}</p>
+            @endif
+        </div>
+
+        @if ($this->timeline->isNotEmpty())
+            <div class="mt-6 border-t border-gray-100 pt-5 dark:border-white/10">
+                <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{{ __('beneficiaries.flow.decisions_title') }}</h3>
+                <x-ui.timeline :items="$this->timeline" />
+            </div>
+        @endif
+    </x-ui.card>
+
     <x-ui.card>
         <x-ui.tabs :tabs="$tabs" :active="$activeTab" wireClick="setTab" />
 

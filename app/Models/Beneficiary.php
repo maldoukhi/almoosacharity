@@ -29,7 +29,9 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'mobile', 'marital_status', 'family_members_count', 'occupation',
     'employer', 'monthly_income', 'health_status', 'special_needs',
     'housing_type', 'rent_amount', 'national_address', 'city', 'district',
-    'bank_name', 'iban', 'bank_account_holder', 'status', 'notes', 'created_by',
+    'bank_name', 'iban', 'bank_account_holder', 'status',
+    'beneficiary_flow_id', 'current_stage_id', 'submitted_at', 'decided_at',
+    'notes', 'created_by',
 ])]
 class Beneficiary extends Model implements HasMedia
 {
@@ -50,6 +52,8 @@ class Beneficiary extends Model implements HasMedia
             'id_type' => IdType::class,
             'housing_type' => HousingType::class,
             'status' => BeneficiaryStatus::class,
+            'submitted_at' => 'datetime',
+            'decided_at' => 'datetime',
             'family_members_count' => 'integer',
             'monthly_income' => 'decimal:2',
             'rent_amount' => 'decimal:2',
@@ -121,6 +125,35 @@ class Beneficiary extends Model implements HasMedia
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * The review workflow snapshotted onto this beneficiary at submission
+     * time (so later edits to the flow never rewrite an in-flight one).
+     *
+     * @return BelongsTo<BeneficiaryFlow, $this>
+     */
+    public function beneficiaryFlow(): BelongsTo
+    {
+        return $this->belongsTo(BeneficiaryFlow::class);
+    }
+
+    /**
+     * @return BelongsTo<BeneficiaryFlowStage, $this>
+     */
+    public function currentStage(): BelongsTo
+    {
+        return $this->belongsTo(BeneficiaryFlowStage::class, 'current_stage_id');
+    }
+
+    /**
+     * The decisions recorded against this beneficiary, newest first.
+     *
+     * @return HasMany<BeneficiaryDecision, $this>
+     */
+    public function decisions(): HasMany
+    {
+        return $this->hasMany(BeneficiaryDecision::class)->latest('decided_at');
     }
 
     /**

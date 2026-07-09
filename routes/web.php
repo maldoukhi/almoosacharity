@@ -16,6 +16,7 @@ use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Beneficiaries\Form as BeneficiaryForm;
 use App\Livewire\Beneficiaries\Import as BeneficiaryImport;
 use App\Livewire\Beneficiaries\Index as BeneficiaryIndex;
+use App\Livewire\Beneficiaries\ReviewInbox as BeneficiaryReviewInbox;
 use App\Livewire\Beneficiaries\Show as BeneficiaryShow;
 use App\Livewire\Dashboard;
 use App\Livewire\Messaging\Broadcast as BroadcastScreen;
@@ -29,6 +30,8 @@ use App\Livewire\Settings\AidPrograms\Form as AidProgramForm;
 use App\Livewire\Settings\AidPrograms\Index as AidProgramIndex;
 use App\Livewire\Settings\ApprovalFlows\Form as ApprovalFlowForm;
 use App\Livewire\Settings\ApprovalFlows\Index as ApprovalFlowIndex;
+use App\Livewire\Settings\BeneficiaryFlows\Form as BeneficiaryFlowForm;
+use App\Livewire\Settings\BeneficiaryFlows\Index as BeneficiaryFlowIndex;
 use App\Livewire\Settings\Categories\Index as CategoryIndex;
 use App\Livewire\Settings\Notifications\Manage;
 use App\Livewire\Surveys\Builder;
@@ -141,6 +144,12 @@ Route::middleware(['auth', 'active'])->group(function (): void {
                 Route::get('/create', ApprovalFlowForm::class)->name('create')->middleware('permission:approvals.configure');
                 Route::get('/{flow}/edit', ApprovalFlowForm::class)->name('edit')->middleware('permission:approvals.configure');
             });
+
+            Route::prefix('beneficiary-flows')->name('beneficiary-flows.')->group(function (): void {
+                Route::get('/', BeneficiaryFlowIndex::class)->name('index')->middleware('permission:beneficiaries.flows.configure');
+                Route::get('/create', BeneficiaryFlowForm::class)->name('create')->middleware('permission:beneficiaries.flows.configure');
+                Route::get('/{flow}/edit', BeneficiaryFlowForm::class)->name('edit')->middleware('permission:beneficiaries.flows.configure');
+            });
         });
     });
 
@@ -154,6 +163,10 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
     Route::prefix('approvals')->name('approvals.')->group(function (): void {
         Route::get('/inbox', ApprovalsInbox::class)->name('inbox')->middleware('permission:approvals.view');
+    });
+
+    Route::prefix('beneficiary-review')->name('beneficiary-review.')->group(function (): void {
+        Route::get('/inbox', BeneficiaryReviewInbox::class)->name('inbox')->middleware('permission:beneficiaries.review');
     });
 
     Route::prefix('reports')->name('reports.')->middleware('permission:reports.view')->group(function (): void {

@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
 
         $registrar->forgetCachedPermissions();
         $this->call(ApprovalFlowSeeder::class);
+        $this->call(BeneficiaryFlowSeeder::class);
         $this->call(AidProgramSeeder::class);
         $this->call(BeneficiaryCategorySeeder::class);
         $this->call(NotificationTemplateSeeder::class);

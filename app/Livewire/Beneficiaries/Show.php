@@ -2,9 +2,21 @@
 
 namespace App\Livewire\Beneficiaries;
 
+use App\Actions\BeneficiaryFlows\DeactivateBeneficiary;
+use App\Actions\BeneficiaryFlows\SubmitBeneficiary;
+use App\Enums\ApprovalAction;
+use App\Enums\BeneficiaryStatus;
 use App\Enums\RelationKind;
+use App\Enums\RoleName;
+use App\Exceptions\InvalidBeneficiaryTransitionException;
 use App\Models\Beneficiary;
+use App\Models\BeneficiaryDecision;
 use App\Models\BeneficiaryFamilyMember;
+use App\Models\BeneficiaryFlow;
+use App\Models\BeneficiaryFlowStage;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
@@ -31,13 +43,23 @@ class Show extends Component
 
     public function mount(Beneficiary $beneficiary): void
     {
-        $this->beneficiary = $beneficiary->load(['categories', 'familyMembers', 'incomeSources', 'creator']);
+        $this->beneficiary = $beneficiary;
 
         Gate::authorize('view', $this->beneficiary);
+
+        $this->eagerLoad();
 
         if (! in_array($this->activeTab, self::TABS, true)) {
             $this->activeTab = 'basic';
         }
+    }
+
+    private function eagerLoad(): void
+    {
+        $this->beneficiary->load([
+            'categories', 'familyMembers', 'incomeSources', 'creator',
+            'beneficiaryFlow.stages', 'currentStage', 'decisions.user',
+        ]);
     }
 
     public function setTab(string $tab): void
@@ -158,6 +180,228 @@ class Show extends Component
             'y' => $y,
             'tier' => $tier,
         ];
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Review lifecycle (mirrors the aid approval-flow subsystem)
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * The ordered stages of the flow that applies to this beneficiary — its
+     * own submitted-flow snapshot once it exists, otherwise the default
+     * active flow so the stepper can be previewed before submission — shaped
+     * for x-ui.stepper (label/meta pairs).
+     *
+     * @return Collection<int, array{label: string, meta: ?string}>
+     */
+    #[Computed]
+    public function stages(): Collection
+    {
+        return $this->resolveStages()->map(fn (BeneficiaryFlowStage $stage): array => [
+            'label' => $stage->name,
+            'meta' => RoleName::tryFrom((string) $stage->role)?->label() ?? $stage->role,
+        ]);
+    }
+
+    /**
+     * Zero-based position of the beneficiary's current stage within
+     * {@see stages}, or null if there is no current stage.
+     */
+    #[Computed]
+    public function currentStageIndex(): ?int
+    {
+        if (! $this->beneficiary->current_stage_id) {
+            return null;
+        }
+
+        $index = $this->resolveStages()->search(
+            fn (BeneficiaryFlowStage $stage): bool => $stage->id === $this->beneficiary->current_stage_id,
+        );
+
+        return $index === false ? null : $index;
+    }
+
+    /**
+     * Terminal outcome coloring for the stepper: 'approved' once Active,
+     * 'rejected' once Rejected, otherwise null.
+     */
+    #[Computed]
+    public function finalStatus(): ?string
+    {
+        return match ($this->beneficiary->status) {
+            BeneficiaryStatus::Active => 'approved',
+            BeneficiaryStatus::Rejected => 'rejected',
+            default => null,
+        };
+    }
+
+    /**
+     * The recorded decisions, newest first, shaped for x-ui.timeline.
+     *
+     * @return Collection<int, BeneficiaryDecision>
+     */
+    #[Computed]
+    public function timeline(): Collection
+    {
+        return $this->beneficiary->decisions;
+    }
+
+    /**
+     * @return Collection<int, BeneficiaryFlowStage>
+     */
+    private function resolveStages(): Collection
+    {
+        $flow = $this->beneficiary->beneficiaryFlow
+            ?? BeneficiaryFlow::query()->default()->where('is_active', true)->first();
+
+        return $flow?->stages ?? collect();
+    }
+
+    #[Computed]
+    public function canSubmit(): bool
+    {
+        return $this->beneficiary->status->isSubmittable()
+            && Gate::allows('submit', $this->beneficiary);
+    }
+
+    #[Computed]
+    public function canReview(): bool
+    {
+        return $this->beneficiary->status === BeneficiaryStatus::UnderReview
+            && $this->beneficiary->current_stage_id !== null
+            && Gate::allows('review', $this->beneficiary);
+    }
+
+    /**
+     * The review actions allowed at the beneficiary's current stage.
+     *
+     * @return array<int, ApprovalAction>
+     */
+    #[Computed]
+    public function allowedActions(): array
+    {
+        $stage = $this->beneficiary->currentStage;
+
+        if (! $stage) {
+            return [];
+        }
+
+        return collect(ApprovalAction::cases())
+            ->filter(fn (ApprovalAction $action): bool => $stage->allows($action))
+            ->values()
+            ->all();
+    }
+
+    #[Computed]
+    public function canDeactivate(): bool
+    {
+        return Gate::allows('deactivate', $this->beneficiary);
+    }
+
+    #[Computed]
+    public function canSuspend(): bool
+    {
+        return Gate::allows('suspend', $this->beneficiary);
+    }
+
+    #[Computed]
+    public function canReactivate(): bool
+    {
+        return $this->beneficiary->status !== BeneficiaryStatus::Active
+            && Gate::allows('reactivate', $this->beneficiary);
+    }
+
+    /**
+     * The note from the most recent "return" decision, surfaced as a heads-up
+     * while the beneficiary is back at New awaiting rework.
+     */
+    #[Computed]
+    public function latestReturnNote(): ?string
+    {
+        if (! $this->beneficiary->status->isSubmittable()) {
+            return null;
+        }
+
+        return $this->beneficiary->decisions
+            ->firstWhere('action', ApprovalAction::Return)
+            ?->note;
+    }
+
+    public function submitForReview(): void
+    {
+        Gate::authorize('submit', $this->beneficiary);
+
+        try {
+            app(SubmitBeneficiary::class)->handle($this->beneficiary, Auth::user());
+        } catch (InvalidBeneficiaryTransitionException|AuthorizationException $exception) {
+            $this->dispatch('toast', type: 'error', message: $exception->getMessage());
+
+            return;
+        }
+
+        $this->dispatch('toast', type: 'success', message: __('beneficiaries.flow.messages.submitted'));
+
+        $this->refreshLifecycle();
+    }
+
+    public function deactivate(): void
+    {
+        Gate::authorize('deactivate', $this->beneficiary);
+
+        $this->applyOffSequence(fn (DeactivateBeneficiary $action) => $action->handle($this->beneficiary, Auth::user()), 'deactivated');
+    }
+
+    public function suspend(): void
+    {
+        Gate::authorize('suspend', $this->beneficiary);
+
+        $this->applyOffSequence(fn (DeactivateBeneficiary $action) => $action->suspend($this->beneficiary, Auth::user()), 'suspended');
+    }
+
+    public function reactivate(): void
+    {
+        Gate::authorize('reactivate', $this->beneficiary);
+
+        $this->applyOffSequence(fn (DeactivateBeneficiary $action) => $action->reactivate($this->beneficiary, Auth::user()), 'reactivated');
+    }
+
+    private function applyOffSequence(callable $callback, string $messageKey): void
+    {
+        try {
+            $callback(app(DeactivateBeneficiary::class));
+        } catch (InvalidBeneficiaryTransitionException|AuthorizationException $exception) {
+            $this->dispatch('toast', type: 'error', message: $exception->getMessage());
+
+            return;
+        }
+
+        $this->dispatch('toast', type: 'success', message: __('beneficiaries.flow.messages.'.$messageKey));
+
+        $this->refreshLifecycle();
+    }
+
+    #[On('beneficiary-reviewed')]
+    public function refreshLifecycle(): void
+    {
+        $this->beneficiary->refresh();
+
+        $this->eagerLoad();
+
+        unset(
+            $this->stages,
+            $this->currentStageIndex,
+            $this->finalStatus,
+            $this->timeline,
+            $this->canSubmit,
+            $this->canReview,
+            $this->allowedActions,
+            $this->canDeactivate,
+            $this->canSuspend,
+            $this->canReactivate,
+            $this->latestReturnNote,
+        );
     }
 
     public function render()

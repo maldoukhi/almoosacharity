@@ -37,6 +37,10 @@ class PermissionSeeder extends Seeder
         'beneficiaries.export',
         'beneficiaries.bank-data.view',
         'beneficiaries.bank-data.manage',
+        'beneficiaries.submit',
+        'beneficiaries.review',
+        'beneficiaries.deactivate',
+        'beneficiaries.flows.configure',
 
         // Aids
         'aids.view',

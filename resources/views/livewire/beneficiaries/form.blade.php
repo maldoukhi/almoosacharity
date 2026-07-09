@@ -5,7 +5,6 @@
     $genderOptions = collect(\App\Enums\Gender::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]);
     $maritalStatusOptions = collect(\App\Enums\MaritalStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]);
     $housingTypeOptions = collect(\App\Enums\HousingType::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]);
-    $beneficiaryStatusOptions = collect(\App\Enums\BeneficiaryStatus::cases())->mapWithKeys(fn ($case) => [$case->value => $case->label()]);
 
     $basicFields = ['first_name', 'second_name', 'third_name', 'last_name', 'id_type', 'national_id', 'nationality', 'birth_date', 'gender', 'marital_status', 'family_members_count'];
     $contactFields = ['mobile', 'occupation', 'employer', 'health_status', 'special_needs'];
@@ -47,13 +46,9 @@
         </div>
 
         <div class="flex items-center gap-3">
-            <div class="w-48">
-                <x-ui.select
-                    name="status"
-                    wire:model="status"
-                    :options="$beneficiaryStatusOptions"
-                />
-            </div>
+            @if ($isEdit)
+                <x-ui.badge :color="$beneficiary->status->color()">{{ $beneficiary->status->label() }}</x-ui.badge>
+            @endif
 
             <x-ui.button href="{{ route('admin.beneficiaries.index') }}" variant="ghost">
                 {{ __('common.back') }}
