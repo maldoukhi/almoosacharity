@@ -29,6 +29,7 @@ return [
         'type' => 'Type',
         'category' => 'Category',
         'city' => 'City',
+        'survey' => 'Survey',
         'delivery_method' => 'Delivery method',
         'delivery_method_hint' => 'Coming soon — pending delivery data integration',
     ],
@@ -113,16 +114,31 @@ return [
         'no_program' => 'No program',
     ],
 
-    // Surveys report — stub until the surveys domain lands
+    // Surveys report
     'surveys' => [
         'title' => 'Survey Results',
-        'subtitle' => 'Summary of beneficiary satisfaction survey results',
+        'subtitle' => 'Summary of beneficiary satisfaction surveys with per-question analysis',
+        'all_surveys' => 'All surveys',
         'column_survey' => 'Survey',
         'column_question' => 'Question',
-        'column_response' => 'Response',
-        'column_submitted_at' => 'Submitted at',
-        'stub_notice' => 'This report will be available once surveys are connected',
-        'coming_soon_badge' => 'Coming soon',
+        'column_type' => 'Question type',
+        'column_detail' => 'Detail',
+        'column_count' => 'Count',
+        'column_percentage' => 'Percentage',
+        'total_surveys' => 'Surveys',
+        'total_responses' => 'Total responses',
+        'responses_count' => 'Responses',
+        'response_rate' => 'Response rate',
+        'latest_answers' => 'Latest answers',
+        'metric_average' => 'Average',
+        'metric_min' => 'Min',
+        'metric_max' => 'Max',
+        'yes' => 'Yes',
+        'no' => 'No',
+        'no_responses' => 'No responses',
+        'no_questions' => 'No questions',
+        'empty_title' => 'No matching surveys',
+        'empty_description' => 'Adjust the filters or create a survey to see results here.',
     ],
 
     // Messages report (sent SMS/WhatsApp log)
@@ -165,6 +181,22 @@ return [
         'total_sms' => 'SMS: :count',
         'total_whatsapp' => 'WhatsApp: :count',
         'total_email' => 'Email: :count',
+    ],
+
+    // Fiscal-year lock (settings screen + enforcement message)
+    'fiscal' => [
+        'title' => 'Fiscal Year Lock',
+        'subtitle' => 'Close an accounting year to prevent its aids from being edited, cancelled or deleted',
+        'explanation' => 'Once a year is set, every aid created in that year or earlier becomes read-and-export only — it can no longer be updated, cancelled or deleted (drafts included). Viewing and exporting always remain available.',
+        'year_label' => 'Locked through end of year',
+        'year_hint' => 'Leave blank to remove the lock. Example: 2025 locks 2025 and all earlier years.',
+        'current_lock' => 'Fiscal years are locked through the end of :year.',
+        'no_lock' => 'No fiscal lock is currently active.',
+        'save' => 'Save',
+        'clear' => 'Remove lock',
+        'saved' => 'Fiscal-year lock saved.',
+        'cleared' => 'Fiscal-year lock removed.',
+        'locked_error' => 'This aid belongs to a locked fiscal year and cannot be edited, cancelled or deleted.',
     ],
 
 ];

@@ -3,15 +3,24 @@
 namespace App\Exports;
 
 use App\Reports\SurveysReport;
+use Illuminate\Support\Collection;
 
-/**
- * STUB export: always produces an empty sheet (besides headings) until the
- * surveys domain (phase 6, built in parallel) lands.
- */
 class SurveysExport extends ReportExport
 {
-    public function __construct(SurveysReport $report)
+    public function __construct(private readonly SurveysReport $surveysReport)
     {
-        parent::__construct($report);
+        parent::__construct($surveysReport);
+    }
+
+    /**
+     * SurveysReport's displayable rows are its per-survey aggregates
+     * flattened in PHP (see SurveysReport::rows()), not a raw per-response
+     * query() result — override the default collection() to export those.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    public function collection(): Collection
+    {
+        return $this->surveysReport->rows();
     }
 }

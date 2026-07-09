@@ -29,6 +29,7 @@ return [
         'type' => 'النوع',
         'category' => 'التصنيف',
         'city' => 'المدينة',
+        'survey' => 'الاستبيان',
         'delivery_method' => 'طريقة التسليم',
         'delivery_method_hint' => 'قريبًا — بانتظار ربط بيانات التسليم',
     ],
@@ -113,16 +114,31 @@ return [
         'no_program' => 'بدون برنامج',
     ],
 
-    // Surveys report — stub until the surveys domain lands
+    // Surveys report
     'surveys' => [
         'title' => 'نتائج الاستبيانات',
-        'subtitle' => 'ملخص نتائج استبيانات رضا المستفيدين',
+        'subtitle' => 'ملخص نتائج استبيانات رضا المستفيدين مع تحليل لكل سؤال',
+        'all_surveys' => 'كل الاستبيانات',
         'column_survey' => 'الاستبيان',
         'column_question' => 'السؤال',
-        'column_response' => 'الإجابة',
-        'column_submitted_at' => 'تاريخ الإرسال',
-        'stub_notice' => 'هذا التقرير متاح بعد ربط الاستبيانات',
-        'coming_soon_badge' => 'قريبًا',
+        'column_type' => 'نوع السؤال',
+        'column_detail' => 'التفصيل',
+        'column_count' => 'العدد',
+        'column_percentage' => 'النسبة',
+        'total_surveys' => 'عدد الاستبيانات',
+        'total_responses' => 'إجمالي الردود',
+        'responses_count' => 'عدد الردود',
+        'response_rate' => 'نسبة الاستجابة',
+        'latest_answers' => 'أحدث الإجابات',
+        'metric_average' => 'المتوسط',
+        'metric_min' => 'الأدنى',
+        'metric_max' => 'الأعلى',
+        'yes' => 'نعم',
+        'no' => 'لا',
+        'no_responses' => 'لا توجد ردود',
+        'no_questions' => 'لا توجد أسئلة',
+        'empty_title' => 'لا توجد استبيانات مطابقة',
+        'empty_description' => 'عدّل الفلاتر أو أنشئ استبيانًا لعرض النتائج هنا.',
     ],
 
     // Messages report (sent SMS/WhatsApp log)
@@ -165,6 +181,22 @@ return [
         'total_sms' => 'رسائل نصية: :count',
         'total_whatsapp' => 'واتساب: :count',
         'total_email' => 'بريد إلكتروني: :count',
+    ],
+
+    // Fiscal-year lock (settings screen + enforcement message)
+    'fiscal' => [
+        'title' => 'قفل السنة المالية',
+        'subtitle' => 'إغلاق سنة محاسبية لمنع تعديل أو إلغاء أو حذف إعاناتها',
+        'explanation' => 'عند تحديد سنة، تصبح كل الإعانات التي أُنشئت في تلك السنة أو قبلها للقراءة والتصدير فقط — لا يمكن تعديلها أو إلغاؤها أو حذفها (بما في ذلك المسودات). العرض والتصدير يبقيان متاحين دائمًا.',
+        'year_label' => 'مغلقة حتى نهاية سنة',
+        'year_hint' => 'اترك الحقل فارغًا لإلغاء القفل. مثال: 2025 يقفل سنة 2025 وما قبلها.',
+        'current_lock' => 'السنوات المالية مغلقة حتى نهاية :year.',
+        'no_lock' => 'لا يوجد قفل مالي مفعّل حاليًا.',
+        'save' => 'حفظ',
+        'clear' => 'إلغاء القفل',
+        'saved' => 'تم حفظ قفل السنة المالية.',
+        'cleared' => 'تم إلغاء قفل السنة المالية.',
+        'locked_error' => 'هذه الإعانة تعود لسنة مالية مغلقة ولا يمكن تعديلها أو إلغاؤها أو حذفها.',
     ],
 
 ];
