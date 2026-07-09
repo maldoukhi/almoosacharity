@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Enums\AidStatus;
 use App\Models\Aid;
 use App\Models\User;
+use App\Support\FiscalLock;
 
 class AidPolicy
 {
@@ -37,12 +38,16 @@ class AidPolicy
 
     public function update(User $user, Aid $aid): bool
     {
-        return $user->can('aids.update') && $aid->status->isEditable();
+        return $user->can('aids.update')
+            && $aid->status->isEditable()
+            && ! FiscalLock::isLocked($aid);
     }
 
     public function delete(User $user, Aid $aid): bool
     {
-        return $user->can('aids.delete') && $aid->status === AidStatus::Draft;
+        return $user->can('aids.delete')
+            && $aid->status === AidStatus::Draft
+            && ! FiscalLock::isLocked($aid);
     }
 
     public function submit(User $user, Aid $aid): bool
@@ -58,7 +63,9 @@ class AidPolicy
 
         $cancellableStatuses = [AidStatus::Draft, AidStatus::Submitted, AidStatus::UnderReview];
 
-        return $isCreatorOrManager && in_array($aid->status, $cancellableStatuses, true);
+        return $isCreatorOrManager
+            && in_array($aid->status, $cancellableStatuses, true)
+            && ! FiscalLock::isLocked($aid);
     }
 
     /**

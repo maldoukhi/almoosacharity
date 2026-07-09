@@ -6,6 +6,7 @@ use App\Enums\AidType;
 use App\Exceptions\InvalidAidTransitionException;
 use App\Models\Aid;
 use App\Models\AidProgram;
+use App\Support\FiscalLock;
 use Illuminate\Support\Facades\DB;
 
 class UpdateAid
@@ -22,6 +23,8 @@ class UpdateAid
      */
     public function handle(Aid $aid, array $data): Aid
     {
+        FiscalLock::assertMutable($aid);
+
         if (! $aid->status->isEditable()) {
             throw InvalidAidTransitionException::notEditable();
         }

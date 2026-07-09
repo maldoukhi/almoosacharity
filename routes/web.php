@@ -34,6 +34,7 @@ use App\Livewire\Settings\ApprovalFlows\Index as ApprovalFlowIndex;
 use App\Livewire\Settings\BeneficiaryFlows\Form as BeneficiaryFlowForm;
 use App\Livewire\Settings\BeneficiaryFlows\Index as BeneficiaryFlowIndex;
 use App\Livewire\Settings\Categories\Index as CategoryIndex;
+use App\Livewire\Settings\FiscalLock as FiscalLockSettings;
 use App\Livewire\Settings\Notifications\Manage;
 use App\Livewire\Surveys\Builder;
 use App\Livewire\Surveys\Results;
@@ -134,6 +135,7 @@ Route::middleware(['auth', 'active'])->group(function (): void {
             Route::get('/categories', CategoryIndex::class)->name('categories.index')->middleware('permission:settings.view');
             Route::get('/notifications', Manage::class)->name('notifications.index')->middleware('permission:notifications.settings.manage');
             Route::get('/system-health', SystemHealth::class)->name('system-health')->middleware('permission:settings.view');
+            Route::get('/fiscal-lock', FiscalLockSettings::class)->name('fiscal-lock.index')->middleware('permission:notifications.settings.manage');
 
             Route::prefix('aid-programs')->name('aid-programs.')->group(function (): void {
                 Route::get('/', AidProgramIndex::class)->name('index')->middleware('permission:settings.manage');

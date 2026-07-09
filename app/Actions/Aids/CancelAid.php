@@ -5,6 +5,7 @@ namespace App\Actions\Aids;
 use App\Enums\AidStatus;
 use App\Exceptions\InvalidAidTransitionException;
 use App\Models\Aid;
+use App\Support\FiscalLock;
 
 class CancelAid
 {
@@ -17,6 +18,8 @@ class CancelAid
      */
     public function handle(Aid $aid): Aid
     {
+        FiscalLock::assertMutable($aid);
+
         $cancellableStatuses = [AidStatus::Draft, AidStatus::Submitted, AidStatus::UnderReview];
 
         if (! in_array($aid->status, $cancellableStatuses, true)) {
