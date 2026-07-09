@@ -6,18 +6,15 @@ enum MessageChannel: string
 {
     case Sms = 'sms';
     case WhatsApp = 'whatsapp';
+    case Email = 'email';
 
     /**
-     * Human readable label. Not routed through __() translation files:
-     * the settings/templates screen that will surface this label to
-     * users ships in a later phase (this task owns no views/lang keys),
-     * mirroring the precedent set by Locale::label().
+     * Human readable, translated label (channel names live in the
+     * notifications lang files so the settings/report/broadcast screens
+     * stay fully localized).
      */
     public function label(): string
     {
-        return match ($this) {
-            self::Sms => 'رسالة نصية',
-            self::WhatsApp => 'واتساب',
-        };
+        return __('notifications.channels.'.$this->value);
     }
 }

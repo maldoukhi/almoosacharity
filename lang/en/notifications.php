@@ -5,11 +5,13 @@ return [
         'aid_approved' => 'Aid approved',
         'aid_ready' => 'Aid ready for collection',
         'aid_delivered' => 'Aid delivered',
+        'aid_awaiting_approval' => 'An aid awaiting your decision',
     ],
 
     'channels' => [
         'sms' => 'SMS',
         'whatsapp' => 'WhatsApp',
+        'email' => 'Email',
     ],
 
     'bell' => [
@@ -46,6 +48,12 @@ return [
 
         'section_templates_title' => 'Message templates',
         'section_templates_description' => 'The text sent to a beneficiary for each aid event and delivery channel',
+
+        'group_beneficiary_title' => 'Beneficiary notifications',
+        'group_beneficiary_description' => 'Messages sent to the beneficiary\'s mobile for each aid event.',
+        'group_staff_title' => 'Staff notifications',
+        'group_staff_description' => 'Messages sent to the assigned staff when an aid reaches a stage they must act on. Placeholders: {reference} aid number, {beneficiary} beneficiary name, {program} program, {stage} stage, {link} approvals inbox link.',
+        'staff_in_app_note' => 'The in-app bell notification is always on. Email and WhatsApp are sent according to the channels chosen on each approval stage.',
 
         'legend_title' => 'Available placeholders',
         'legend_name' => '{name} — beneficiary name',

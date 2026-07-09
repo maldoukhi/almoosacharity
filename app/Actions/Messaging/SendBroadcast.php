@@ -54,29 +54,42 @@ class SendBroadcast
 
         $channelEnum = MessageChannel::from($channel);
 
-        // SMS has no attachment concept: drop any file so it is never
-        // referenced downstream for a text-only channel.
-        $attachment = $channelEnum === MessageChannel::WhatsApp ? $attachment : null;
+        // Only channels that can carry a file keep the attachment; SMS (text
+        // only) drops it so it is never referenced downstream.
+        $carriesAttachment = in_array($channelEnum, [MessageChannel::WhatsApp, MessageChannel::Email], true);
+        $attachment = $carriesAttachment ? $attachment : null;
 
-        $eligibleIds = Beneficiary::query()
-            ->whereIn('id', $beneficiaryIds)
-            ->whereNotNull('mobile')
-            ->where('mobile', '!=', '')
-            ->pluck('id')
-            ->all();
+        if ($channelEnum === MessageChannel::Email) {
+            // Beneficiaries carry no email on file: email broadcasts reach
+            // only the manually-typed addresses (already validated/lowercased
+            // by the Livewire screen).
+            $eligibleIds = [];
+            $manualNumbers = collect($manualNumbers)
+                ->map(fn (string $email): string => mb_strtolower(trim($email)))
+                ->unique()
+                ->values()
+                ->all();
+        } else {
+            $eligibleIds = Beneficiary::query()
+                ->whereIn('id', $beneficiaryIds)
+                ->whereNotNull('mobile')
+                ->where('mobile', '!=', '')
+                ->pluck('id')
+                ->all();
 
-        $beneficiaryNumbers = Beneficiary::query()
-            ->whereIn('id', $eligibleIds)
-            ->pluck('mobile')
-            ->map(fn (string $mobile): string => MobileNumber::normalize($mobile))
-            ->all();
+            $beneficiaryNumbers = Beneficiary::query()
+                ->whereIn('id', $eligibleIds)
+                ->pluck('mobile')
+                ->map(fn (string $mobile): string => MobileNumber::normalize($mobile))
+                ->all();
 
-        $manualNumbers = collect($manualNumbers)
-            ->map(fn (string $number): string => MobileNumber::normalize($number))
-            ->unique()
-            ->reject(fn (string $number): bool => in_array($number, $beneficiaryNumbers, true))
-            ->values()
-            ->all();
+            $manualNumbers = collect($manualNumbers)
+                ->map(fn (string $number): string => MobileNumber::normalize($number))
+                ->unique()
+                ->reject(fn (string $number): bool => in_array($number, $beneficiaryNumbers, true))
+                ->values()
+                ->all();
+        }
 
         $total = count($eligibleIds) + count($manualNumbers);
 

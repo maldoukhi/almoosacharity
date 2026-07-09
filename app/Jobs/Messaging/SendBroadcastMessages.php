@@ -111,6 +111,9 @@ class SendBroadcastMessages implements ShouldQueue
         match ($channel) {
             MessageChannel::Sms => $messenger->sms($beneficiary->mobile, $body, related: $broadcast),
             MessageChannel::WhatsApp => $this->whatsapp($messenger, $broadcast, $beneficiary->mobile, $body, $mediaUrl, $idempotencyKey),
+            // Beneficiaries carry no email on file, so an email broadcast
+            // never targets them (only the manual address list) — no-op.
+            MessageChannel::Email => null,
         };
     }
 
@@ -127,7 +130,43 @@ class SendBroadcastMessages implements ShouldQueue
         match ($channel) {
             MessageChannel::Sms => $messenger->sms($number, $body, related: $broadcast),
             MessageChannel::WhatsApp => $this->whatsapp($messenger, $broadcast, $number, $body, $mediaUrl, $idempotencyKey),
+            // On the email channel the "number" is an email address.
+            MessageChannel::Email => $this->email($messenger, $broadcast, $number, $body),
         };
+    }
+
+    /**
+     * Send one email recipient the body, with the optional broadcast file
+     * attached to the email itself (not as a fetchable URL like WhatsApp).
+     */
+    private function email(Messenger $messenger, Broadcast $broadcast, string $to, string $body): void
+    {
+        $messenger->email(
+            $to,
+            __('messaging.email_subject'),
+            $body,
+            related: $broadcast,
+            attachment: $this->emailAttachment(),
+        );
+    }
+
+    /**
+     * The stored broadcast file shaped for an email attachment (disk/path +
+     * a display filename), or null when this broadcast carries no file.
+     *
+     * @return array{disk: string, path: string, name: string}|null
+     */
+    private function emailAttachment(): ?array
+    {
+        if ($this->attachment === null) {
+            return null;
+        }
+
+        return [
+            'disk' => $this->attachment['disk'],
+            'path' => $this->attachment['path'],
+            'name' => basename($this->attachment['path']),
+        ];
     }
 
     /**

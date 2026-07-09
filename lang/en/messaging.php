@@ -43,9 +43,15 @@ return [
         'manual_numbers_valid_count' => ':count valid numbers',
         'manual_numbers_invalid_count' => ':count invalid numbers',
         'manual_numbers_invalid' => 'The following numbers are invalid: :numbers',
-        'recipients_breakdown' => ':beneficiaries beneficiaries + :manual additional numbers = :total recipients',
+        'manual_emails_label' => 'Email Addresses',
+        'manual_emails_placeholder' => "Enter one email per line, e.g.:\nahmad@example.com\nsara@example.com",
+        'manual_emails_hint' => 'One email per line (or comma-separated). Beneficiaries have no email on file, so the email is sent only to the addresses entered here.',
+        'manual_emails_valid_count' => ':count valid emails',
+        'manual_emails_invalid_count' => ':count invalid emails',
+        'recipients_breakdown' => ':beneficiaries beneficiaries + :manual additional recipients = :total recipients',
         'attachment_label' => 'Attachment (optional)',
         'attachment_hint' => 'The file is delivered with the WhatsApp message only. Accepted types: PDF, JPG or PNG, up to 8 MB.',
+        'attachment_hint_email' => 'The file is attached to the email. Accepted types: PDF, JPG or PNG, up to 8 MB.',
         'attachment_choose' => 'Choose file',
         'attachment_remove' => 'Remove attachment',
         'attachment_uploading' => 'Uploading file...',
@@ -67,4 +73,16 @@ return [
     |
     */
     'default_recipient_name' => 'Dear valued recipient',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default email subject
+    |--------------------------------------------------------------------------
+    |
+    | Used for broadcast emails and for re-sending a failed email from the
+    | messages report (the body carries the message; the subject is a fixed
+    | branded line).
+    |
+    */
+    'email_subject' => 'A message from Al-Moosa Charity',
 ];

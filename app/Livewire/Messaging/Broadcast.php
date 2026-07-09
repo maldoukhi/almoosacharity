@@ -204,11 +204,23 @@ class Broadcast extends Component
 
     /**
      * Whether the currently-selected channel can deliver a file attachment.
-     * WhatsApp can (via the provider's media message); SMS cannot.
+     * WhatsApp (via the provider's media message) and Email (as a real file
+     * attachment) can; SMS cannot.
      */
     public function channelSupportsAttachment(): bool
     {
-        return $this->channel === MessageChannel::WhatsApp->value;
+        return in_array($this->channel, [MessageChannel::WhatsApp->value, MessageChannel::Email->value], true);
+    }
+
+    /**
+     * Whether the broadcast is being sent as email, in which case the
+     * recipients are email addresses (typed into the additional-recipients
+     * box) rather than mobile numbers — beneficiaries carry no email on
+     * file, so beneficiary selection contributes no recipients.
+     */
+    public function isEmailChannel(): bool
+    {
+        return $this->channel === MessageChannel::Email->value;
     }
 
     public function toggleId(int $id): void
@@ -266,7 +278,7 @@ class Broadcast extends Component
         $maxLength = MessageChannel::from($this->channel) === MessageChannel::Sms ? 480 : 1000;
 
         $this->validate([
-            'channel' => ['required', 'in:sms,whatsapp'],
+            'channel' => ['required', 'in:sms,whatsapp,email'],
             'body' => ['required', 'string', "max:{$maxLength}"],
             'newTemplateName' => ['required_if:saveAsTemplate,true', 'nullable', 'string', 'max:100'],
             ...$this->channelSupportsAttachment() && $this->attachment !== null ? $this->attachmentRules() : [],
@@ -536,6 +548,12 @@ class Broadcast extends Component
     #[Computed]
     public function beneficiaryEligibleCount(): int
     {
+        // Beneficiaries carry no email on file, so an email broadcast reaches
+        // only the manually-typed addresses.
+        if ($this->isEmailChannel()) {
+            return 0;
+        }
+
         return Beneficiary::query()
             ->whereIn('id', $this->selectedIds)
             ->whereNotNull('mobile')
@@ -584,9 +602,9 @@ class Broadcast extends Component
         $valid = $this->parsedManualNumbers();
 
         return collect($this->manualNumberTokens())
-            ->map(fn (string $token): string => MobileNumber::normalize($token))
+            ->map(fn (string $token): string => $this->normalizeRecipient($token))
             ->unique()
-            ->reject(fn (string $number): bool => in_array($number, $valid, true))
+            ->reject(fn (string $recipient): bool => in_array($recipient, $valid, true))
             ->values()
             ->all();
     }
@@ -648,6 +666,17 @@ class Broadcast extends Component
      */
     private function parsedManualNumbers(): array
     {
+        // On the email channel the additional-recipients box holds email
+        // addresses, validated as such rather than as Saudi mobile numbers.
+        if ($this->isEmailChannel()) {
+            return collect($this->manualNumberTokens())
+                ->map(fn (string $token): string => $this->normalizeRecipient($token))
+                ->unique()
+                ->filter(fn (string $email): bool => filter_var($email, FILTER_VALIDATE_EMAIL) !== false)
+                ->values()
+                ->all();
+        }
+
         $rule = new SaudiMobile;
 
         return collect($this->manualNumberTokens())
@@ -667,6 +696,18 @@ class Broadcast extends Component
     }
 
     /**
+     * Normalize a single freely-typed recipient token: an email address
+     * (lowercased/trimmed) on the email channel, or a Saudi mobile number
+     * otherwise.
+     */
+    private function normalizeRecipient(string $token): string
+    {
+        return $this->isEmailChannel()
+            ? mb_strtolower(trim($token))
+            : MobileNumber::normalize($token);
+    }
+
+    /**
      * Distinct recipients across selected beneficiaries (with a mobile
      * number) and valid manual numbers, unioned on the normalized mobile
      * format so the same person/number is never counted (or sent to)
@@ -676,6 +717,12 @@ class Broadcast extends Component
      */
     private function eligibleNormalizedNumbers(): array
     {
+        // Email broadcasts reach only the manually-typed addresses
+        // (beneficiaries have no email on file).
+        if ($this->isEmailChannel()) {
+            return $this->parsedManualNumbers();
+        }
+
         $beneficiaryNumbers = Beneficiary::query()
             ->whereIn('id', $this->selectedIds)
             ->whereNotNull('mobile')

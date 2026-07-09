@@ -164,6 +164,7 @@ return [
         'total_pending' => 'Pending: :count',
         'total_sms' => 'SMS: :count',
         'total_whatsapp' => 'WhatsApp: :count',
+        'total_email' => 'Email: :count',
     ],
 
 ];

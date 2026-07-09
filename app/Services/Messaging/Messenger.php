@@ -4,6 +4,7 @@ namespace App\Services\Messaging;
 
 use App\Enums\MessageChannel;
 use App\Enums\MessageStatus;
+use App\Jobs\Messaging\SendEmailMessage;
 use App\Jobs\Messaging\SendSmsMessage;
 use App\Jobs\Messaging\SendWhatsAppMessage;
 use App\Models\MessageLog;
@@ -126,6 +127,32 @@ class Messenger
             language: $language,
             idempotencyKey: $idempotencyKey ?? $this->defaultIdempotencyKey($log),
         );
+
+        return $log;
+    }
+
+    /**
+     * Queue a plain-text email (rendered from a template upstream), with an
+     * optional file attachment.
+     *
+     * @param  array{disk: string, path: string, name?: string}|null  $attachment
+     */
+    public function email(
+        string $to,
+        string $subject,
+        string $body,
+        ?Model $related = null,
+        ?array $attachment = null,
+    ): MessageLog {
+        $log = $this->createLog(
+            channel: MessageChannel::Email,
+            provider: (string) config('mail.default', 'log'),
+            to: $to,
+            body: $body,
+            related: $related,
+        );
+
+        SendEmailMessage::dispatch($log->id, $to, $subject, $body, $attachment);
 
         return $log;
     }

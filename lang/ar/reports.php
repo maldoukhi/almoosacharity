@@ -164,6 +164,7 @@ return [
         'total_pending' => 'قيد الإرسال: :count',
         'total_sms' => 'رسائل نصية: :count',
         'total_whatsapp' => 'واتساب: :count',
+        'total_email' => 'بريد إلكتروني: :count',
     ],
 
 ];

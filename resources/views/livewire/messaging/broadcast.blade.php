@@ -12,6 +12,7 @@
     $cityOptions = collect($this->cities)->mapWithKeys(fn ($city) => [$city => $city]);
 
     $maxLength = $channel === 'sms' ? 480 : 1000;
+    $isEmail = $channel === 'email';
 @endphp
 
 <div class="space-y-6">
@@ -138,7 +139,7 @@
                         </div>
 
                         <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                            {{ __('messaging.broadcast.attachment_hint') }}
+                            {{ $isEmail ? __('messaging.broadcast.attachment_hint_email') : __('messaging.broadcast.attachment_hint') }}
                         </p>
 
                         @error('attachment')
@@ -149,29 +150,33 @@
             </x-ui.card>
 
             <x-ui.card>
-                <x-slot:header>{{ __('messaging.broadcast.manual_numbers_label') }}</x-slot:header>
+                <x-slot:header>{{ $isEmail ? __('messaging.broadcast.manual_emails_label') : __('messaging.broadcast.manual_numbers_label') }}</x-slot:header>
 
                 <textarea
                     id="manualNumbers" maxlength="4000"
                     wire:model.live.debounce.300ms="manualNumbers"
                     rows="4"
-                    placeholder="{{ __('messaging.broadcast.manual_numbers_placeholder') }}"
+                    placeholder="{{ $isEmail ? __('messaging.broadcast.manual_emails_placeholder') : __('messaging.broadcast.manual_numbers_placeholder') }}"
                     dir="ltr"
                     class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3.5 py-2.5 text-start text-sm text-gray-900 shadow-sm transition duration-200 ease-out focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
                 ></textarea>
 
                 <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    {{ __('messaging.broadcast.manual_numbers_hint') }}
+                    {{ $isEmail ? __('messaging.broadcast.manual_emails_hint') : __('messaging.broadcast.manual_numbers_hint') }}
                 </p>
 
                 <div class="mt-2 flex items-center gap-3 text-xs">
                     <span class="font-medium text-status-approved">
-                        {{ __('messaging.broadcast.manual_numbers_valid_count', ['count' => count($this->manualNumbersValid)]) }}
+                        {{ $isEmail
+                            ? __('messaging.broadcast.manual_emails_valid_count', ['count' => count($this->manualNumbersValid)])
+                            : __('messaging.broadcast.manual_numbers_valid_count', ['count' => count($this->manualNumbersValid)]) }}
                     </span>
 
                     @if ($this->manualNumbersInvalid !== [])
                         <span class="font-medium text-status-rejected">
-                            {{ __('messaging.broadcast.manual_numbers_invalid_count', ['count' => count($this->manualNumbersInvalid)]) }}
+                            {{ $isEmail
+                                ? __('messaging.broadcast.manual_emails_invalid_count', ['count' => count($this->manualNumbersInvalid)])
+                                : __('messaging.broadcast.manual_numbers_invalid_count', ['count' => count($this->manualNumbersInvalid)]) }}
                         </span>
                     @endif
                 </div>
@@ -206,7 +211,7 @@
                         {{ __('messaging.broadcast.send_button', ['count' => $this->eligibleCount]) }}
                     </x-ui.button>
 
-                    @if ($this->excludedNoMobileCount > 0)
+                    @if (! $isEmail && $this->excludedNoMobileCount > 0)
                         <p class="text-xs text-status-review">
                             {{ __('messaging.broadcast.excluded_no_mobile', ['count' => $this->excludedNoMobileCount]) }}
                         </p>
@@ -368,7 +373,7 @@
                             </div>
                         </div>
 
-                        @if ($this->excludedNoMobileCount > 0)
+                        @if (! $isEmail && $this->excludedNoMobileCount > 0)
                             <p class="mt-3 text-xs text-status-review">
                                 {{ __('messaging.broadcast.excluded_no_mobile', ['count' => $this->excludedNoMobileCount]) }}
                             </p>

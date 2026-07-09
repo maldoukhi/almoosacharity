@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Enums\MessageChannel;
 use App\Enums\NotificationEvent;
 use App\Models\NotificationTemplate;
 use App\Models\Setting;
@@ -11,11 +10,13 @@ use Illuminate\Database\Seeder;
 class NotificationTemplateSeeder extends Seeder
 {
     /**
-     * Default SMS/WhatsApp copy for every aid lifecycle event. SMS ships
-     * active by default; WhatsApp ships inactive until an Okta Connect
-     * template is approved and the admin turns it on from settings.
+     * Default copy for every notification event, keyed by channel. SMS
+     * ships active by default; WhatsApp ships inactive until an Okta
+     * Connect template is approved and turned on from settings. The staff
+     * event (aid_awaiting_approval) ships its Email template active so
+     * approvers are emailed on arrival, WhatsApp inactive.
      *
-     * @var array<string, array{sms: string, whatsapp: string}>
+     * @var array<string, array<string, string>>
      */
     protected array $bodies = [
         'aid_approved' => [
@@ -30,6 +31,22 @@ class NotificationTemplateSeeder extends Seeder
             'sms' => 'عزيزي/عزيزتي {name}، تم تسليم إعانتكم ({program}) بنجاح. نشكر لكم ثقتكم بجمعية الموسى الخيرية.',
             'whatsapp' => 'عزيزي/عزيزتي {name}، تم تسليم إعانتكم ({program}) بنجاح. نشكر لكم ثقتكم بجمعية الموسى الخيرية.',
         ],
+        'aid_awaiting_approval' => [
+            'email' => "مرحبًا،\n\nوصلت الإعانة رقم {reference} للمستفيد {beneficiary} ضمن برنامج {program} إلى مرحلة \"{stage}\" وهي بانتظار قراركم.\n\nلمراجعة الطلب واتخاذ القرار: {link}\n\nشكرًا لكم، جمعية الموسى الخيرية.",
+            'whatsapp' => 'وصلت الإعانة رقم {reference} للمستفيد {beneficiary} ({program}) إلى مرحلة "{stage}" وهي بانتظار قراركم. للمراجعة: {link}',
+        ],
+    ];
+
+    /**
+     * Channels that ship active by default, per event value.
+     *
+     * @var array<string, array<int, string>>
+     */
+    protected array $activeChannels = [
+        'aid_approved' => ['sms'],
+        'aid_ready' => ['sms'],
+        'aid_delivered' => ['sms'],
+        'aid_awaiting_approval' => ['email'],
     ];
 
     /**
@@ -38,17 +55,18 @@ class NotificationTemplateSeeder extends Seeder
     public function run(): void
     {
         foreach (NotificationEvent::cases() as $event) {
-            $copy = $this->bodies[$event->value];
+            $copy = $this->bodies[$event->value] ?? [];
+            $active = $this->activeChannels[$event->value] ?? [];
 
-            NotificationTemplate::query()->updateOrCreate(
-                ['event' => $event->value, 'channel' => MessageChannel::Sms->value],
-                ['body' => $copy['sms'], 'is_active' => true],
-            );
-
-            NotificationTemplate::query()->updateOrCreate(
-                ['event' => $event->value, 'channel' => MessageChannel::WhatsApp->value],
-                ['body' => $copy['whatsapp'], 'is_active' => false],
-            );
+            foreach ($event->channels() as $channel) {
+                NotificationTemplate::query()->updateOrCreate(
+                    ['event' => $event->value, 'channel' => $channel->value],
+                    [
+                        'body' => $copy[$channel->value] ?? '',
+                        'is_active' => in_array($channel->value, $active, true),
+                    ],
+                );
+            }
         }
 
         Setting::query()->updateOrCreate(['key' => 'taqnyat_sender'], ['value' => '']);

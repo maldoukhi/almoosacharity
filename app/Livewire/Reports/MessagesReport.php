@@ -5,6 +5,7 @@ namespace App\Livewire\Reports;
 use App\Enums\MessageChannel;
 use App\Enums\MessageStatus;
 use App\Exports\MessagesExport;
+use App\Jobs\Messaging\SendEmailMessage;
 use App\Jobs\Messaging\SendSmsMessage;
 use App\Jobs\Messaging\SendWhatsAppMessage;
 use App\Models\MessageLog;
@@ -77,6 +78,12 @@ class MessagesReport extends Component
                 $log->recipient,
                 (string) $log->body,
                 idempotencyKey: 'resend-'.$log->id.'-'.now()->timestamp,
+            ),
+            MessageChannel::Email => SendEmailMessage::dispatch(
+                $log->id,
+                $log->recipient,
+                __('messaging.email_subject'),
+                (string) $log->body,
             ),
         };
 

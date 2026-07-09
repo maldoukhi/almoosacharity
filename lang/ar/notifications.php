@@ -5,11 +5,13 @@ return [
         'aid_approved' => 'اعتماد الإعانة',
         'aid_ready' => 'جاهزية الإعانة للاستلام',
         'aid_delivered' => 'تسليم الإعانة',
+        'aid_awaiting_approval' => 'إعانة بانتظار قرارك',
     ],
 
     'channels' => [
         'sms' => 'رسالة نصية',
         'whatsapp' => 'واتساب',
+        'email' => 'بريد إلكتروني',
     ],
 
     'bell' => [
@@ -46,6 +48,12 @@ return [
 
         'section_templates_title' => 'قوالب الرسائل',
         'section_templates_description' => 'نص كل رسالة يُرسل للمستفيد حسب حدث الإعانة وقناة الإرسال',
+
+        'group_beneficiary_title' => 'إشعارات المستفيدين',
+        'group_beneficiary_description' => 'الرسائل المرسلة للمستفيد على جواله حسب حدث الإعانة.',
+        'group_staff_title' => 'إشعارات الموظفين',
+        'group_staff_description' => 'الرسائل المرسلة للموظفين المكلّفين عند وصول إعانة إلى مرحلة تتطلب قرارهم. المتغيرات المتاحة: {reference} رقم الإعانة، {beneficiary} اسم المستفيد، {program} البرنامج، {stage} المرحلة، {link} رابط صندوق الموافقات.',
+        'staff_in_app_note' => 'إشعار الجرس داخل النظام مُفعّل دائمًا. البريد الإلكتروني وواتساب يُرسلان حسب القنوات المختارة في كل مرحلة موافقة.',
 
         'legend_title' => 'المتغيرات المتاحة',
         'legend_name' => '{name} — اسم المستفيد',

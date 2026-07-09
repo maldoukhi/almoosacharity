@@ -43,9 +43,15 @@ return [
         'manual_numbers_valid_count' => ':count رقم صالح',
         'manual_numbers_invalid_count' => ':count رقم غير صالح',
         'manual_numbers_invalid' => 'الأرقام التالية غير صحيحة: :numbers',
-        'recipients_breakdown' => ':beneficiaries مستفيد + :manual رقم إضافي = :total مستلم',
+        'manual_emails_label' => 'عناوين البريد الإلكتروني',
+        'manual_emails_placeholder' => "أدخل بريدًا إلكترونيًا واحدًا في كل سطر، مثل:\nahmad@example.com\nsara@example.com",
+        'manual_emails_hint' => 'بريد إلكتروني واحد لكل سطر (أو مفصول بفاصلة). المستفيدون لا يملكون بريدًا مسجّلًا، لذا تُرسَل رسالة البريد إلى العناوين المُدخلة هنا فقط.',
+        'manual_emails_valid_count' => ':count بريد صالح',
+        'manual_emails_invalid_count' => ':count بريد غير صالح',
+        'recipients_breakdown' => ':beneficiaries مستفيد + :manual مستلم إضافي = :total مستلم',
         'attachment_label' => 'مرفق (اختياري)',
         'attachment_hint' => 'يُرسَل المرفق مع رسالة الواتساب فقط. الصيغ المقبولة: PDF أو JPG أو PNG، بحد أقصى 8 ميجابايت.',
+        'attachment_hint_email' => 'يُرفق الملف برسالة البريد الإلكتروني. الصيغ المقبولة: PDF أو JPG أو PNG، بحد أقصى 8 ميجابايت.',
         'attachment_choose' => 'اختيار ملف',
         'attachment_remove' => 'إزالة المرفق',
         'attachment_uploading' => 'جارٍ رفع الملف...',
@@ -67,4 +73,16 @@ return [
     |
     */
     'default_recipient_name' => 'عزيزنا المكرم',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Default email subject
+    |--------------------------------------------------------------------------
+    |
+    | Used for broadcast emails and for re-sending a failed email from the
+    | messages report (the body carries the message; the subject is a fixed
+    | branded line).
+    |
+    */
+    'email_subject' => 'رسالة من جمعية الموسى الخيرية',
 ];

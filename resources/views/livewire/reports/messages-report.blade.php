@@ -66,6 +66,7 @@
                 <span class="text-status-review">{{ __('reports.messages.total_pending', ['count' => $this->totals['pending']]) }}</span>
                 <span class="text-secondary-700 dark:text-secondary-300">{{ __('reports.messages.total_sms', ['count' => $this->totals['sms']]) }}</span>
                 <span class="text-accent-700 dark:text-accent-300">{{ __('reports.messages.total_whatsapp', ['count' => $this->totals['whatsapp']]) }}</span>
+                <span class="text-primary-700 dark:text-primary-300">{{ __('reports.messages.total_email', ['count' => $this->totals['email']]) }}</span>
             </div>
         </x-slot:header>
 

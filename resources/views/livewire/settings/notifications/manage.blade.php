@@ -1,6 +1,7 @@
 @php
-    $events = \App\Enums\NotificationEvent::cases();
-    $channels = \App\Enums\MessageChannel::cases();
+    $allEvents = collect(\App\Enums\NotificationEvent::cases());
+    $beneficiaryEvents = $allEvents->reject(fn ($event) => $event->isStaff());
+    $staffEvents = $allEvents->filter(fn ($event) => $event->isStaff());
 @endphp
 
 <div class="space-y-6">
@@ -54,50 +55,53 @@
                 </ul>
             </div>
 
-            <div class="space-y-6">
-                @foreach ($events as $event)
-                    <div class="rounded-(--radius-brand) border border-gray-200 p-4 dark:border-white/10">
-                        <h3 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{{ $event->label() }}</h3>
-
-                        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                            @foreach ($channels as $channel)
-                                <div class="space-y-2">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-xs font-medium text-gray-500 dark:text-gray-400">{{ __('notifications.channels.'.$channel->value) }}</span>
-
-                                        <label class="flex cursor-pointer items-center gap-2 select-none">
-                                            <span class="relative inline-block h-5 w-9 shrink-0">
-                                                <input
-                                                    type="checkbox"
-                                                    wire:model="templates.{{ $event->value }}.{{ $channel->value }}.is_active"
-                                                    class="peer sr-only"
-                                                />
-                                                <span class="absolute inset-0 rounded-full bg-gray-200 transition-colors duration-200 ease-out peer-checked:bg-primary dark:bg-white/10"></span>
-                                                <span class="absolute start-0.5 top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-out peer-checked:translate-x-4 rtl:peer-checked:-translate-x-4"></span>
-                                            </span>
-                                            <span class="text-xs text-gray-600 dark:text-gray-300">{{ __('notifications.settings.field_is_active') }}</span>
-                                        </label>
-                                    </div>
-
-                                    <textarea
-                                        wire:model="templates.{{ $event->value }}.{{ $channel->value }}.body"
-                                        rows="3"
-                                        maxlength="480"
-                                        class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition duration-200 ease-out focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
-                                    ></textarea>
-
-                                    @error('templates.'.$event->value.'.'.$channel->value.'.body')
-                                        <p class="text-xs text-status-rejected">{{ $message }}</p>
-                                    @enderror
-
-                                    @if ($combinedDeliveryMessage && $event === \App\Enums\NotificationEvent::AidDelivered)
-                                        <p class="text-xs text-secondary-700 dark:text-secondary-300">{{ __('notifications.settings.combined_template_link_hint') }}</p>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
+            <div class="space-y-8">
+                {{-- Beneficiary-facing notifications (SMS/WhatsApp to the
+                     beneficiary's mobile). --}}
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="text-sm font-semibold text-primary-800 dark:text-primary-200">{{ __('notifications.settings.group_beneficiary_title') }}</h3>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.group_beneficiary_description') }}</p>
                     </div>
-                @endforeach
+
+                    @foreach ($beneficiaryEvents as $event)
+                        <div wire:key="event-{{ $event->value }}" class="rounded-(--radius-brand) border border-gray-200 p-4 dark:border-white/10">
+                            <h4 class="mb-4 text-sm font-semibold text-gray-900 dark:text-white">{{ $event->label() }}</h4>
+
+                            <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                @foreach ($event->channels() as $channel)
+                                    @include('livewire.settings.notifications.partials.template-field', ['event' => $event, 'channel' => $channel])
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Staff/user notifications: sent to the assigned approvers
+                     when an aid reaches a stage they must act on. The in-app
+                     bell is always on; email/WhatsApp follow the channels
+                     chosen on each approval stage. --}}
+                @if ($staffEvents->isNotEmpty())
+                    <div class="space-y-4 border-t border-gray-200 pt-6 dark:border-white/10">
+                        <div>
+                            <h3 class="text-sm font-semibold text-secondary-800 dark:text-secondary-200">{{ __('notifications.settings.group_staff_title') }}</h3>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.group_staff_description') }}</p>
+                        </div>
+
+                        @foreach ($staffEvents as $event)
+                            <div wire:key="event-{{ $event->value }}" class="rounded-(--radius-brand) border border-gray-200 p-4 dark:border-white/10">
+                                <h4 class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">{{ $event->label() }}</h4>
+                                <p class="mb-4 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.staff_in_app_note') }}</p>
+
+                                <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                    @foreach ($event->channels() as $channel)
+                                        @include('livewire.settings.notifications.partials.template-field', ['event' => $event, 'channel' => $channel])
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </x-ui.card>
 

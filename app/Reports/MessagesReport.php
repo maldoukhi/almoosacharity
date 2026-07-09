@@ -116,6 +116,7 @@ final class MessagesReport implements Report
             'pending' => $this->query()->where('status', MessageStatus::Pending)->count(),
             'sms' => $this->query()->where('channel', MessageChannel::Sms)->count(),
             'whatsapp' => $this->query()->where('channel', MessageChannel::WhatsApp)->count(),
+            'email' => $this->query()->where('channel', MessageChannel::Email)->count(),
         ];
     }
 

@@ -131,7 +131,7 @@ class Manage extends Component
         Gate::authorize('notifications.settings.manage');
 
         foreach (NotificationEvent::cases() as $event) {
-            foreach (MessageChannel::cases() as $channel) {
+            foreach ($event->channels() as $channel) {
                 $template = NotificationTemplate::query()
                     ->where('event', $event->value)
                     ->where('channel', $channel->value)
