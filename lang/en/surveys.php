@@ -85,6 +85,12 @@ return [
         'export_hint' => 'Available with reports',
         'responses_count' => '{0} no responses|{1} one response|[2,*] :count responses',
         'answers_count' => '{0} no answers|{1} one answer|[2,*] :count answers',
+        'view_label' => 'View mode',
+        'view_aggregate' => 'Aggregate',
+        'view_individual' => 'Individual responses',
+        'anonymous' => 'Anonymous respondent',
+        'submitted_on' => 'Submitted on :date',
+        'related_aid' => 'Aid :reference',
     ],
 
     'aid_detail' => [

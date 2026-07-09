@@ -5,19 +5,45 @@ namespace App\Livewire\Surveys;
 use App\Enums\SurveyQuestionType;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
+use App\Models\SurveyResponse;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 /**
- * Read-only survey results screen: per-question aggregates rendered as
- * simple CSS percentage bars (no charting library here — ApexCharts is
- * reserved for the dashboard/reports phase).
+ * Read-only survey results screen. Two views over the same, gate-guarded
+ * data set:
+ *   - "aggregate": per-question summaries rendered as simple CSS percentage
+ *     bars (no charting library here — ApexCharts is reserved for the
+ *     dashboard/reports phase);
+ *   - "individual": every submitted response listed with its respondent's
+ *     short name, submission date and (when tied to one) the related aid,
+ *     each expandable to reveal that beneficiary's full per-question answers.
+ *
+ * Everything is scoped through the survey's own responses()/questions()
+ * relationships so a response belonging to another survey can never leak in.
  */
 class Results extends Component
 {
+    use WithPagination;
+
     public Survey $survey;
+
+    /**
+     * Which panel is shown: "aggregate" (default) or "individual".
+     */
+    #[Url]
+    public string $view = 'aggregate';
+
+    /**
+     * The individual response currently expanded in the "individual" view,
+     * or null when the list is collapsed.
+     */
+    public ?int $selectedResponseId = null;
 
     public function mount(Survey $survey): void
     {
@@ -28,10 +54,124 @@ class Results extends Component
         $this->survey->load(['questions' => fn ($query) => $query->orderBy('position')]);
     }
 
+    /**
+     * Switch between the aggregate and individual panels, collapsing any
+     * open response and resetting pagination for a clean list.
+     */
+    public function switchView(string $view): void
+    {
+        $this->view = in_array($view, ['aggregate', 'individual'], true) ? $view : 'aggregate';
+        $this->selectedResponseId = null;
+        $this->resetPage();
+    }
+
+    /**
+     * Expand a response's answers, or collapse it when it's already open.
+     */
+    public function toggleResponse(int $responseId): void
+    {
+        $this->selectedResponseId = $this->selectedResponseId === $responseId ? null : $responseId;
+    }
+
     #[Computed]
     public function totalResponses(): int
     {
         return $this->survey->responses()->count();
+    }
+
+    /**
+     * Every submitted response for this survey, newest first, with the
+     * respondent and (optional) related aid eager-loaded for the list rows.
+     *
+     * @return LengthAwarePaginator<int, SurveyResponse>
+     */
+    #[Computed]
+    public function responses(): LengthAwarePaginator
+    {
+        return $this->survey->responses()
+            ->with(['beneficiary', 'aid'])
+            ->orderByDesc('submitted_at')
+            ->orderByDesc('id')
+            ->paginate(15);
+    }
+
+    /**
+     * The currently expanded response's answer to every question, shaped by
+     * type for display (identical presentation to the aid-detail survey
+     * card). Empty when nothing is expanded or the id doesn't belong to this
+     * survey.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    #[Computed]
+    public function selectedResponseDetail(): Collection
+    {
+        if ($this->selectedResponseId === null) {
+            return collect();
+        }
+
+        // Scoped through the survey's own responses(): a response id from any
+        // other survey resolves to null and renders nothing.
+        $response = $this->survey->responses()
+            ->with('answers')
+            ->whereKey($this->selectedResponseId)
+            ->first();
+
+        if (! $response) {
+            return collect();
+        }
+
+        $answers = $response->answers->keyBy('survey_question_id');
+
+        return $this->survey->questions->map(function (SurveyQuestion $question) use ($answers): array {
+            $value = $answers->get($question->id)?->value;
+            $answered = $value !== null && $value !== [];
+
+            $base = [
+                'id' => $question->id,
+                'label' => $question->label,
+                'type_label' => $question->type->label(),
+                'answered' => $answered,
+            ];
+
+            return match ($question->type) {
+                SurveyQuestionType::SingleChoice,
+                SurveyQuestionType::MultipleChoice => $base + [
+                    'kind' => 'choice',
+                    'labels' => $this->choiceLabels($question, $value),
+                ],
+                SurveyQuestionType::Rating => $base + [
+                    'kind' => 'rating',
+                    'rating' => $answered ? (int) $value : null,
+                    'max_stars' => (int) ($question->config['max_stars'] ?? 5),
+                ],
+                SurveyQuestionType::YesNo => $base + [
+                    'kind' => 'yes_no',
+                    'yes' => $answered ? (bool) $value : null,
+                ],
+                default => $base + [
+                    'kind' => 'text',
+                    'text' => $answered ? (string) $value : null,
+                ],
+            };
+        });
+    }
+
+    /**
+     * Map a choice question's stored value(s) to their human labels,
+     * falling back to the raw value when an option was later removed.
+     *
+     * @param  mixed  $value
+     * @return array<int, string>
+     */
+    private function choiceLabels(SurveyQuestion $question, $value): array
+    {
+        $values = is_array($value) ? $value : ($value === null ? [] : [$value]);
+        $options = collect($question->options ?? [])->keyBy('value');
+
+        return collect($values)
+            ->map(fn ($item): string => $options->get($item)['label'] ?? (string) $item)
+            ->all();
     }
 
     /**

@@ -85,6 +85,12 @@ return [
         'export_hint' => 'متاح مع التقارير',
         'responses_count' => '{0} بدون ردود|{1} رد واحد|[2,*] :count ردود',
         'answers_count' => '{0} بدون إجابات|{1} إجابة واحدة|[2,*] :count إجابات',
+        'view_label' => 'طريقة العرض',
+        'view_aggregate' => 'ملخص إجمالي',
+        'view_individual' => 'الردود الفردية',
+        'anonymous' => 'مستفيد غير محدد',
+        'submitted_on' => 'أُرسل في :date',
+        'related_aid' => 'الإعانة :reference',
     ],
 
     'aid_detail' => [
