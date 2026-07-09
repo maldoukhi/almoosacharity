@@ -3,6 +3,8 @@
 
     $beneficiaryOptions = $this->beneficiaries->mapWithKeys(fn ($beneficiary) => [$beneficiary->id => $beneficiary->full_name]);
     $programOptions = $this->programs->mapWithKeys(fn ($program) => [$program->id => $program->name]);
+    $frequencyOptions = collect(\App\Enums\RecurrenceFrequency::cases())->mapWithKeys(fn ($frequency) => [$frequency->value => $frequency->label()]);
+    $existingDocuments = $isEdit ? $aid->getMedia('aid_documents') : collect();
 @endphp
 
 <div class="space-y-6">
@@ -315,6 +317,101 @@
                 @error('notes')
                     <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
                 @enderror
+            </div>
+
+            {{-- Supporting documents (phase 9) --}}
+            <div class="space-y-3 border-t border-gray-100 pt-5 dark:border-white/10">
+                <div>
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aids.documents.title') }}</p>
+                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.documents.hint') }}</p>
+                </div>
+
+                @if ($existingDocuments->isNotEmpty())
+                    <ul class="space-y-1.5">
+                        @foreach ($existingDocuments as $media)
+                            <li wire:key="aid-document-{{ $media->id }}" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                                <svg class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                </svg>
+                                <span class="truncate">{{ $media->name }}</span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                <input
+                    type="file"
+                    wire:model="documents"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    class="block w-full text-sm text-gray-600 file:me-3 file:rounded-(--radius-brand) file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-700 hover:file:bg-primary-100 dark:text-gray-300 dark:file:bg-primary-500/20 dark:file:text-primary-200"
+                />
+
+                <div wire:loading wire:target="documents" class="text-xs text-gray-500 dark:text-gray-400">{{ __('aids.documents.uploading') }}</div>
+
+                @error('documents.*')
+                    <p class="text-xs text-status-rejected">{{ $message }}</p>
+                @enderror
+
+                @if (! empty($documents))
+                    <p class="text-xs text-secondary-700 dark:text-secondary-400">
+                        {{ trans_choice('aids.documents.pending_count', count($documents), ['count' => count($documents)]) }}
+                    </p>
+                @endif
+            </div>
+
+            {{-- Recurrence (phase 10) --}}
+            <div class="space-y-4 border-t border-gray-100 pt-5 dark:border-white/10">
+                <x-ui.toggle
+                    :label="__('aids.recurrence.enable')"
+                    :description="__('aids.recurrence.enable_hint')"
+                    name="isRecurring"
+                    wire:model.live="isRecurring"
+                />
+
+                @if ($isRecurring)
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <x-ui.select
+                            :label="__('aids.recurrence.frequency_label')"
+                            name="recurrenceFrequency"
+                            wire:model.live="recurrenceFrequency"
+                            :options="$frequencyOptions"
+                        />
+
+                        @if ($recurrenceFrequency === \App\Enums\RecurrenceFrequency::CustomMonths->value)
+                            <x-ui.input
+                                :label="__('aids.recurrence.interval_months')"
+                                name="recurrenceIntervalMonths"
+                                type="number"
+                                min="1"
+                                max="60"
+                                wire:model="recurrenceIntervalMonths"
+                            />
+                        @endif
+
+                        <x-ui.input
+                            :label="__('aids.recurrence.starts_on')"
+                            name="recurrenceStartsOn"
+                            type="date"
+                            wire:model="recurrenceStartsOn"
+                        />
+
+                        <x-ui.input
+                            :label="__('aids.recurrence.ends_on')"
+                            name="recurrenceEndsOn"
+                            type="date"
+                            wire:model="recurrenceEndsOn"
+                            :hint="__('aids.recurrence.ends_on_hint')"
+                        />
+                    </div>
+
+                    <x-ui.toggle
+                        :label="__('aids.recurrence.active')"
+                        :description="__('aids.recurrence.active_hint')"
+                        name="recurrenceActive"
+                        wire:model="recurrenceActive"
+                    />
+                @endif
             </div>
 
             @if (! $isEdit && count($beneficiary_ids) > 1)

@@ -138,6 +138,32 @@ return [
         'both' => 'Cash and In-Kind',
     ],
 
+    'documents' => [
+        'title' => 'Supporting Documents',
+        'hint' => 'Attach documents (PDF, JPG or PNG, up to 5 MB each).',
+        'uploading' => 'Uploading...',
+        'pending_count' => '{1} 1 file ready to upload|[2,*] :count files ready to upload',
+    ],
+
+    'recurrence' => [
+        'enable' => 'Make this a recurring aid',
+        'enable_hint' => 'Automatically create a new aid on a schedule.',
+        'frequency_label' => 'Frequency',
+        'interval_months' => 'Months between each occurrence',
+        'starts_on' => 'Start date',
+        'ends_on' => 'End date (optional)',
+        'ends_on_hint' => 'Leave empty to recur indefinitely.',
+        'active' => 'Schedule active',
+        'active_hint' => 'Turn off to pause recurrence without deleting it.',
+        'frequency' => [
+            'monthly' => 'Monthly',
+            'quarterly' => 'Quarterly',
+            'semi_annual' => 'Semi-annual',
+            'yearly' => 'Yearly',
+            'custom_months' => 'Custom (months)',
+        ],
+    ],
+
     'messages' => [
         'submitted' => 'Aid submitted successfully for approval',
         'saved' => 'Aid saved successfully',

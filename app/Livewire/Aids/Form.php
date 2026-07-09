@@ -8,10 +8,13 @@ use App\Actions\Aids\SubmitAid;
 use App\Actions\Aids\UpdateAid;
 use App\Enums\AidProgramType;
 use App\Enums\AidType;
+use App\Enums\RecurrenceFrequency;
 use App\Exceptions\InvalidAidTransitionException;
 use App\Models\Aid;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
+use App\Models\RecurringAidPlan;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -21,6 +24,8 @@ use Illuminate\Validation\Rule;
 use InvalidArgumentException;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 
 /**
  * Aid create/edit form. Editing an existing aid is only reachable while it
@@ -30,6 +35,8 @@ use Livewire\Component;
  */
 class Form extends Component
 {
+    use WithFileUploads;
+
     /**
      * Safety cap for {@see selectAllMatching()}: the maximum number of
      * beneficiaries a single "select all" click can add to
@@ -82,6 +89,31 @@ class Form extends Component
      */
     public bool $showSubmitConfirm = false;
 
+    /**
+     * Phase 10 recurrence controls. When {@see $isRecurring} is on, saving
+     * the aid also creates/updates a {@see RecurringAidPlan} tied to it.
+     */
+    public bool $isRecurring = false;
+
+    public string $recurrenceFrequency = 'monthly';
+
+    public ?int $recurrenceIntervalMonths = null;
+
+    public ?string $recurrenceStartsOn = null;
+
+    public ?string $recurrenceEndsOn = null;
+
+    public bool $recurrenceActive = true;
+
+    /**
+     * Phase 9 (aid-form part): pending supporting-document uploads. Each
+     * entry is a {@see TemporaryUploadedFile} that is moved into the aid's
+     * private 'aid_documents' media collection on save.
+     *
+     * @var array<int, TemporaryUploadedFile>
+     */
+    public array $documents = [];
+
     public function mount(?Aid $aid = null): void
     {
         $this->aid = $aid;
@@ -107,6 +139,15 @@ class Form extends Component
             'estimated_value' => $item->estimated_value !== null ? (float) $item->estimated_value : null,
             'description' => (string) $item->description,
         ])->all();
+
+        if ($plan = $this->aid->recurringPlan) {
+            $this->isRecurring = true;
+            $this->recurrenceFrequency = $plan->frequency->value;
+            $this->recurrenceIntervalMonths = $plan->interval_months;
+            $this->recurrenceStartsOn = $plan->starts_on?->toDateString();
+            $this->recurrenceEndsOn = $plan->ends_on?->toDateString();
+            $this->recurrenceActive = $plan->is_active;
+        }
     }
 
     /**
@@ -442,6 +483,9 @@ class Form extends Component
 
             $this->aid = $aid;
 
+            $this->syncRecurringPlan($aid);
+            $this->storeDocuments($aid);
+
             $this->dispatch('toast', type: 'success', message: __('aids.messages.saved'));
 
             return $aid;
@@ -451,10 +495,17 @@ class Form extends Component
         unset($validated['beneficiary_ids']);
 
         $createdAids = collect($beneficiaryIds)
-            ->map(fn (int $beneficiaryId): Aid => app(CreateAid::class)->handle(
-                [...$validated, 'beneficiary_id' => $beneficiaryId],
-                Auth::user(),
-            ));
+            ->map(function (int $beneficiaryId) use ($validated): Aid {
+                $aid = app(CreateAid::class)->handle(
+                    [...$validated, 'beneficiary_id' => $beneficiaryId],
+                    Auth::user(),
+                );
+
+                $this->syncRecurringPlan($aid);
+                $this->storeDocuments($aid);
+
+                return $aid;
+            });
 
         if ($createdAids->count() === 1) {
             $aid = $createdAids->first();
@@ -469,6 +520,67 @@ class Form extends Component
         $this->dispatch('toast', type: 'success', message: __('aids.messages.bulk_created', ['count' => $createdAids->count()]));
 
         return $createdAids;
+    }
+
+    /**
+     * Create, update or remove the aid's recurrence plan to match the form.
+     * A single plan row is kept per aid ({@see Aid::recurringPlan()}): it is
+     * upserted while {@see $isRecurring} is on and deleted once it's turned
+     * off.
+     */
+    private function syncRecurringPlan(Aid $aid): void
+    {
+        if (! $this->isRecurring) {
+            $aid->recurringPlan()->delete();
+
+            return;
+        }
+
+        $frequency = RecurrenceFrequency::from($this->recurrenceFrequency);
+        $intervalMonths = $frequency->isCustom() ? $this->recurrenceIntervalMonths : null;
+        $startsOn = CarbonImmutable::parse($this->recurrenceStartsOn)->startOfDay();
+        $endsOn = $this->recurrenceEndsOn !== null && $this->recurrenceEndsOn !== ''
+            ? CarbonImmutable::parse($this->recurrenceEndsOn)->startOfDay()
+            : null;
+
+        $existing = $aid->recurringPlan;
+
+        // Preserve an already-advanced next_run_on on edit unless the start
+        // date itself moved; a brand-new plan simply fires first on its
+        // start date.
+        $nextRunOn = $existing !== null && $existing->starts_on?->toDateString() === $startsOn->toDateString()
+            ? $existing->next_run_on
+            : $startsOn;
+
+        $aid->recurringPlan()->updateOrCreate([], [
+            'frequency' => $frequency,
+            'interval_months' => $intervalMonths,
+            'starts_on' => $startsOn,
+            'ends_on' => $endsOn,
+            'next_run_on' => $nextRunOn,
+            'is_active' => $this->recurrenceActive,
+        ]);
+    }
+
+    /**
+     * Move every pending upload into the aid's private 'aid_documents'
+     * media collection. preservingOriginal keeps the temporary file intact
+     * so the same set of documents can be attached to each aid of a bulk
+     * create.
+     */
+    private function storeDocuments(Aid $aid): void
+    {
+        foreach ($this->documents as $document) {
+            if (! $document instanceof TemporaryUploadedFile) {
+                continue;
+            }
+
+            $aid->addMedia($document->getRealPath())
+                ->preservingOriginal()
+                ->usingName($document->getClientOriginalName())
+                ->usingFileName($document->getClientOriginalName())
+                ->toMediaCollection('aid_documents');
+        }
     }
 
     /**
@@ -496,7 +608,20 @@ class Form extends Component
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.estimated_value' => ['nullable', 'numeric', 'min:0'],
             'items.*.description' => ['nullable', 'string'],
+            // Phase 9: optional supporting documents (PDF/JPG/PNG, 5 MB each).
+            'documents' => ['array', 'max:10'],
+            'documents.*' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ];
+
+        if ($this->isRecurring) {
+            $rules['recurrenceFrequency'] = ['required', Rule::enum(RecurrenceFrequency::class)];
+            $rules['recurrenceIntervalMonths'] = [
+                'nullable', 'integer', 'min:1', 'max:60',
+                Rule::requiredIf($this->recurrenceFrequency === RecurrenceFrequency::CustomMonths->value),
+            ];
+            $rules['recurrenceStartsOn'] = ['required', 'date'];
+            $rules['recurrenceEndsOn'] = ['nullable', 'date', 'after_or_equal:recurrenceStartsOn'];
+        }
 
         if ($isUpdate) {
             $rules['beneficiary_id'] = [

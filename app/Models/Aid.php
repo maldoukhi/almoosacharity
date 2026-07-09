@@ -14,15 +14,28 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
 #[Fillable([
     'reference', 'beneficiary_id', 'aid_program_id', 'type', 'status',
     'amount', 'purpose', 'notes', 'approval_flow_id', 'current_stage_id',
     'created_by', 'submitted_at', 'decided_at',
 ])]
-class Aid extends Model
+class Aid extends Model implements HasMedia
 {
-    use HasFactory, HasHashid, LogsActivity, SoftDeletes;
+    use HasFactory, HasHashid, InteractsWithMedia, LogsActivity, SoftDeletes;
+
+    /**
+     * Supporting documents attached when the aid is created/edited
+     * (quotes, invoices, case files…). These may reference sensitive case
+     * details, so — like Disbursement's proof and Beneficiary's documents —
+     * they live on the private 'local' disk, never the public one.
+     */
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('aid_documents')->useDisk('local');
+    }
 
     /**
      * @return array<string, string>
@@ -127,5 +140,16 @@ class Aid extends Model
     public function confirmation(): HasOne
     {
         return $this->hasOne(AidConfirmation::class);
+    }
+
+    /**
+     * The optional recurrence schedule attached to this aid (phase 10):
+     * one plan per originating aid that clones it each cycle.
+     *
+     * @return HasOne<RecurringAidPlan, $this>
+     */
+    public function recurringPlan(): HasOne
+    {
+        return $this->hasOne(RecurringAidPlan::class);
     }
 }

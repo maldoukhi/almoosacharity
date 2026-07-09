@@ -12,3 +12,7 @@ Artisan::command('inspire', function () {
 // Phase 6b: exactly one automatic reminder for each outstanding
 // delivery-confirmation link past its reminder_after_days threshold.
 Schedule::job(new SendConfirmationReminders)->daily();
+
+// Phase 10: clone every due recurring-aid plan into a fresh draft aid and
+// advance its next run date.
+Schedule::command('aids:generate-recurring')->daily();
