@@ -129,6 +129,9 @@ class NotifyBeneficiary
                 related: $aid,
                 idempotencyKey: "aid-{$aid->id}-{$event->value}-wa",
             ),
+            // Beneficiaries are reached only by SMS/WhatsApp (no email on
+            // file); any other channel is a no-op here rather than a throw.
+            default => null,
         };
     }
 
@@ -137,7 +140,14 @@ class NotifyBeneficiary
         $key = match ($channel) {
             MessageChannel::Sms => 'sms_enabled',
             MessageChannel::WhatsApp => 'whatsapp_enabled',
+            // Non-beneficiary channels (e.g. Email) are never enabled for
+            // beneficiary notifications.
+            default => null,
         };
+
+        if ($key === null) {
+            return false;
+        }
 
         return $this->settings->get($key) === '1';
     }
