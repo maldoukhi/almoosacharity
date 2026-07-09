@@ -49,6 +49,13 @@ class Manage extends Component
     public bool $combinedDeliveryMessage = false;
 
     /**
+     * When on, the beneficiary must draw a signature on the public
+     * confirmation page before a receipt can be submitted (read there from
+     * the confirmation_signature_required setting).
+     */
+    public bool $confirmationSignatureRequired = false;
+
+    /**
      * The editable body of the receipt-confirmation message (the one that
      * carries the signed link). Must always contain the {link} placeholder.
      */
@@ -143,6 +150,7 @@ class Manage extends Component
         $this->smsEnabled = $settings->get('sms_enabled', '1') === '1';
         $this->whatsappEnabled = $settings->get('whatsapp_enabled', '0') === '1';
         $this->combinedDeliveryMessage = $settings->get('combined_delivery_message', '0') === '1';
+        $this->confirmationSignatureRequired = $settings->get('confirmation_signature_required', '0') === '1';
         $this->confirmationBody = $settings->get('confirmation_body') ?: __('confirmations.default_body');
 
         // Non-secret provider fields are shown as-is (the saved override,
@@ -173,6 +181,7 @@ class Manage extends Component
             'smsEnabled' => ['boolean'],
             'whatsappEnabled' => ['boolean'],
             'combinedDeliveryMessage' => ['boolean'],
+            'confirmationSignatureRequired' => ['boolean'],
             'confirmationBody' => $confirmationBodyRules,
             'taqnyatApiKeyInput' => ['nullable', 'string', 'max:255'],
             'oktaBaseUrl' => ['nullable', 'string', 'max:255'],
@@ -201,6 +210,7 @@ class Manage extends Component
         $settings->set('sms_enabled', $this->smsEnabled ? '1' : '0');
         $settings->set('whatsapp_enabled', $this->whatsappEnabled ? '1' : '0');
         $settings->set('combined_delivery_message', $this->combinedDeliveryMessage ? '1' : '0');
+        $settings->set('confirmation_signature_required', $this->confirmationSignatureRequired ? '1' : '0');
         $settings->set('confirmation_body', trim($this->confirmationBody));
 
         $settings->set('okta_base_url', trim($this->oktaBaseUrl) !== '' ? trim($this->oktaBaseUrl) : null);

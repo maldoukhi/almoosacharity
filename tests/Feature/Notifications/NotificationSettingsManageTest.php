@@ -123,6 +123,25 @@ it('rejects a confirmation body that is missing the {link} placeholder, and save
     expect(app(Settings::class)->get('confirmation_body'))->toBe($valid);
 });
 
+it('persists the confirmation-signature-required toggle', function () {
+    (new NotificationTemplateSeeder)->run();
+    asAdmin();
+
+    Livewire::test(Manage::class)
+        ->set('confirmationSignatureRequired', true)
+        ->call('save')
+        ->assertHasNoErrors();
+
+    expect(app(Settings::class)->get('confirmation_signature_required'))->toBe('1');
+
+    Livewire::test(Manage::class)
+        ->assertSet('confirmationSignatureRequired', true)
+        ->set('confirmationSignatureRequired', false)
+        ->call('save');
+
+    expect(app(Settings::class)->get('confirmation_signature_required'))->toBe('0');
+});
+
 it('rejects turning on combined delivery mode when the AidDelivered template is missing {link}, and accepts it once added', function () {
     (new NotificationTemplateSeeder)->run();
     asAdmin();
