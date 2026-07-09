@@ -38,6 +38,19 @@ return [
             'report' => false,
         ],
 
+        /*
+         * Destination for spatie/laravel-backup archives. Kept outside the
+         * 'local' private-documents root so backups never nest inside the
+         * files they back up. Point this at an off-server mount in production
+         * if one is available.
+         */
+        'backups' => [
+            'driver' => 'local',
+            'root' => storage_path('app/backups'),
+            'throw' => false,
+            'report' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),

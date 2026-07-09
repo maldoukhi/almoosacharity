@@ -16,3 +16,9 @@ Schedule::job(new SendConfirmationReminders)->daily();
 // Phase 10: clone every due recurring-aid plan into a fresh draft aid and
 // advance its next run date.
 Schedule::command('aids:generate-recurring')->daily();
+
+// Nightly backups (spatie/laravel-backup): prune old archives per the
+// retention policy in config/backup.php, then take a fresh backup of the
+// private documents + database. Failures email BACKUP_NOTIFICATION_EMAIL.
+Schedule::command('backup:clean')->dailyAt('01:30');
+Schedule::command('backup:run')->dailyAt('02:00');
