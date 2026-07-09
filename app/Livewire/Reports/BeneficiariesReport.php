@@ -8,7 +8,7 @@ use App\Models\Beneficiary;
 use App\Models\BeneficiaryCategory;
 use App\Reports\BeneficiariesReport as BeneficiariesReportData;
 use App\Reports\Filters\BeneficiariesFilter;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\ArabicPdf;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
@@ -148,7 +148,7 @@ class BeneficiariesReport extends Component
 
         $rows = $report->query()->get()->map(fn (Model $row): array => $report->map($row));
 
-        $pdf = Pdf::loadView($report->pdfView(), [
+        $pdf = ArabicPdf::loadView($report->pdfView(), [
             'title' => $report->title(),
             'headings' => $report->headings(),
             'rows' => $rows,

@@ -157,7 +157,7 @@
                 <td>
                     <div class="brand-name">{{ config('app.name') }}</div>
                     <div class="report-title">{{ $title }}</div>
-                    <div class="meta">{{ __('reports.pdf.generated_at', ['date' => now()->format('Y-m-d H:i')]) }}</div>
+                    <div class="meta">{{ __('reports.pdf.generated_at', ['date' => now()->format('Y-m-d')]) }}</div>
                 </td>
             </tr>
         </table>

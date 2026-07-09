@@ -7,7 +7,7 @@ use App\Models\AidProgram;
 use App\Models\Survey;
 use App\Reports\Filters\SurveysFilter;
 use App\Reports\SurveysReport as SurveysReportData;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\ArabicPdf;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
@@ -101,7 +101,7 @@ class SurveysReport extends Component
 
         $rows = $report->rows()->map(fn (array $row): array => $report->map($row));
 
-        $pdf = Pdf::loadView($report->pdfView(), [
+        $pdf = ArabicPdf::loadView($report->pdfView(), [
             'title' => $report->title(),
             'headings' => $report->headings(),
             'rows' => $rows,

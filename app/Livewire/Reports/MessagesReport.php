@@ -11,7 +11,7 @@ use App\Jobs\Messaging\SendWhatsAppMessage;
 use App\Models\MessageLog;
 use App\Reports\Filters\MessagesReportFilter;
 use App\Reports\MessagesReport as MessagesReportData;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\ArabicPdf;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Gate;
@@ -175,7 +175,7 @@ class MessagesReport extends Component
 
         $rows = $report->query()->get()->map(fn (Model $row): array => $report->map($row));
 
-        $pdf = Pdf::loadView($report->pdfView(), [
+        $pdf = ArabicPdf::loadView($report->pdfView(), [
             'title' => $report->title(),
             'headings' => $report->headings(),
             'rows' => $rows,

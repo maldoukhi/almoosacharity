@@ -17,7 +17,7 @@ use App\Models\BeneficiaryStageResponse;
 use App\Models\Disbursement;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Support\ArabicPdf;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -579,7 +579,9 @@ class Show extends Component
 
         $aid = $this->aid;
 
-        $pdf = Pdf::loadView('pdf.aid-receipt', [
+        // ArabicPdf shapes the Arabic runs before dompdf renders them —
+        // dompdf alone outputs Arabic disconnected/misordered.
+        $pdf = ArabicPdf::loadView('pdf.aid-receipt', [
             'aid' => $aid,
             'maskedNationalId' => $this->maskNationalId($aid->beneficiary?->national_id),
         ]);
