@@ -72,7 +72,7 @@ it('round-trips mixed mandatory/optional document types through the builder', fu
             'role' => '',
             'assignee_user_ids' => [$approver->id],
             'allowed_actions' => ['approve', 'reject'],
-            'type' => ApprovalStageType::DocumentUpload->value,
+            'type' => ApprovalStageType::Approval->value,
             'documents_required' => true,
             'required_documents' => [
                 ['label' => 'صورة الهوية', 'required' => true],
@@ -86,7 +86,7 @@ it('round-trips mixed mandatory/optional document types through the builder', fu
 
     $stage = ApprovalFlow::query()->where('name', 'مسار المستندات')->firstOrFail()->stages()->firstOrFail();
 
-    expect($stage->type)->toBe(ApprovalStageType::DocumentUpload)
+    expect($stage->type)->toBe(ApprovalStageType::Approval)
         ->and($stage->documents_required)->toBeTrue()
         // blank labels are trimmed away; label + required persist per type
         ->and($stage->required_documents)->toBe([

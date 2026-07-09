@@ -176,6 +176,44 @@
                         </div>
                     @endif
 
+                    @if ($this->awaitingBeneficiary)
+                        <div class="rounded-(--radius-brand) border border-status-review/30 bg-status-review/5 p-4">
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-status-review/10 text-status-review">
+                                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z" />
+                                    </svg>
+                                </span>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ __('approvals.beneficiary_response.awaiting_title') }}</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">{{ __('approvals.beneficiary_response.awaiting_description') }}</p>
+                                </div>
+                            </div>
+
+                            @if ($this->stageResponse)
+                                <p class="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                                    @if ($this->stageResponse->sent_at)
+                                        {{ __('approvals.beneficiary_response.sent_at', ['at' => $this->stageResponse->sent_at->translatedFormat('Y/m/d H:i')]) }}
+                                    @else
+                                        {{ __('approvals.beneficiary_response.not_sent') }}
+                                    @endif
+                                </p>
+                            @endif
+
+                            <x-ui.button
+                                type="button"
+                                variant="secondary"
+                                class="mt-4 w-full"
+                                data-confirm="{{ __('approvals.beneficiary_response.confirm_resend') }}"
+                                x-on:click="uiConfirm($el.dataset.confirm, () => $wire.resendBeneficiaryLink())"
+                                wire:target="resendBeneficiaryLink"
+                                wire:loading.attr="disabled"
+                            >
+                                {{ __('approvals.beneficiary_response.resend_button') }}
+                            </x-ui.button>
+                        </div>
+                    @endif
+
                     @if ($this->canCancel)
                         <x-ui.button
                             type="button"
@@ -187,7 +225,7 @@
                         </x-ui.button>
                     @endif
 
-                    @if (! $this->canSubmit && ! $this->canAct && ! $this->canCancel)
+                    @if (! $this->canSubmit && ! $this->canAct && ! $this->awaitingBeneficiary && ! $this->canCancel)
                         <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.no_actions_available') }}</p>
                     @endif
                 </div>

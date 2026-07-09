@@ -1,5 +1,6 @@
 <?php
 
+use App\Livewire\Public\BeneficiaryStageResponse;
 use App\Livewire\Public\ConfirmReceipt;
 use Illuminate\Support\Facades\Route;
 
@@ -19,4 +20,11 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['web', 'throttle:10,1'])->group(function (): void {
     Route::get('/c/{token}', ConfirmReceipt::class)
         ->name('public.confirm');
+
+    // Beneficiary response to an approval stage of type beneficiary_response.
+    // Same token posture as /c/{token}: the raw token is the sole secret,
+    // stored only as a sha256 digest, single-use, and expiry-enforced by the
+    // BeneficiaryStageResponse model.
+    Route::get('/r/{token}', BeneficiaryStageResponse::class)
+        ->name('public.stage-response');
 });

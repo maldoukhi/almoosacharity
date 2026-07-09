@@ -27,8 +27,17 @@ return [
 
     'stage_type' => [
         'approval' => 'Approval',
-        'document_upload' => 'Document Upload',
         'beneficiary_response' => 'Beneficiary Response',
+    ],
+
+    'beneficiary_response' => [
+        'awaiting_title' => 'Awaiting the beneficiary',
+        'awaiting_description' => 'A private link was sent to the beneficiary to submit their response at this stage.',
+        'sent_at' => 'Link sent on :at',
+        'not_sent' => 'The link has not been sent yet.',
+        'resend_button' => 'Resend link',
+        'confirm_resend' => 'Resend the response link to the beneficiary? The previous link will stop working.',
+        'link_resent' => 'Response link sent to the beneficiary successfully',
     ],
 
     'decision' => [

@@ -143,7 +143,7 @@ class RecordApprovalDecision
             }
 
             match ($action) {
-                ApprovalAction::Approve => $this->applyApprove($aid),
+                ApprovalAction::Approve => $this->advance($aid),
                 ApprovalAction::Reject => $this->applyReject($aid),
                 ApprovalAction::Return => $this->applyReturn($aid),
             };
@@ -152,7 +152,18 @@ class RecordApprovalDecision
         });
     }
 
-    private function applyApprove(Aid $aid): void
+    /**
+     * Move a still-under-review aid forward from its current stage: to the
+     * next stage (firing AidEnteredStage so that stage's handlers — staff
+     * notification, or a beneficiary_response link — run), or to the final
+     * Approved status when the current stage is the last one.
+     *
+     * Shared by a staff approve decision here and by a beneficiary's own
+     * response ({@see RecordBeneficiaryStageResponse}), so both advance the
+     * workflow identically. Callers must already hold the aid's row lock and
+     * have verified it is UnderReview at the intended stage.
+     */
+    public function advance(Aid $aid): void
     {
         $next = $this->resolveNextStage->handle($aid);
 

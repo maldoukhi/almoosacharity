@@ -27,8 +27,17 @@ return [
 
     'stage_type' => [
         'approval' => 'موافقة',
-        'document_upload' => 'رفع مستند',
         'beneficiary_response' => 'رد المستفيد',
+    ],
+
+    'beneficiary_response' => [
+        'awaiting_title' => 'بانتظار رد المستفيد',
+        'awaiting_description' => 'أُرسل رابط خاص للمستفيد لتقديم رده في هذه المرحلة.',
+        'sent_at' => 'أُرسل الرابط في :at',
+        'not_sent' => 'لم يُرسل الرابط بعد.',
+        'resend_button' => 'إعادة إرسال الرابط',
+        'confirm_resend' => 'هل تريد إعادة إرسال رابط الرد للمستفيد؟ سيتوقف الرابط السابق عن العمل.',
+        'link_resent' => 'تم إرسال رابط الرد للمستفيد بنجاح',
     ],
 
     'decision' => [

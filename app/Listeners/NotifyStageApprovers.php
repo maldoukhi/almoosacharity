@@ -29,6 +29,13 @@ class NotifyStageApprovers implements ShouldQueue
 
     public function handle(AidEnteredStage $event): void
     {
+        // A beneficiary_response stage waits on the beneficiary, not staff:
+        // no approval prompt is sent here (the beneficiary link is issued by
+        // IssueBeneficiaryStageLink instead).
+        if ($event->stage->isBeneficiaryResponse()) {
+            return;
+        }
+
         // Everyone eligible for the stage: its role's holders unioned with
         // any specifically-assigned users (both active only).
         $recipients = $event->stage->eligibleUsers();

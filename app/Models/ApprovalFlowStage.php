@@ -66,6 +66,25 @@ class ApprovalFlowStage extends Model
     }
 
     /**
+     * Whether this stage waits for the beneficiary's own response (issued
+     * as a public link) rather than a staff approve/reject decision. Stages
+     * without an explicit type default to a classic approval.
+     */
+    public function isBeneficiaryResponse(): bool
+    {
+        return ($this->type ?? ApprovalStageType::Approval) === ApprovalStageType::BeneficiaryResponse;
+    }
+
+    /**
+     * Whether this stage is a classic staff approve/reject decision (the
+     * default when no explicit type is set).
+     */
+    public function isApproval(): bool
+    {
+        return ($this->type ?? ApprovalStageType::Approval) === ApprovalStageType::Approval;
+    }
+
+    /**
      * The user ids specifically assigned to this stage (in addition to,
      * or instead of, the role).
      *

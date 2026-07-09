@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Aids;
 
+use App\Actions\Approvals\RequestBeneficiaryStageResponse;
 use App\Actions\Confirmations\ResendConfirmationLink;
 use App\Enums\AidStatus;
 use App\Enums\ApprovalAction;
@@ -13,6 +14,7 @@ use App\Models\AidConfirmation;
 use App\Models\ApprovalDecision;
 use App\Models\ApprovalFlow;
 use App\Models\ApprovalFlowStage;
+use App\Models\BeneficiaryStageResponse;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -113,9 +115,46 @@ class Show extends Component
         // The status guard matters for a system-admin, whose Gate::before
         // short-circuits the policy's own state checks: without it every
         // action button would show regardless of the aid's actual state.
+        //
+        // A beneficiary_response stage is deliberately excluded: it waits on
+        // the beneficiary, so staff get the awaiting-beneficiary state (with
+        // a resend action) rather than approve/reject buttons.
         return $this->aid->status === AidStatus::UnderReview
             && $this->aid->current_stage_id !== null
+            && ! (bool) $this->aid->currentStage?->isBeneficiaryResponse()
             && Gate::allows('act', $this->aid);
+    }
+
+    /**
+     * True when the aid is parked at a beneficiary_response stage and the
+     * signed-in user is eligible for that stage: they see that the aid is
+     * waiting on the beneficiary, plus a "resend link" action, instead of
+     * approve/reject controls.
+     */
+    #[Computed]
+    public function awaitingBeneficiary(): bool
+    {
+        return $this->aid->status === AidStatus::UnderReview
+            && (bool) $this->aid->currentStage?->isBeneficiaryResponse()
+            && Gate::allows('act', $this->aid);
+    }
+
+    /**
+     * The beneficiary stage-response link record for the aid's current
+     * beneficiary_response stage, if any — used to surface send/open
+     * tracking beside the resend action. Null otherwise.
+     */
+    #[Computed]
+    public function stageResponse(): ?BeneficiaryStageResponse
+    {
+        if (! $this->aid->currentStage?->isBeneficiaryResponse()) {
+            return null;
+        }
+
+        return BeneficiaryStageResponse::query()
+            ->where('aid_id', $this->aid->id)
+            ->where('approval_flow_stage_id', $this->aid->current_stage_id)
+            ->first();
     }
 
     /**
@@ -316,6 +355,28 @@ class Show extends Component
         $this->refreshAid();
     }
 
+    /**
+     * Re-issue the beneficiary response link for the aid's current
+     * beneficiary_response stage. Gated on the same `act` ability as an
+     * approval decision, so only staff eligible for the stage can resend.
+     */
+    public function resendBeneficiaryLink(): void
+    {
+        $stage = $this->aid->currentStage;
+
+        if (! $stage?->isBeneficiaryResponse() || $this->aid->status !== AidStatus::UnderReview) {
+            abort(404);
+        }
+
+        Gate::authorize('act', $this->aid);
+
+        app(RequestBeneficiaryStageResponse::class)->handle($this->aid, $stage);
+
+        $this->dispatch('toast', type: 'success', message: __('approvals.beneficiary_response.link_resent'));
+
+        $this->refreshAid();
+    }
+
     private function eagerLoad(): void
     {
         $this->aid->load([
@@ -349,6 +410,8 @@ class Show extends Component
             $this->currentStageIndex,
             $this->timeline,
             $this->canAct,
+            $this->awaitingBeneficiary,
+            $this->stageResponse,
             $this->allowedActions,
             $this->canSubmit,
             $this->canCancel,

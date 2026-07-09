@@ -3,6 +3,7 @@
 namespace App\Livewire\Approvals;
 
 use App\Enums\AidStatus;
+use App\Enums\ApprovalStageType;
 use App\Models\Aid;
 use App\Models\AidProgram;
 use Illuminate\Database\Eloquent\Builder;
@@ -87,7 +88,12 @@ class Inbox extends Component
         return Aid::query()
             ->where('status', AidStatus::UnderReview->value)
             ->whereHas('currentStage', function (Builder $query) use ($roleNames): void {
-                $query->whereIn('role', $roleNames);
+                $query
+                    ->whereIn('role', $roleNames)
+                    // A beneficiary_response stage waits on the beneficiary,
+                    // not staff: it must never surface as an actionable item
+                    // in the approvals inbox.
+                    ->where('type', '!=', ApprovalStageType::BeneficiaryResponse->value);
             });
     }
 
