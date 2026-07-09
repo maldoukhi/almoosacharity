@@ -360,58 +360,83 @@
                 @endif
             </div>
 
-            {{-- Recurrence (phase 10) --}}
-            <div class="space-y-4 border-t border-gray-100 pt-5 dark:border-white/10">
-                <x-ui.toggle
-                    :label="__('aids.recurrence.enable')"
-                    :description="__('aids.recurrence.enable_hint')"
-                    name="isRecurring"
-                    wire:model.live="isRecurring"
-                />
-
-                @if ($isRecurring)
-                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                        <x-ui.select
-                            :label="__('aids.recurrence.frequency_label')"
-                            name="recurrenceFrequency"
-                            wire:model.live="recurrenceFrequency"
-                            :options="$frequencyOptions"
-                        />
-
-                        @if ($recurrenceFrequency === \App\Enums\RecurrenceFrequency::CustomMonths->value)
-                            <x-ui.input
-                                :label="__('aids.recurrence.interval_months')"
-                                name="recurrenceIntervalMonths"
-                                type="number"
-                                min="1"
-                                max="60"
-                                wire:model="recurrenceIntervalMonths"
-                            />
-                        @endif
-
-                        <x-ui.input
-                            :label="__('aids.recurrence.starts_on')"
-                            name="recurrenceStartsOn"
-                            type="date"
-                            wire:model="recurrenceStartsOn"
-                        />
-
-                        <x-ui.input
-                            :label="__('aids.recurrence.ends_on')"
-                            name="recurrenceEndsOn"
-                            type="date"
-                            wire:model="recurrenceEndsOn"
-                            :hint="__('aids.recurrence.ends_on_hint')"
-                        />
+            {{-- Recurrence (phase 10) — a prominent, standalone card so the
+                 recurring-aid schedule is easy to find, not buried in a toggle. --}}
+            <div class="overflow-hidden rounded-(--radius-brand) border border-primary-100 bg-primary-50/40 dark:border-primary-500/20 dark:bg-primary-500/5">
+                <div class="flex items-start gap-3 border-b border-primary-100/70 px-5 py-4 dark:border-primary-500/20">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-200">
+                        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                        </svg>
+                    </span>
+                    <div>
+                        <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('aids.recurrence.card_title') }}</h2>
+                        <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('aids.recurrence.card_subtitle') }}</p>
                     </div>
+                </div>
 
+                <div class="space-y-4 px-5 py-4">
                     <x-ui.toggle
-                        :label="__('aids.recurrence.active')"
-                        :description="__('aids.recurrence.active_hint')"
-                        name="recurrenceActive"
-                        wire:model="recurrenceActive"
+                        :label="__('aids.recurrence.enable')"
+                        :description="__('aids.recurrence.enable_hint')"
+                        name="isRecurring"
+                        wire:model.live="isRecurring"
                     />
-                @endif
+
+                    @if ($isRecurring)
+                        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                            <x-ui.select
+                                :label="__('aids.recurrence.frequency_label')"
+                                name="recurrenceFrequency"
+                                wire:model.live="recurrenceFrequency"
+                                :options="$frequencyOptions"
+                            />
+
+                            @if ($recurrenceFrequency === \App\Enums\RecurrenceFrequency::CustomMonths->value)
+                                <x-ui.input
+                                    :label="__('aids.recurrence.interval_months')"
+                                    name="recurrenceIntervalMonths"
+                                    type="number"
+                                    min="1"
+                                    max="60"
+                                    wire:model="recurrenceIntervalMonths"
+                                />
+                            @endif
+
+                            <x-ui.input
+                                :label="__('aids.recurrence.starts_on')"
+                                name="recurrenceStartsOn"
+                                type="date"
+                                wire:model="recurrenceStartsOn"
+                            />
+
+                            <x-ui.input
+                                :label="__('aids.recurrence.ends_on')"
+                                name="recurrenceEndsOn"
+                                type="date"
+                                wire:model="recurrenceEndsOn"
+                                :hint="__('aids.recurrence.ends_on_hint')"
+                            />
+
+                            <x-ui.input
+                                :label="__('aids.recurrence.lead_days')"
+                                name="recurrenceLeadDays"
+                                type="number"
+                                min="0"
+                                max="365"
+                                wire:model="recurrenceLeadDays"
+                                :hint="__('aids.recurrence.lead_days_hint')"
+                            />
+                        </div>
+
+                        <x-ui.toggle
+                            :label="__('aids.recurrence.active')"
+                            :description="__('aids.recurrence.active_hint')"
+                            name="recurrenceActive"
+                            wire:model="recurrenceActive"
+                        />
+                    @endif
+                </div>
             </div>
 
             @if (! $isEdit && count($beneficiary_ids) > 1)

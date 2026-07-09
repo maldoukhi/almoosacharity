@@ -8,6 +8,7 @@ use App\Livewire\Admin\Users\Index as UserIndex;
 use App\Livewire\Aids\BatchCreate as AidBatchCreate;
 use App\Livewire\Aids\Form as AidForm;
 use App\Livewire\Aids\Index as AidIndex;
+use App\Livewire\Aids\RecurringPlans\Index as RecurringPlanIndex;
 use App\Livewire\Aids\Show as AidShow;
 use App\Livewire\Approvals\Inbox as ApprovalsInbox;
 use App\Livewire\Auth\ForgotPassword;
@@ -155,6 +156,7 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
     Route::prefix('aids')->name('aids.')->group(function (): void {
         Route::get('/', AidIndex::class)->name('index')->middleware('permission:aids.view');
+        Route::get('/recurring-plans', RecurringPlanIndex::class)->name('recurring-plans.index')->middleware('permission:aids.view');
         Route::get('/create', AidForm::class)->name('create')->middleware('permission:aids.create');
         Route::get('/batch', AidBatchCreate::class)->name('batch')->middleware('permission:aids.create');
         Route::get('/{aid}/edit', AidForm::class)->name('edit')->middleware('permission:aids.update');

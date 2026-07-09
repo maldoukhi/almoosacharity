@@ -103,6 +103,12 @@ class Form extends Component
 
     public ?string $recurrenceEndsOn = null;
 
+    /**
+     * How many days before each due date the next cycle's aid is generated
+     * (0 = generate exactly on the due date).
+     */
+    public int $recurrenceLeadDays = 0;
+
     public bool $recurrenceActive = true;
 
     /**
@@ -146,6 +152,7 @@ class Form extends Component
             $this->recurrenceIntervalMonths = $plan->interval_months;
             $this->recurrenceStartsOn = $plan->starts_on?->toDateString();
             $this->recurrenceEndsOn = $plan->ends_on?->toDateString();
+            $this->recurrenceLeadDays = $plan->lead_days;
             $this->recurrenceActive = $plan->is_active;
         }
     }
@@ -558,6 +565,7 @@ class Form extends Component
             'starts_on' => $startsOn,
             'ends_on' => $endsOn,
             'next_run_on' => $nextRunOn,
+            'lead_days' => max(0, $this->recurrenceLeadDays),
             'is_active' => $this->recurrenceActive,
         ]);
     }
@@ -621,6 +629,7 @@ class Form extends Component
             ];
             $rules['recurrenceStartsOn'] = ['required', 'date'];
             $rules['recurrenceEndsOn'] = ['nullable', 'date', 'after_or_equal:recurrenceStartsOn'];
+            $rules['recurrenceLeadDays'] = ['required', 'integer', 'min:0', 'max:365'];
         }
 
         if ($isUpdate) {

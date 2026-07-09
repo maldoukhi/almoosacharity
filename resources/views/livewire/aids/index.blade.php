@@ -12,8 +12,15 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('aids.index_subtitle') }}</p>
         </div>
 
-        @can('create', \App\Models\Aid::class)
-            <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+            <x-ui.button href="{{ route('aids.recurring-plans.index') }}" variant="ghost">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                </svg>
+                {{ __('recurring_aids.nav_button') }}
+            </x-ui.button>
+
+            @can('create', \App\Models\Aid::class)
                 <x-ui.button href="{{ route('aids.batch') }}" variant="secondary">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87m6-1.13a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm6 0a3 3 0 1 0-3-3m-9 3a3 3 0 1 1 3-3" />
@@ -27,8 +34,8 @@
                     </svg>
                     {{ __('aids.create_button') }}
                 </x-ui.button>
-            </div>
-        @endcan
+            @endcan
+        </div>
     </div>
 
     <x-ui.card>

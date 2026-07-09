@@ -390,4 +390,15 @@
             @endif
         </div>
     </x-ui.card>
+
+    {{-- الإعانات الدورية لهذا المستفيد (المرحلة 10) --}}
+    @can('viewAny', \App\Models\Aid::class)
+        <x-ui.card>
+            <livewire:aids.recurring-plans.index
+                :beneficiary-id="$beneficiary->id"
+                :embedded="true"
+                :wire:key="'recurring-plans-'.$beneficiary->id"
+            />
+        </x-ui.card>
+    @endcan
 </div>

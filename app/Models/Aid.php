@@ -20,7 +20,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
 #[Fillable([
     'reference', 'beneficiary_id', 'aid_program_id', 'type', 'status',
     'amount', 'purpose', 'notes', 'approval_flow_id', 'current_stage_id',
-    'created_by', 'submitted_at', 'decided_at',
+    'created_by', 'recurring_aid_plan_id', 'submitted_at', 'decided_at',
 ])]
 class Aid extends Model implements HasMedia
 {
@@ -143,13 +143,26 @@ class Aid extends Model implements HasMedia
     }
 
     /**
-     * The optional recurrence schedule attached to this aid (phase 10):
-     * one plan per originating aid that clones it each cycle.
+     * The optional recurrence schedule this aid *originates* (phase 10):
+     * one plan per template aid that clones it each cycle. Distinct from
+     * {@see recurringPlanSeries()}, which points the other way.
      *
      * @return HasOne<RecurringAidPlan, $this>
      */
     public function recurringPlan(): HasOne
     {
         return $this->hasOne(RecurringAidPlan::class);
+    }
+
+    /**
+     * The recurring plan that *generated* this aid (phase 10 series link),
+     * set only on clones the generator produces. Null on aids raised
+     * directly, including the plan's own originating aid.
+     *
+     * @return BelongsTo<RecurringAidPlan, $this>
+     */
+    public function recurringPlanSeries(): BelongsTo
+    {
+        return $this->belongsTo(RecurringAidPlan::class, 'recurring_aid_plan_id');
     }
 }

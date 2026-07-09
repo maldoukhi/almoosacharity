@@ -33,17 +33,38 @@ class GenerateRecurringAids
 
         $generated = 0;
 
+        // Only active plans are ever considered, so a plan paused before its
+        // lead window opened generates nothing. The lead-time comparison is
+        // per-plan (lead_days lives on the row) so it is evaluated in PHP,
+        // keeping the query SQLite/MySQL neutral.
         RecurringAidPlan::query()
             ->with('aid.items', 'aid.createdBy')
             ->where('is_active', true)
-            ->whereDate('next_run_on', '<=', $today->toDateString())
             ->each(function (RecurringAidPlan $plan) use ($today, &$generated): void {
-                if ($this->processPlan($plan, $today)) {
+                if ($this->isDue($plan, $today) && $this->processPlan($plan, $today)) {
                     $generated++;
                 }
             });
 
         return $generated;
+    }
+
+    /**
+     * A plan is due once "today" has reached its lead window: today is on or
+     * after (next_run_on minus lead_days). lead_days brings generation
+     * forward a configurable number of days before the due date; a lead of 0
+     * fires exactly on next_run_on. A plan whose window is still in the
+     * future is skipped, so a series is only ever built one cycle at a time —
+     * never the whole run upfront.
+     */
+    private function isDue(RecurringAidPlan $plan, CarbonImmutable $today): bool
+    {
+        $trigger = $plan->next_run_on
+            ->toImmutable()
+            ->startOfDay()
+            ->subDays(max(0, $plan->lead_days));
+
+        return $today->gte($trigger);
     }
 
     /**
@@ -72,7 +93,7 @@ class GenerateRecurringAids
         $actor = $source->createdBy ?? User::query()->firstOrFail();
 
         DB::transaction(function () use ($plan, $source, $actor): void {
-            $this->createAid->handle([
+            $clone = $this->createAid->handle([
                 'beneficiary_id' => $source->beneficiary_id,
                 'aid_program_id' => $source->aid_program_id,
                 'type' => $source->type->value,
@@ -86,6 +107,9 @@ class GenerateRecurringAids
                     'description' => $item->description,
                 ])->all(),
             ], $actor);
+
+            // Link the clone into the plan's series (phase 10).
+            $clone->update(['recurring_aid_plan_id' => $plan->id]);
 
             $next = $plan->frequency
                 ->nextDate($plan->next_run_on->toImmutable(), $plan->interval_months)

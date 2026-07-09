@@ -146,6 +146,8 @@ return [
     ],
 
     'recurrence' => [
+        'card_title' => 'Recurring aid',
+        'card_subtitle' => 'Schedule this aid to be created automatically at regular intervals.',
         'enable' => 'Make this a recurring aid',
         'enable_hint' => 'Automatically create a new aid on a schedule.',
         'frequency_label' => 'Frequency',
@@ -153,6 +155,8 @@ return [
         'starts_on' => 'Start date',
         'ends_on' => 'End date (optional)',
         'ends_on_hint' => 'Leave empty to recur indefinitely.',
+        'lead_days' => 'Lead days',
+        'lead_days_hint' => 'Days before the due date the aid is generated (0 = on the due date itself).',
         'active' => 'Schedule active',
         'active_hint' => 'Turn off to pause recurrence without deleting it.',
         'frequency' => [
