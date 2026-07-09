@@ -202,6 +202,21 @@ class BatchCreate extends Component
         return $this->mode === AidType::InKind->value || $this->mode === 'both';
     }
 
+    /**
+     * The row checkboxes bind straight into {@see $selected_ids} via
+     * wire:model.live, and DOM checkbox values always arrive as strings
+     * ("2"). Normalise them back to unique integers on every change so the
+     * strict comparisons that decide whether a row's custom-amount input is
+     * shown — and the write-path eligibility check — keep matching the integer
+     * beneficiary ids.
+     */
+    public function updatedSelectedIds(): void
+    {
+        $this->selected_ids = array_values(array_unique(
+            array_map('intval', $this->selected_ids),
+        ));
+    }
+
     public function toggleBeneficiary(int $id): void
     {
         if (in_array($id, $this->selected_ids, true)) {
