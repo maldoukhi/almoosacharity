@@ -3,6 +3,7 @@
 use App\Enums\Locale;
 use App\Livewire\Admin\Roles\Form as RoleForm;
 use App\Livewire\Admin\Roles\Index as RoleIndex;
+use App\Livewire\Admin\SystemHealth;
 use App\Livewire\Admin\Users\Form as UserForm;
 use App\Livewire\Admin\Users\Index as UserIndex;
 use App\Livewire\Aids\Form as AidForm;
@@ -132,6 +133,7 @@ Route::middleware(['auth', 'active'])->group(function (): void {
         Route::prefix('settings')->name('settings.')->group(function (): void {
             Route::get('/categories', CategoryIndex::class)->name('categories.index')->middleware('permission:settings.view');
             Route::get('/notifications', Manage::class)->name('notifications.index')->middleware('permission:notifications.settings.manage');
+            Route::get('/system-health', SystemHealth::class)->name('system-health')->middleware('permission:settings.view');
 
             Route::prefix('aid-programs')->name('aid-programs.')->group(function (): void {
                 Route::get('/', AidProgramIndex::class)->name('index')->middleware('permission:settings.manage');

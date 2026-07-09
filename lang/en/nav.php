@@ -11,6 +11,7 @@ return [
     'approvals_inbox' => 'Approvals Inbox',
     'settings_group' => 'Settings',
     'user_management_group' => 'User Management',
+    'system_health' => 'System Health',
     'categories' => 'Categories',
     'aid_programs' => 'Aid Programs',
     'approval_flows' => 'Approval Flows',

@@ -11,6 +11,7 @@ return [
     'approvals_inbox' => 'صندوق الموافقات',
     'settings_group' => 'الإعدادات',
     'user_management_group' => 'إدارة المستخدمين',
+    'system_health' => 'صحة النظام',
     'categories' => 'التصنيفات',
     'aid_programs' => 'برامج الإعانات',
     'approval_flows' => 'مسارات الموافقات',
