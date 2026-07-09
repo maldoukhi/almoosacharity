@@ -60,10 +60,10 @@ enum BeneficiaryStatus: string
         return match ($this) {
             self::New, self::UnderStudy => [self::UnderReview, self::Deactivated],
             self::UnderReview => [self::Active, self::Rejected, self::New, self::Deactivated],
-            self::Active => [self::Suspended, self::Deactivated],
+            self::Active => [self::Suspended, self::Deactivated, self::UnderReview],
             self::Suspended => [self::Active, self::Deactivated],
-            self::Rejected => [self::New, self::Deactivated],
-            self::Deactivated => [self::Active, self::New],
+            self::Rejected => [self::New, self::Deactivated, self::UnderReview],
+            self::Deactivated => [self::Active, self::New, self::UnderReview],
         };
     }
 

@@ -5,6 +5,7 @@
         'housing_income' => __('beneficiaries.tab.housing_income'),
         'bank' => __('beneficiaries.tab.bank'),
         'documents' => __('beneficiaries.tab.documents'),
+        'aids' => __('beneficiaries.tab.aids'),
         'activity' => __('beneficiaries.tab.activity'),
     ];
 
@@ -132,6 +133,17 @@
                 </x-ui.button>
             @endif
 
+            @if ($this->canRestudy)
+                <x-ui.button
+                    type="button"
+                    variant="ghost"
+                    data-confirm="{{ __('beneficiaries.flow.confirm_restudy') }}"
+                    x-on:click="uiConfirm($el.dataset.confirm, () => $wire.restudy())"
+                >
+                    {{ __('beneficiaries.flow.restudy_button') }}
+                </x-ui.button>
+            @endif
+
             @if ($this->canDeactivate)
                 <x-ui.button
                     type="button"
@@ -143,7 +155,7 @@
                 </x-ui.button>
             @endif
 
-            @if (! $this->canSubmit && ! $this->canReview && ! $this->canSuspend && ! $this->canReactivate && ! $this->canDeactivate)
+            @if (! $this->canSubmit && ! $this->canReview && ! $this->canSuspend && ! $this->canReactivate && ! $this->canDeactivate && ! $this->canRestudy)
                 <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('beneficiaries.flow.no_actions') }}</p>
             @endif
         </div>
@@ -433,6 +445,8 @@
                 <livewire:beneficiaries.profile.bank-panel :beneficiary="$beneficiary" :wire:key="'bank-'.$beneficiary->id" />
             @elseif ($activeTab === 'documents')
                 <livewire:beneficiaries.profile.documents :beneficiary="$beneficiary" :wire:key="'documents-'.$beneficiary->id" />
+            @elseif ($activeTab === 'aids')
+                <livewire:beneficiaries.profile.aids :beneficiary="$beneficiary" :wire:key="'aids-'.$beneficiary->id" />
             @elseif ($activeTab === 'activity')
                 <livewire:beneficiaries.profile.activity-log :beneficiary="$beneficiary" :wire:key="'activity-'.$beneficiary->id" />
             @endif

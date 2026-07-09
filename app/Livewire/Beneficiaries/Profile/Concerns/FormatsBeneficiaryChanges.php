@@ -32,12 +32,27 @@ trait FormatsBeneficiaryChanges
             return __('beneficiaries.activity.event.bank_data_revealed');
         }
 
+        // Workflow lifecycle activities (SubmitBeneficiary,
+        // RecordBeneficiaryDecision, DeactivateBeneficiary, ...) store their
+        // description as 'beneficiary.<event>' (e.g. 'beneficiary.reactivated',
+        // 'beneficiary.stage-advanced'). Translate those to a readable label,
+        // normalizing the hyphenated 'stage-advanced' key to 'stage_advanced',
+        // and falling back to the raw description if no translation exists.
+        $description = (string) $activity->description;
+
+        if (str_starts_with($description, 'beneficiary.')) {
+            $event = str_replace('-', '_', substr($description, strlen('beneficiary.')));
+            $key = 'beneficiaries.activity.events.'.$event;
+
+            return __($key) === $key ? $description : __($key);
+        }
+
         return match ($activity->event) {
             'created' => __('beneficiaries.activity.event.created'),
             'updated' => __('beneficiaries.activity.event.updated'),
             'deleted' => __('beneficiaries.activity.event.deleted'),
             'restored' => __('beneficiaries.activity.event.restored'),
-            default => (string) $activity->description,
+            default => $description,
         };
     }
 

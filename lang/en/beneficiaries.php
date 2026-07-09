@@ -27,7 +27,21 @@ return [
         'categories' => 'Categories',
         'family' => 'Family Members',
         'documents' => 'Documents',
+        'aids' => 'Aids',
         'activity' => 'Activity Log',
+    ],
+
+    'aids' => [
+        'title' => 'Beneficiary Aids',
+        'empty_title' => 'No aids',
+        'empty_description' => 'No aids have been granted to this beneficiary yet',
+        'field_reference' => 'Reference',
+        'field_title' => 'Title',
+        'field_program' => 'Program',
+        'field_type' => 'Type',
+        'field_amount' => 'Amount',
+        'field_status' => 'Status',
+        'field_created_at' => 'Created',
     ],
 
     'field_first_name' => 'First Name',
@@ -60,6 +74,9 @@ return [
     'field_status' => 'Beneficiary Status',
     'field_notes' => 'Notes',
     'field_created_by' => 'Created By',
+    'field_review_flow' => 'Review flow',
+    'field_review_flow_hint' => 'The flow that will be followed when the beneficiary is submitted for review.',
+    'field_review_flow_locked' => 'The review flow cannot be changed once the review has started.',
 
     'select_placeholder' => 'Select from list',
 
@@ -167,6 +184,17 @@ return [
             'restored' => 'Record Restored',
             'bank_data_revealed' => 'Bank Data Revealed',
         ],
+        'events' => [
+            'submitted' => 'Submitted for review',
+            'approved' => 'Approved',
+            'rejected' => 'Rejected',
+            'returned' => 'Returned for revision',
+            'suspended' => 'Suspended',
+            'deactivated' => 'Deactivated',
+            'reactivated' => 'Reactivated',
+            'reopened' => 'Study re-opened',
+            'stage_advanced' => 'Advanced to next stage',
+        ],
     ],
 
     'categories' => [
@@ -241,6 +269,8 @@ return [
         'reactivate_button' => 'Reactivate',
         'deactivate_button' => 'Deactivate',
         'confirm_deactivate' => 'This will deactivate the beneficiary and block new aids. Continue?',
+        'restudy_button' => 'Re-study case',
+        'confirm_restudy' => 'The beneficiary will be sent back to the start of the review flow to study the case again. Continue?',
 
         'inbox_title' => 'Beneficiary Review',
         'inbox_subtitle' => 'Beneficiaries awaiting your decision at your current stage.',
@@ -277,6 +307,7 @@ return [
             'deactivated' => 'Beneficiary deactivated.',
             'suspended' => 'Beneficiary suspended.',
             'reactivated' => 'Beneficiary reactivated.',
+            'reopened' => 'Beneficiary sent back to review.',
         ],
 
         'errors' => [

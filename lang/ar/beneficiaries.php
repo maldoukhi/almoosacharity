@@ -27,7 +27,21 @@ return [
         'categories' => 'التصنيفات',
         'family' => 'أفراد الأسرة',
         'documents' => 'المستندات',
+        'aids' => 'الإعانات',
         'activity' => 'السجل',
+    ],
+
+    'aids' => [
+        'title' => 'إعانات المستفيد',
+        'empty_title' => 'لا توجد إعانات',
+        'empty_description' => 'لم تُصرف أي إعانات لهذا المستفيد بعد',
+        'field_reference' => 'الرقم المرجعي',
+        'field_title' => 'العنوان',
+        'field_program' => 'البرنامج',
+        'field_type' => 'النوع',
+        'field_amount' => 'المبلغ',
+        'field_status' => 'الحالة',
+        'field_created_at' => 'تاريخ الإنشاء',
     ],
 
     'field_first_name' => 'الاسم الأول',
@@ -60,6 +74,9 @@ return [
     'field_status' => 'حالة المستفيد',
     'field_notes' => 'ملاحظات',
     'field_created_by' => 'أنشئ بواسطة',
+    'field_review_flow' => 'مسار المراجعة',
+    'field_review_flow_hint' => 'المسار الذي سيُتّبع عند إرسال المستفيد للمراجعة.',
+    'field_review_flow_locked' => 'لا يمكن تغيير مسار المراجعة بعد بدء المراجعة.',
 
     'select_placeholder' => 'اختر من القائمة',
 
@@ -167,6 +184,17 @@ return [
             'restored' => 'استرجاع الملف',
             'bank_data_revealed' => 'كشف بيانات بنكية',
         ],
+        'events' => [
+            'submitted' => 'أُرسل للمراجعة',
+            'approved' => 'تم الاعتماد',
+            'rejected' => 'تم الرفض',
+            'returned' => 'أُعيد للتعديل',
+            'suspended' => 'تم الإيقاف',
+            'deactivated' => 'تم التعطيل',
+            'reactivated' => 'تمت إعادة التفعيل',
+            'reopened' => 'أُعيدت دراسة الحالة',
+            'stage_advanced' => 'انتقل إلى المرحلة التالية',
+        ],
     ],
 
     'categories' => [
@@ -241,6 +269,8 @@ return [
         'reactivate_button' => 'إعادة التفعيل',
         'deactivate_button' => 'تعطيل',
         'confirm_deactivate' => 'سيتم تعطيل المستفيد ومنعه من استلام إعانات جديدة. هل تريد المتابعة؟',
+        'restudy_button' => 'إعادة دراسة الحالة',
+        'confirm_restudy' => 'سيُعاد المستفيد إلى مسار المراجعة من بدايته لدراسة حالته من جديد. هل تريد المتابعة؟',
 
         'inbox_title' => 'مراجعة المستفيدين',
         'inbox_subtitle' => 'المستفيدون بانتظار قرارك في مرحلتك الحالية.',
@@ -277,6 +307,7 @@ return [
             'deactivated' => 'تم تعطيل المستفيد.',
             'suspended' => 'تم إيقاف المستفيد.',
             'reactivated' => 'تمت إعادة تفعيل المستفيد.',
+            'reopened' => 'تمت إعادة المستفيد إلى المراجعة.',
         ],
 
         'errors' => [

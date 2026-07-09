@@ -3,6 +3,7 @@
 namespace App\Livewire\Beneficiaries;
 
 use App\Actions\BeneficiaryFlows\DeactivateBeneficiary;
+use App\Actions\BeneficiaryFlows\ReopenBeneficiaryStudy;
 use App\Actions\BeneficiaryFlows\SubmitBeneficiary;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
@@ -36,7 +37,7 @@ class Show extends Component
      *
      * @var array<int, string>
      */
-    private const TABS = ['basic', 'family', 'housing_income', 'bank', 'documents', 'activity'];
+    private const TABS = ['basic', 'family', 'housing_income', 'bank', 'documents', 'aids', 'activity'];
 
     public Beneficiary $beneficiary;
 
@@ -422,20 +423,38 @@ class Show extends Component
     #[Computed]
     public function canDeactivate(): bool
     {
-        return Gate::allows('deactivate', $this->beneficiary);
+        return $this->beneficiary->status !== BeneficiaryStatus::Deactivated
+            && Gate::allows('deactivate', $this->beneficiary);
     }
 
     #[Computed]
     public function canSuspend(): bool
     {
-        return Gate::allows('suspend', $this->beneficiary);
+        return $this->beneficiary->status === BeneficiaryStatus::Active
+            && Gate::allows('suspend', $this->beneficiary);
     }
 
     #[Computed]
     public function canReactivate(): bool
     {
-        return $this->beneficiary->status !== BeneficiaryStatus::Active
+        return in_array($this->beneficiary->status, [BeneficiaryStatus::Suspended, BeneficiaryStatus::Deactivated], true)
             && Gate::allows('reactivate', $this->beneficiary);
+    }
+
+    /**
+     * Whether the beneficiary can be sent back into the review workflow: only
+     * from a decided (Active / Rejected) or off-sequence (Deactivated) state,
+     * and only for an actor who may review beneficiaries.
+     */
+    #[Computed]
+    public function canRestudy(): bool
+    {
+        return in_array($this->beneficiary->status, [
+            BeneficiaryStatus::Active,
+            BeneficiaryStatus::Rejected,
+            BeneficiaryStatus::Deactivated,
+        ], true)
+            && Gate::allows('beneficiaries.review');
     }
 
     /**
@@ -492,6 +511,23 @@ class Show extends Component
         $this->applyOffSequence(fn (DeactivateBeneficiary $action) => $action->reactivate($this->beneficiary, Auth::user()), 'reactivated');
     }
 
+    public function restudy(): void
+    {
+        Gate::authorize('beneficiaries.review');
+
+        try {
+            app(ReopenBeneficiaryStudy::class)->handle($this->beneficiary, Auth::user());
+        } catch (InvalidBeneficiaryTransitionException|AuthorizationException $exception) {
+            $this->dispatch('toast', type: 'error', message: $exception->getMessage());
+
+            return;
+        }
+
+        $this->dispatch('toast', type: 'success', message: __('beneficiaries.flow.messages.reopened'));
+
+        $this->refreshLifecycle();
+    }
+
     private function applyOffSequence(callable $callback, string $messageKey): void
     {
         try {
@@ -525,6 +561,7 @@ class Show extends Component
             $this->canDeactivate,
             $this->canSuspend,
             $this->canReactivate,
+            $this->canRestudy,
             $this->latestReturnNote,
         );
     }

@@ -104,6 +104,26 @@
                 />
 
                 <x-ui.input :label="__('beneficiaries.field_family_members_count')" name="family_members_count" type="number" min="0" wire:model="family_members_count" />
+
+                @if ($this->canChangeReviewFlow)
+                    <x-ui.select
+                        :label="__('beneficiaries.field_review_flow')"
+                        name="beneficiary_flow_id"
+                        wire:model="beneficiary_flow_id"
+                        :placeholder="__('beneficiaries.select_placeholder')"
+                        :options="$this->reviewFlowOptions"
+                        :hint="__('beneficiaries.field_review_flow_hint')"
+                    />
+                @else
+                    <x-ui.select
+                        :label="__('beneficiaries.field_review_flow')"
+                        name="beneficiary_flow_id"
+                        wire:model="beneficiary_flow_id"
+                        :options="$this->reviewFlowOptions"
+                        :hint="__('beneficiaries.field_review_flow_locked')"
+                        disabled
+                    />
+                @endif
             </div>
 
             {{-- التواصل والعمل --}}

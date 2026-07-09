@@ -11,6 +11,7 @@ use App\Enums\IdType;
 use App\Enums\MaritalStatus;
 use App\Models\Beneficiary;
 use App\Models\BeneficiaryCategory;
+use App\Models\BeneficiaryFlow;
 use App\Rules\SaudiIban;
 use App\Rules\SaudiMobile;
 use App\Rules\SaudiNationalId;
@@ -84,6 +85,14 @@ class Form extends Component
     public array $selectedCategories = [];
 
     /**
+     * Which review flow will apply once the beneficiary is submitted into the
+     * workflow. Chosen freely on create and while still submittable; snapshotted
+     * onto the beneficiary and locked once the review has started (see
+     * SubmitBeneficiary). Null falls back to the default active flow.
+     */
+    public ?int $beneficiary_flow_id = null;
+
+    /**
      * The workflow status is no longer chosen freely on this form: a new
      * beneficiary always starts at BeneficiaryStatus::New and then progresses
      * only through the controlled review actions (submit / approve / reject /
@@ -103,6 +112,9 @@ class Form extends Component
         );
 
         if (! $this->beneficiary?->exists) {
+            // New registration: preselect the default active review flow.
+            $this->beneficiary_flow_id = $this->defaultReviewFlowId();
+
             return;
         }
 
@@ -137,9 +149,61 @@ class Form extends Component
         // form, and an empty submission is treated by UpdateBeneficiary as
         // "keep the current value" rather than "clear it".
         $this->status = $this->beneficiary->status->value;
+        $this->beneficiary_flow_id = $this->beneficiary->beneficiary_flow_id;
         $this->selectedCategories = $this->beneficiary->categories()
             ->pluck('beneficiary_categories.id')
             ->all();
+    }
+
+    /**
+     * The default active review flow's id (default flow preferred), or null
+     * when no active flow exists yet.
+     */
+    private function defaultReviewFlowId(): ?int
+    {
+        return BeneficiaryFlow::query()
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderBy('id')
+            ->value('id');
+    }
+
+    /**
+     * Review-flow picker options (id => name): the active flows, plus the
+     * beneficiary's currently-assigned flow even if it is now inactive, so a
+     * locked/decided beneficiary still shows its historical flow label.
+     *
+     * @return array<int, string>
+     */
+    #[Computed]
+    public function reviewFlowOptions(): array
+    {
+        $options = BeneficiaryFlow::query()
+            ->where('is_active', true)
+            ->orderByDesc('is_default')
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(fn (BeneficiaryFlow $flow): array => [$flow->id => $flow->name])
+            ->all();
+
+        $current = $this->beneficiary?->beneficiaryFlow;
+
+        if ($current && ! array_key_exists($current->id, $options)) {
+            $options[$current->id] = $current->name;
+        }
+
+        return $options;
+    }
+
+    /**
+     * Whether the review flow may still be changed: always on create, and on
+     * edit only while the review has not yet started (status still submittable).
+     */
+    #[Computed]
+    public function canChangeReviewFlow(): bool
+    {
+        return ! ($this->beneficiary?->exists ?? false)
+            || $this->beneficiary->status->isSubmittable();
     }
 
     /**
@@ -261,6 +325,16 @@ class Form extends Component
             'selectedCategories' => ['array'],
             'selectedCategories.*' => ['integer', 'exists:beneficiary_categories,id'],
         ];
+
+        // The review flow is only writable while still changeable: on a
+        // locked (already-submitted) beneficiary it carries no rule, so it is
+        // never included in the validated payload and stays untouched.
+        if ($this->canChangeReviewFlow) {
+            $rules['beneficiary_flow_id'] = [
+                'nullable',
+                Rule::exists('beneficiary_flows', 'id')->where('is_active', true),
+            ];
+        }
 
         if ($this->canManageBank) {
             $rules['iban'] = ['nullable', new SaudiIban];
