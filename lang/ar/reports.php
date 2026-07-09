@@ -51,6 +51,9 @@ return [
         'chart_by_month' => 'الإعانات حسب الشهر',
         'chart_by_month_count' => 'عدد الإعانات',
         'chart_by_month_cash' => 'إجمالي النقدي (ر.س)',
+        'receipt_issues_title' => 'إعانات لم تُستلم بالكامل',
+        'receipt_issues_empty' => 'لا توجد بلاغات باستلام جزئي أو عدم استلام.',
+        'receipt_issues_view_all' => 'عرض كل الإعانات ←',
     ],
 
     // PDF layout strings

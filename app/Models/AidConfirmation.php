@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Actions\Confirmations\ConfirmAidReceipt;
 use App\Actions\Confirmations\CreateAidConfirmation;
+use App\Enums\ReceiptStatus;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -27,6 +28,7 @@ use Spatie\MediaLibrary\InteractsWithMedia;
     'aid_id', 'token_hash', 'expires_at', 'sent_at', 'opened_at',
     'confirmed_at', 'reminder_sent_at', 'confirmed_ip',
     'confirmed_user_agent', 'channel',
+    'receipt_status', 'receipt_note', 'received_item_ids',
 ])]
 class AidConfirmation extends Model implements HasMedia
 {
@@ -53,6 +55,8 @@ class AidConfirmation extends Model implements HasMedia
             'opened_at' => 'datetime',
             'confirmed_at' => 'datetime',
             'reminder_sent_at' => 'datetime',
+            'receipt_status' => ReceiptStatus::class,
+            'received_item_ids' => 'array',
         ];
     }
 

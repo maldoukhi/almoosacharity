@@ -51,6 +51,9 @@ return [
         'chart_by_month' => 'Aids by month',
         'chart_by_month_count' => 'Aid count',
         'chart_by_month_cash' => 'Cash total (SAR)',
+        'receipt_issues_title' => 'Aids not fully received',
+        'receipt_issues_empty' => 'No partial or non-receipt reports.',
+        'receipt_issues_view_all' => 'View all aids ←',
     ],
 
     // PDF layout strings

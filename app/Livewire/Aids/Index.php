@@ -6,6 +6,7 @@ use App\Actions\Aids\CancelAid;
 use App\Actions\Aids\DeleteAid;
 use App\Enums\AidStatus;
 use App\Enums\AidType;
+use App\Enums\ReceiptStatus;
 use App\Exceptions\InvalidAidTransitionException;
 use App\Models\Aid;
 use App\Models\AidProgram;
@@ -41,6 +42,14 @@ class Index extends Component
     #[Url]
     public string $beneficiaryFilter = '';
 
+    /**
+     * Filters aids by the receipt outcome the beneficiary reported on the
+     * public confirmation page (partial / not received) — the "needs
+     * follow-up" surface for staff.
+     */
+    #[Url]
+    public string $receiptFilter = '';
+
     public function mount(): void
     {
         Gate::authorize('viewAny', Aid::class);
@@ -71,6 +80,11 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatingReceiptFilter(): void
+    {
+        $this->resetPage();
+    }
+
     /**
      * @return LengthAwarePaginator<int, Aid>
      */
@@ -84,6 +98,7 @@ class Index extends Component
                 'beneficiary:id,first_name,second_name,third_name,last_name',
                 'program',
                 'currentStage',
+                'confirmation:id,aid_id,receipt_status',
             ])
             ->withCount('items')
             ->when(! $user->can('aids.view-any'), function (Builder $query) use ($user): void {
@@ -105,6 +120,11 @@ class Index extends Component
             })
             ->when($this->beneficiaryFilter !== '', function (Builder $query): void {
                 $query->where('beneficiary_id', $this->beneficiaryFilter);
+            })
+            ->when($this->receiptFilter !== '', function (Builder $query): void {
+                $query->whereHas('confirmation', function (Builder $sub): void {
+                    $sub->where('receipt_status', $this->receiptFilter);
+                });
             })
             ->latest()
             ->paginate(15);
@@ -140,6 +160,21 @@ class Index extends Component
     public function types(): array
     {
         return AidType::cases();
+    }
+
+    /**
+     * Receipt outcomes that warrant staff follow-up, for the receipt filter
+     * dropdown (a full receipt is deliberately omitted — it needs no action).
+     *
+     * @return array<int, ReceiptStatus>
+     */
+    #[Computed]
+    public function receiptStatuses(): array
+    {
+        return array_values(array_filter(
+            ReceiptStatus::cases(),
+            fn (ReceiptStatus $status): bool => $status->needsAttention(),
+        ));
     }
 
     public function delete(int $aidId): void

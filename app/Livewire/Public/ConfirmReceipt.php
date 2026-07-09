@@ -5,11 +5,13 @@ namespace App\Livewire\Public;
 use App\Actions\Confirmations\ConfirmAidReceipt;
 use App\Actions\Surveys\RecordSurveyResponse;
 use App\Actions\Surveys\ResolveSurveyForAid;
+use App\Enums\ReceiptStatus;
 use App\Listeners\CreateConfirmationOnDelivery;
 use App\Models\Aid;
 use App\Models\AidConfirmation;
 use App\Models\Survey;
 use App\Models\SurveyQuestion;
+use App\Support\Settings;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
@@ -50,6 +52,36 @@ class ConfirmReceipt extends Component
     public string $signature = '';
 
     /**
+     * Whether a drawn signature is mandatory before the receipt can be
+     * submitted, read once from the `confirmation_signature_required`
+     * setting on mount (see the settings screen owned elsewhere). Enforced
+     * both client-side (blocks the submit button) and server-side (in
+     * {@see confirm()}).
+     */
+    #[Locked]
+    public bool $signatureRequired = false;
+
+    /**
+     * The receipt outcome the beneficiary picks on the confirm step: one of
+     * the {@see ReceiptStatus} values. Defaults to a full receipt so the
+     * common "yes, I got everything" path is a single tap.
+     */
+    public string $receiptStatus = ReceiptStatus::Received->value;
+
+    /**
+     * Optional free-text note for a partial / not-received report.
+     */
+    public string $receiptNote = '';
+
+    /**
+     * aid_item ids the beneficiary ticks as actually received, for a
+     * partial in-kind receipt.
+     *
+     * @var array<int, int|string>
+     */
+    public array $receivedItemIds = [];
+
+    /**
      * Answers keyed by survey_question_id.
      *
      * @var array<int, mixed>
@@ -60,6 +92,8 @@ class ConfirmReceipt extends Component
 
     public function mount(string $token): void
     {
+        $this->signatureRequired = app(Settings::class)->get('confirmation_signature_required') === '1';
+
         $confirmation = $token === ''
             ? null
             : AidConfirmation::query()
@@ -138,11 +172,34 @@ class ConfirmReceipt extends Component
             return;
         }
 
+        $status = ReceiptStatus::tryFrom($this->receiptStatus) ?? ReceiptStatus::Received;
+
+        // Server-side signature gate: when the setting requires a signature,
+        // a receipt cannot be submitted without one. The button is also
+        // disabled client-side, this is the authoritative check.
+        if ($this->signatureRequired && trim($this->signature) === '') {
+            $this->addError('signature', __('confirmations.signature_required_error'));
+
+            return;
+        }
+
+        // Keep only ticked ids that genuinely belong to this aid, and only
+        // for a partial receipt (a full/none receipt carries no item list).
+        $itemIds = $status === ReceiptStatus::Partial
+            ? array_values(array_intersect(
+                array_map('intval', $this->receivedItemIds),
+                $this->aid->items->pluck('id')->all(),
+            ))
+            : [];
+
         app(ConfirmAidReceipt::class)->handle(
             $this->confirmation,
             (string) (request()->ip() ?? '0.0.0.0'),
             (string) request()->userAgent(),
             $this->signature,
+            $status,
+            $this->receiptNote,
+            $itemIds,
         );
 
         $this->confirmation->refresh();

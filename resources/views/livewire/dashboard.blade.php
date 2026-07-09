@@ -44,6 +44,47 @@
         @endcan
     </div>
 
+    {{-- Aids the beneficiary reported as partially or not received --}}
+    <x-ui.card>
+        <x-slot:header>
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-sm font-semibold text-gray-900 dark:text-white">{{ __('reports.dashboard.receipt_issues_title') }}</h2>
+                    @if ($this->receiptIssuesCount > 0)
+                        <x-ui.badge color="rejected">{{ $this->receiptIssuesCount }}</x-ui.badge>
+                    @endif
+                </div>
+                @if ($this->receiptIssuesCount > 0)
+                    <a href="{{ route('aids.index') }}" wire:navigate class="text-xs font-medium text-primary-700 hover:underline dark:text-primary-300">
+                        {{ __('reports.dashboard.receipt_issues_view_all') }}
+                    </a>
+                @endif
+            </div>
+        </x-slot:header>
+
+        @if ($this->receiptIssues->isEmpty())
+            <p class="py-2 text-sm text-gray-500 dark:text-gray-400">{{ __('reports.dashboard.receipt_issues_empty') }}</p>
+        @else
+            <ul class="divide-y divide-gray-100 dark:divide-white/10">
+                @foreach ($this->receiptIssues as $issue)
+                    <li wire:key="receipt-issue-{{ $issue->id }}" class="flex items-center justify-between gap-3 py-3">
+                        <div class="min-w-0">
+                            <a href="{{ route('aids.show', $issue) }}" wire:navigate class="font-mono text-sm font-medium text-primary-700 hover:underline dark:text-primary-300">
+                                {{ $issue->reference }}
+                            </a>
+                            <p class="truncate text-xs text-gray-500 dark:text-gray-400">
+                                {{ $issue->beneficiary?->full_name }}@if ($issue->program) · {{ $issue->program->name }}@endif
+                            </p>
+                        </div>
+                        <x-ui.badge :color="$issue->confirmation->receipt_status->color()">
+                            {{ $issue->confirmation->receipt_status->label() }}
+                        </x-ui.badge>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
+    </x-ui.card>
+
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
         <x-ui.card>
             <x-slot:header>

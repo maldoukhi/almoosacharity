@@ -108,6 +108,7 @@ return [
     'filter_status' => 'Filter by Status',
     'filter_program' => 'Filter by Program',
     'filter_type' => 'Filter by Type',
+    'filter_receipt' => 'Receipt Status',
 
     'results_count' => '{0} No results|{1} 1 result|[2,*] :count results',
 

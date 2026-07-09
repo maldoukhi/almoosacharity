@@ -4,10 +4,12 @@ namespace App\Livewire;
 
 use App\Enums\AidStatus;
 use App\Enums\AidType;
+use App\Enums\ReceiptStatus;
 use App\Models\Aid;
 use App\Models\Beneficiary;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -77,6 +79,54 @@ class Dashboard extends Component
                 $query->whereIn('role', $user->getRoleNames());
             })
             ->count();
+    }
+
+    /**
+     * The receipt outcomes that need staff follow-up (anything short of a
+     * full receipt), used by both the count and the short list below.
+     *
+     * @return array<int, string>
+     */
+    private function attentionReceiptValues(): array
+    {
+        return array_map(
+            fn (ReceiptStatus $status): string => $status->value,
+            array_filter(ReceiptStatus::cases(), fn (ReceiptStatus $s): bool => $s->needsAttention()),
+        );
+    }
+
+    /**
+     * Number of aids whose beneficiary reported a partial or missing receipt
+     * on the public confirmation page — derived from the AidConfirmation
+     * relationship, never a column on aids.
+     */
+    #[Computed]
+    public function receiptIssuesCount(): int
+    {
+        return Aid::query()
+            ->whereHas('confirmation', function (Builder $query): void {
+                $query->whereIn('receipt_status', $this->attentionReceiptValues());
+            })
+            ->count();
+    }
+
+    /**
+     * The most recent handful of aids flagged as partially / not received,
+     * for the dashboard follow-up list.
+     *
+     * @return Collection<int, Aid>
+     */
+    #[Computed]
+    public function receiptIssues(): Collection
+    {
+        return Aid::query()
+            ->with(['beneficiary:id,first_name,second_name,third_name,last_name', 'program:id,name', 'confirmation:id,aid_id,receipt_status,confirmed_at'])
+            ->whereHas('confirmation', function (Builder $query): void {
+                $query->whereIn('receipt_status', $this->attentionReceiptValues());
+            })
+            ->latest()
+            ->limit(5)
+            ->get();
     }
 
     /**

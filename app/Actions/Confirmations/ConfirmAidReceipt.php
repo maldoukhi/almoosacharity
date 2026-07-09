@@ -3,6 +3,7 @@
 namespace App\Actions\Confirmations;
 
 use App\Enums\AidStatus;
+use App\Enums\ReceiptStatus;
 use App\Enums\RoleName;
 use App\Enums\UserStatus;
 use App\Models\Aid;
@@ -21,9 +22,22 @@ use Illuminate\Support\Facades\Notification;
  */
 class ConfirmAidReceipt
 {
-    public function handle(AidConfirmation $confirmation, string $ip, string $userAgent, string $signature = ''): void
-    {
-        DB::transaction(function () use ($confirmation, $ip, $userAgent, $signature): void {
+    /**
+     * @param  array<int, int>  $receivedItemIds  aid_item ids the beneficiary
+     *                                            ticked as actually received
+     *                                            (only meaningful for a
+     *                                            partial receipt)
+     */
+    public function handle(
+        AidConfirmation $confirmation,
+        string $ip,
+        string $userAgent,
+        string $signature = '',
+        ReceiptStatus $receiptStatus = ReceiptStatus::Received,
+        string $note = '',
+        array $receivedItemIds = [],
+    ): void {
+        DB::transaction(function () use ($confirmation, $ip, $userAgent, $signature, $receiptStatus, $note, $receivedItemIds): void {
             $locked = AidConfirmation::query()->whereKey($confirmation->id)->lockForUpdate()->first();
 
             if ($locked === null || $locked->confirmed_at !== null) {
@@ -34,10 +48,21 @@ class ConfirmAidReceipt
                 return;
             }
 
+            $note = trim($note);
+
             $locked->update([
                 'confirmed_at' => now(),
                 'confirmed_ip' => $ip,
                 'confirmed_user_agent' => mb_substr($userAgent, 0, 1000),
+                'receipt_status' => $receiptStatus,
+                // A note is only meaningful for a partial/not-received report.
+                'receipt_note' => $receiptStatus === ReceiptStatus::Received || $note === ''
+                    ? null
+                    : mb_substr($note, 0, 2000),
+                // Ticked-item ids only make sense for a partial receipt.
+                'received_item_ids' => $receiptStatus === ReceiptStatus::Partial
+                    ? array_values(array_unique(array_map('intval', $receivedItemIds)))
+                    : null,
             ]);
 
             $this->attachSignature($locked, $signature);

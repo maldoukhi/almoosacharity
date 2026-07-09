@@ -2,6 +2,7 @@
     $statusOptions = $this->statuses->mapWithKeys(fn ($status) => [$status->value => $status->label()]);
     $programOptions = $this->programs->mapWithKeys(fn ($program) => [$program->id => $program->name]);
     $typeOptions = collect(\App\Enums\AidType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->label()]);
+    $receiptOptions = collect($this->receiptStatuses)->mapWithKeys(fn ($status) => [$status->value => $status->label()]);
 @endphp
 
 <div class="space-y-6">
@@ -53,6 +54,14 @@
                 :placeholder="__('common.all')"
                 :options="$typeOptions"
             />
+
+            <x-ui.select
+                :label="__('aids.filter_receipt')"
+                name="receiptFilter"
+                wire:model.live="receiptFilter"
+                :placeholder="__('common.all')"
+                :options="$receiptOptions"
+            />
         </div>
     </x-ui.card>
 
@@ -64,7 +73,7 @@
         </div>
 
         <div class="relative">
-        <div wire:loading.flex wire:target="search, statusFilter, programFilter, typeFilter" class="hidden flex-col gap-2" style="display: none">
+        <div wire:loading.flex wire:target="search, statusFilter, programFilter, typeFilter, receiptFilter" class="hidden flex-col gap-2" style="display: none">
             <x-ui.skeleton height="3rem" />
             <x-ui.skeleton height="3rem" />
             <x-ui.skeleton height="3rem" />
@@ -72,7 +81,7 @@
             <x-ui.skeleton height="3rem" />
         </div>
 
-        <div wire:loading.remove wire:target="search, statusFilter, programFilter, typeFilter">
+        <div wire:loading.remove wire:target="search, statusFilter, programFilter, typeFilter, receiptFilter">
             @if ($this->aids->isEmpty())
                 <x-ui.empty-state :title="__('aids.empty_title')" :description="__('aids.empty_description')">
                     <x-slot:icon>
@@ -121,7 +130,14 @@
                                     @endif
                                 </x-ui.table.td>
                                 <x-ui.table.td>
-                                    <x-ui.badge :color="$aid->status->color()">{{ $aid->status->label() }}</x-ui.badge>
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <x-ui.badge :color="$aid->status->color()">{{ $aid->status->label() }}</x-ui.badge>
+                                        @if ($aid->confirmation?->receipt_status?->needsAttention())
+                                            <x-ui.badge :color="$aid->confirmation->receipt_status->color()">
+                                                {{ $aid->confirmation->receipt_status->label() }}
+                                            </x-ui.badge>
+                                        @endif
+                                    </div>
                                 </x-ui.table.td>
                                 <x-ui.table.td>
                                     @if ($aid->currentStage)

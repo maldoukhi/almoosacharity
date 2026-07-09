@@ -33,7 +33,8 @@
         </x-ui.card>
 
     @elseif ($view === 'confirm')
-        <x-ui.card x-data="confirmationSignaturePad()">
+        @php $inKindItems = $this->aid->type === \App\Enums\AidType::InKind ? $this->aid->items : collect(); @endphp
+        <x-ui.card x-data="confirmationSignaturePad(@js($signatureRequired))">
             <div class="mb-5 text-center">
                 <p class="text-base font-semibold text-gray-900 dark:text-white">
                     {{ __('confirmations.greeting', ['name' => $this->aid->beneficiary?->first_name ?? '']) }}
@@ -52,11 +53,11 @@
                     <dd class="font-medium text-gray-900 dark:text-white">{{ $this->aid->type->label() }}</dd>
                 </div>
 
-                @if ($this->aid->type === \App\Enums\AidType::InKind && $this->aid->items->isNotEmpty())
+                @if ($inKindItems->isNotEmpty())
                     <div class="flex items-start justify-between gap-3">
                         <dt class="shrink-0 text-gray-500 dark:text-gray-400">{{ __('confirmations.field_items') }}</dt>
                         <dd class="text-end font-medium text-gray-900 dark:text-white">
-                            {{ $this->aid->items->pluck('name')->implode('، ') }}
+                            {{ $inKindItems->pluck('name')->implode('، ') }}
                         </dd>
                     </div>
                 @endif
@@ -74,10 +75,63 @@
                 </div>
             </dl>
 
-            {{-- Optional signature --}}
+            {{-- Receipt outcome: full / partial / not-received --}}
+            <div class="mt-5">
+                <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('confirmations.receipt_question') }}</p>
+                <div class="flex flex-col gap-2">
+                    @foreach (\App\Enums\ReceiptStatus::cases() as $option)
+                        <button
+                            type="button"
+                            wire:key="receipt-option-{{ $option->value }}"
+                            wire:click="$set('receiptStatus', '{{ $option->value }}')"
+                            aria-pressed="{{ $receiptStatus === $option->value ? 'true' : 'false' }}"
+                            class="w-full rounded-(--radius-brand) border px-4 py-3 text-start text-sm font-medium transition duration-150 {{ $receiptStatus === $option->value ? 'border-primary-500 bg-primary-50 text-primary-800 dark:bg-primary-500/20 dark:text-primary-100' : 'border-gray-200 text-gray-700 hover:bg-gray-50 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5' }}"
+                        >
+                            {{ __('confirmations.receipt_choice.'.$option->value) }}
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Partial receipt: per-item checkboxes for an in-kind aid --}}
+            @if ($receiptStatus === \App\Enums\ReceiptStatus::Partial->value && $inKindItems->isNotEmpty())
+                <div class="mt-4">
+                    <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('confirmations.receipt_items_title') }}</p>
+                    <div class="flex flex-col gap-2">
+                        @foreach ($inKindItems as $item)
+                            <label
+                                wire:key="receipt-item-{{ $item->id }}"
+                                class="flex w-full cursor-pointer items-center gap-3 rounded-(--radius-brand) border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 transition duration-150 hover:bg-gray-50 has-checked:border-secondary-500 has-checked:bg-secondary-50 has-checked:text-secondary-800 dark:border-white/10 dark:text-gray-200 dark:hover:bg-white/5 dark:has-checked:bg-secondary-500/20 dark:has-checked:text-secondary-100"
+                            >
+                                <input type="checkbox" wire:model="receivedItemIds" value="{{ $item->id }}" class="h-4 w-4 rounded border-gray-300 text-secondary-600 focus:ring-secondary-500">
+                                <span class="flex-1">{{ $item->name }}</span>
+                                <span class="shrink-0 tabular-nums text-xs text-gray-400 dark:text-gray-500">{{ __('confirmations.receipt_item_quantity', ['quantity' => $item->quantity]) }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
+
+            {{-- Optional note for a partial / not-received report --}}
+            @if ($receiptStatus === \App\Enums\ReceiptStatus::Partial->value || $receiptStatus === \App\Enums\ReceiptStatus::NotReceived->value)
+                <div class="mt-4">
+                    <label for="receipt-note" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('confirmations.receipt_note') }}</label>
+                    <textarea
+                        id="receipt-note"
+                        wire:model="receiptNote"
+                        rows="3"
+                        placeholder="{{ __('confirmations.receipt_note_placeholder') }}"
+                        class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
+                    ></textarea>
+                </div>
+            @endif
+
+            {{-- Signature — optional or mandatory per the confirmation_signature_required setting --}}
             <div class="mt-5">
                 <div class="mb-1.5 flex items-center justify-between">
-                    <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('confirmations.signature') }}</p>
+                    <p class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                        {{ $signatureRequired ? __('confirmations.signature_required') : __('confirmations.signature') }}
+                    </p>
                     <button type="button" @click="clear()" class="text-xs font-medium text-status-rejected hover:underline">
                         {{ __('confirmations.clear_signature') }}
                     </button>
@@ -92,6 +146,14 @@
                     class="h-40 w-full touch-none rounded-(--radius-brand) border border-dashed border-gray-300 bg-gray-50 dark:border-white/15 dark:bg-white/5"
                 ></canvas>
                 <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">{{ __('confirmations.signature_hint') }}</p>
+
+                {{-- Client-side signature-required message --}}
+                <p x-show="sigError" x-cloak class="mt-1.5 text-xs text-status-rejected">{{ __('confirmations.signature_required_error') }}</p>
+
+                {{-- Server-side signature-required message --}}
+                @error('signature')
+                    <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                @enderror
             </div>
 
             <x-ui.button
@@ -99,11 +161,11 @@
                 variant="secondary"
                 size="lg"
                 class="mt-6 w-full"
-                x-on:click="$wire.set('signature', hasDrawn ? $refs.pad.toDataURL('image/png') : '', false); $wire.confirm()"
+                x-on:click="submit()"
                 wire:target="confirm"
                 wire:loading.attr="disabled"
             >
-                {{ __('confirmations.confirm_button') }}
+                {{ __('confirmations.submit_receipt') }}
             </x-ui.button>
         </x-ui.card>
 
@@ -285,12 +347,26 @@
     @endif
 
     <script>
-        window.confirmationSignaturePad = function () {
+        window.confirmationSignaturePad = function (required = false) {
             return {
                 drawing: false,
                 hasDrawn: false,
+                required: required,
+                sigError: false,
                 ctx: null,
                 last: { x: 0, y: 0 },
+                submit() {
+                    // Block submission until a signature is drawn when the
+                    // setting makes it mandatory. Mirrors the server guard in
+                    // ConfirmReceipt::confirm().
+                    if (this.required && ! this.hasDrawn) {
+                        this.sigError = true;
+                        return;
+                    }
+                    this.sigError = false;
+                    this.$wire.set('signature', this.hasDrawn ? this.$refs.pad.toDataURL('image/png') : '', false);
+                    this.$wire.confirm();
+                },
                 init() {
                     const canvas = this.$refs.pad;
                     const ratio = window.devicePixelRatio || 1;
@@ -320,6 +396,7 @@
                     this.ctx.stroke();
                     this.last = p;
                     this.hasDrawn = true;
+                    this.sigError = false;
                 },
                 endDraw() {
                     this.drawing = false;

@@ -24,8 +24,29 @@ return [
 
     'confirm_button' => 'أؤكد الاستلام',
     'confirming' => 'جارٍ التأكيد...',
+    'submit_receipt' => 'إرسال',
+
+    // Receipt outcome choices on the confirm page.
+    'receipt_question' => 'ما مدى استلامك للإعانة؟',
+    'receipt_choice' => [
+        'received' => 'استلمتها كاملة',
+        'partial' => 'استلمتها جزئيًا',
+        'not_received' => 'لم أستلمها',
+    ],
+    // Short labels used in admin badges (App\Enums\ReceiptStatus::label()).
+    'receipt_status' => [
+        'received' => 'مُستلمة كاملة',
+        'partial' => 'مُستلمة جزئيًا',
+        'not_received' => 'لم تُستلم',
+    ],
+    'receipt_items_title' => 'حدّد الأصناف التي استلمتها',
+    'receipt_item_quantity' => 'الكمية: :quantity',
+    'receipt_note' => 'ملاحظة (اختياري)',
+    'receipt_note_placeholder' => 'وضّح ما لم تستلمه أو أي ملاحظة تودّ إضافتها',
 
     'signature' => 'التوقيع (اختياري)',
+    'signature_required' => 'التوقيع (مطلوب)',
+    'signature_required_error' => 'يرجى التوقيع داخل الإطار قبل إرسال التأكيد.',
     'signature_hint' => 'يمكنك التوقيع بإصبعك داخل الإطار أعلاه لتوثيق الاستلام.',
     'clear_signature' => 'مسح',
 

@@ -109,6 +109,7 @@ return [
     'filter_status' => 'التصفية حسب الحالة',
     'filter_program' => 'التصفية حسب البرنامج',
     'filter_type' => 'التصفية حسب النوع',
+    'filter_receipt' => 'حالة الاستلام',
 
     'results_count' => '{0} لا نتائج|{1} نتيجة واحدة|[2,*] :count نتيجة',
 

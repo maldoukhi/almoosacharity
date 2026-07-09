@@ -24,8 +24,29 @@ return [
 
     'confirm_button' => 'Confirm Receipt',
     'confirming' => 'Confirming...',
+    'submit_receipt' => 'Submit',
+
+    // Receipt outcome choices on the confirm page.
+    'receipt_question' => 'How much of the aid did you receive?',
+    'receipt_choice' => [
+        'received' => 'Received in full',
+        'partial' => 'Received partially',
+        'not_received' => 'Did not receive',
+    ],
+    // Short labels used in admin badges (App\Enums\ReceiptStatus::label()).
+    'receipt_status' => [
+        'received' => 'Received in full',
+        'partial' => 'Partially received',
+        'not_received' => 'Not received',
+    ],
+    'receipt_items_title' => 'Select the items you received',
+    'receipt_item_quantity' => 'Qty: :quantity',
+    'receipt_note' => 'Note (optional)',
+    'receipt_note_placeholder' => 'Explain what you did not receive or add any note',
 
     'signature' => 'Signature (optional)',
+    'signature_required' => 'Signature (required)',
+    'signature_required_error' => 'Please sign inside the box before submitting your confirmation.',
     'signature_hint' => 'You may sign with your finger inside the box above to document receipt.',
     'clear_signature' => 'Clear',
 
