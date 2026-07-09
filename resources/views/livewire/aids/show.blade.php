@@ -27,9 +27,17 @@
             </p>
         </div>
 
-        <x-ui.button href="{{ route('aids.index') }}" variant="ghost">
-            {{ __('common.back') }}
-        </x-ui.button>
+        <div class="flex flex-wrap items-center gap-2">
+            @if ($this->canDownloadReceipt)
+                <x-ui.button wire:click="downloadReceipt" variant="ghost">
+                    {{ __('aids.receipt.button') }}
+                </x-ui.button>
+            @endif
+
+            <x-ui.button href="{{ route('aids.index') }}" variant="ghost">
+                {{ __('common.back') }}
+            </x-ui.button>
+        </div>
     </div>
 
     @if ($this->latestReturnNote)
@@ -158,10 +166,20 @@
 
             <x-ui.card>
                 <x-slot:header>
-                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('aids.decisions_title') }}</h2>
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('aids.timeline_title') }}</h2>
                 </x-slot:header>
 
-                <x-ui.timeline :items="$this->timeline" />
+                @php
+                    $timelineItems = collect($this->timeline)->map(fn (array $entry): array => [
+                        'title' => $entry['title'],
+                        'description' => $entry['meta'] ?? null,
+                        'date' => $entry['at'] ?? null,
+                        'color' => $entry['color'] ?? 'primary',
+                        'icon' => $entry['icon'] ?? 'dot',
+                    ]);
+                @endphp
+
+                <x-ui.timeline :items="$timelineItems" />
             </x-ui.card>
 
             @if (in_array($aid->status, [\App\Enums\AidStatus::Approved, \App\Enums\AidStatus::InDisbursement, \App\Enums\AidStatus::Delivered], true))

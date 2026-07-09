@@ -11,19 +11,22 @@ use App\Enums\SurveyQuestionType;
 use App\Exceptions\Confirmations\AidConfirmationException;
 use App\Models\Aid;
 use App\Models\AidConfirmation;
-use App\Models\ApprovalDecision;
 use App\Models\ApprovalFlow;
 use App\Models\ApprovalFlowStage;
 use App\Models\BeneficiaryStageResponse;
+use App\Models\Disbursement;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Aid detail screen: timeline, decisions, items and the approval action
@@ -82,15 +85,146 @@ class Show extends Component
     }
 
     /**
-     * The decisions recorded against this aid, newest first, in the shape
-     * x-ui.timeline reads directly off an ApprovalDecision instance.
+     * A single chronological timeline merging every event recorded against
+     * this aid: creation, submission, each approval decision, the
+     * disbursement lifecycle (started/delivered/second-check confirmed)
+     * and the beneficiary confirmation link (sent/confirmed) — sorted
+     * ascending (oldest first) so it reads as one continuous story.
      *
-     * @return Collection<int, ApprovalDecision>
+     * Each entry is shaped ['at' => Carbon, 'title' => string,
+     * 'meta' => ?string, 'color' => string, 'icon' => string], ready to be
+     * mapped onto x-ui.timeline's item shape in the view. Relations that
+     * don't exist yet (no disbursement, no confirmation, no decisions) are
+     * defensively skipped rather than causing an error.
+     *
+     * @return array<int, array{at: ?Carbon, title: string, meta: ?string, color: string, icon: string}>
      */
     #[Computed]
-    public function timeline(): Collection
+    public function timeline(): array
     {
-        return $this->aid->decisions;
+        $entries = collect();
+
+        $entries->push([
+            'at' => $this->aid->created_at,
+            'title' => __('aids.timeline.created'),
+            'meta' => $this->aid->createdBy?->name,
+            'color' => 'primary',
+            'icon' => 'dot',
+        ]);
+
+        if ($this->aid->submitted_at) {
+            $entries->push([
+                'at' => $this->aid->submitted_at,
+                'title' => __('aids.timeline.submitted'),
+                'meta' => null,
+                'color' => 'review',
+                'icon' => 'dot',
+            ]);
+        }
+
+        foreach ($this->aid->decisions as $decision) {
+            if (! $decision->decided_at) {
+                continue;
+            }
+
+            $entries->push([
+                'at' => $decision->decided_at,
+                'title' => trim(($decision->action?->label() ?? '').' — '.$decision->stage_name),
+                'meta' => collect([$decision->user?->name, $decision->note])->filter()->implode(' · ') ?: null,
+                'color' => match ($decision->action) {
+                    ApprovalAction::Approve => 'approved',
+                    ApprovalAction::Reject => 'rejected',
+                    ApprovalAction::Return => 'review',
+                    default => 'primary',
+                },
+                'icon' => match ($decision->action) {
+                    ApprovalAction::Approve => 'check',
+                    ApprovalAction::Reject => 'x',
+                    ApprovalAction::Return => 'undo',
+                    default => 'dot',
+                },
+            ]);
+        }
+
+        if ($disbursement = $this->aid->disbursement) {
+            $this->pushDisbursementEntries($entries, $disbursement);
+        }
+
+        if ($confirmation = $this->aid->confirmation) {
+            $this->pushConfirmationEntries($entries, $confirmation);
+        }
+
+        return $entries
+            ->filter(fn (array $entry): bool => $entry['at'] !== null)
+            ->sortBy('at')
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Append the disbursement's own lifecycle events (started, delivered,
+     * second-check confirmed) to the timeline entries collection, skipping
+     * any that haven't happened yet.
+     */
+    private function pushDisbursementEntries(Collection $entries, Disbursement $disbursement): void
+    {
+        if ($disbursement->started_at) {
+            $entries->push([
+                'at' => $disbursement->started_at,
+                'title' => __('aids.timeline.disbursement_started', ['method' => $disbursement->method->label()]),
+                'meta' => $disbursement->startedBy?->name,
+                'color' => 'review',
+                'icon' => 'dot',
+            ]);
+        }
+
+        if ($disbursement->delivered_at) {
+            $entries->push([
+                'at' => $disbursement->delivered_at,
+                'title' => __('aids.timeline.disbursement_delivered'),
+                'meta' => $disbursement->deliveredBy?->name,
+                'color' => 'approved',
+                'icon' => 'check',
+            ]);
+        }
+
+        if ($disbursement->confirmed_at) {
+            $entries->push([
+                'at' => $disbursement->confirmed_at,
+                'title' => __('aids.timeline.disbursement_confirmed'),
+                'meta' => $disbursement->confirmedBy?->name,
+                'color' => 'approved',
+                'icon' => 'check',
+            ]);
+        }
+    }
+
+    /**
+     * Append the beneficiary confirmation link's own events (link sent,
+     * beneficiary confirmed with its receipt status) to the timeline
+     * entries collection, skipping any that haven't happened yet.
+     */
+    private function pushConfirmationEntries(Collection $entries, AidConfirmation $confirmation): void
+    {
+        if ($confirmation->sent_at) {
+            $entries->push([
+                'at' => $confirmation->sent_at,
+                'title' => __('aids.timeline.confirmation_sent'),
+                'meta' => null,
+                'color' => 'primary',
+                'icon' => 'dot',
+            ]);
+        }
+
+        if ($confirmation->confirmed_at) {
+            $entries->push([
+                'at' => $confirmation->confirmed_at,
+                'title' => __('aids.timeline.confirmation_confirmed'),
+                'meta' => $confirmation->receipt_status?->label(),
+                'color' => $confirmation->receipt_status?->color() ?? 'approved',
+                'icon' => 'check',
+            ]);
+        }
     }
 
     /**
@@ -191,6 +325,23 @@ class Show extends Component
     {
         return in_array($this->aid->status, [AidStatus::Draft, AidStatus::Submitted, AidStatus::UnderReview], true)
             && Gate::allows('cancel', $this->aid);
+    }
+
+    /**
+     * The PDF receipt ("سند صرف إعانة") only makes sense once the aid has
+     * actually been approved — before that there is nothing to hand the
+     * beneficiary a voucher for, and a rejected/cancelled aid was never
+     * disbursed at all.
+     */
+    #[Computed]
+    public function canDownloadReceipt(): bool
+    {
+        return in_array($this->aid->status, [
+            AidStatus::Approved,
+            AidStatus::InDisbursement,
+            AidStatus::Delivered,
+            AidStatus::Confirmed,
+        ], true) && Gate::allows('view', $this->aid);
     }
 
     /**
@@ -409,7 +560,48 @@ class Show extends Component
             'confirmation',
             'recurringPlan',
             'recurringPlanSeries',
+            'disbursement.startedBy',
+            'disbursement.deliveredBy',
+            'disbursement.confirmedBy',
         ]);
+    }
+
+    /**
+     * Stream the "سند صرف إعانة" (aid receipt) PDF for this aid — same
+     * 'view' authorization as the page itself, so anyone who can see the
+     * aid can print its receipt. Returning a streamDownload response from
+     * a Livewire action triggers the browser download automatically (same
+     * pattern as App\Livewire\Reports\AidsReport::exportPdf()).
+     */
+    public function downloadReceipt(): StreamedResponse
+    {
+        Gate::authorize('view', $this->aid);
+
+        $aid = $this->aid;
+
+        $pdf = Pdf::loadView('pdf.aid-receipt', [
+            'aid' => $aid,
+            'maskedNationalId' => $this->maskNationalId($aid->beneficiary?->national_id),
+        ]);
+
+        return response()->streamDownload(
+            fn () => print ($pdf->output()),
+            'receipt-'.$aid->reference.'.pdf',
+        );
+    }
+
+    /**
+     * Partial mask matching the pattern already used for national IDs in
+     * reports (App\Reports\BeneficiariesReport): keep the first and last
+     * two digits only, never the full identifier.
+     */
+    private function maskNationalId(?string $nationalId): ?string
+    {
+        if (! $nationalId) {
+            return null;
+        }
+
+        return substr($nationalId, 0, 2).'••••••'.substr($nationalId, -2);
     }
 
     /**
@@ -436,6 +628,7 @@ class Show extends Component
             $this->allowedActions,
             $this->canSubmit,
             $this->canCancel,
+            $this->canDownloadReceipt,
             $this->latestReturnNote,
             $this->recurringCycle,
             $this->confirmation,
