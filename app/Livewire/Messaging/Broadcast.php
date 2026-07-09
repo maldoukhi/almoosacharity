@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\RateLimiter;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Url;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 /**
@@ -34,7 +36,20 @@ use Livewire\WithPagination;
  */
 class Broadcast extends Component
 {
+    use WithFileUploads;
     use WithPagination;
+
+    /**
+     * Private disk the uploaded broadcast attachment is persisted to before
+     * the send fans out. Mirrors the rest of the app's convention of keeping
+     * uploaded files off the public disk.
+     */
+    private const ATTACHMENT_DISK = 'local';
+
+    /**
+     * Attachment upload cap (KB). PDF/JPG/PNG only — see {@see attachmentRules()}.
+     */
+    private const ATTACHMENT_MAX_KB = 8192;
 
     #[Url]
     public string $search = '';
@@ -51,6 +66,13 @@ class Broadcast extends Component
     public string $channel = 'sms';
 
     public string $body = '';
+
+    /**
+     * Optional file (PDF/JPG/PNG) delivered alongside the message. Only
+     * offered/sent on channels that support attachments — currently WhatsApp
+     * (SMS is text-only). A {@see TemporaryUploadedFile} while pending.
+     */
+    public $attachment = null;
 
     /**
      * Selected template key: "msg:{id}" for a saved broadcast template or
@@ -153,6 +175,40 @@ class Broadcast extends Component
     public function updatedChannel(): void
     {
         $this->selectedTemplate = null;
+
+        // SMS carries no attachment: drop any pending file when switching to
+        // a channel that cannot deliver it.
+        if (! $this->channelSupportsAttachment()) {
+            $this->removeAttachment();
+        }
+    }
+
+    /**
+     * Validate the file the moment it is chosen (rather than only at send),
+     * so an oversized/wrong-type upload surfaces its error immediately.
+     */
+    public function updatedAttachment(): void
+    {
+        if ($this->attachment === null) {
+            return;
+        }
+
+        $this->validate($this->attachmentRules());
+    }
+
+    public function removeAttachment(): void
+    {
+        $this->attachment = null;
+        $this->resetErrorBag('attachment');
+    }
+
+    /**
+     * Whether the currently-selected channel can deliver a file attachment.
+     * WhatsApp can (via the provider's media message); SMS cannot.
+     */
+    public function channelSupportsAttachment(): bool
+    {
+        return $this->channel === MessageChannel::WhatsApp->value;
     }
 
     public function toggleId(int $id): void
@@ -213,6 +269,7 @@ class Broadcast extends Component
             'channel' => ['required', 'in:sms,whatsapp'],
             'body' => ['required', 'string', "max:{$maxLength}"],
             'newTemplateName' => ['required_if:saveAsTemplate,true', 'nullable', 'string', 'max:100'],
+            ...$this->channelSupportsAttachment() && $this->attachment !== null ? $this->attachmentRules() : [],
         ]);
 
         if ($this->manualNumbersInvalid !== []) {
@@ -285,11 +342,56 @@ class Broadcast extends Component
             templateName: $this->resolveTemplate($this->selectedTemplate)['name'] ?? null,
             actor: Auth::user(),
             manualNumbers: $this->parsedManualNumbers(),
+            attachment: $this->storeAttachment(),
         );
 
         $this->dispatch('toast', type: 'success', message: __('messaging.broadcast.sent', ['count' => $broadcast->recipients_count]));
 
-        $this->reset(['body', 'selectedTemplate', 'saveAsTemplate', 'newTemplateName', 'manualNumbers', 'showSendConfirm']);
+        $this->reset(['body', 'selectedTemplate', 'saveAsTemplate', 'newTemplateName', 'manualNumbers', 'showSendConfirm', 'attachment']);
+    }
+
+    /**
+     * Persist the pending upload to the private disk and return the metadata
+     * the send pipeline needs (disk/path + WhatsApp media type). Returns null
+     * when there is nothing to attach or the channel cannot carry it.
+     *
+     * @return array{disk: string, path: string, type: string}|null
+     */
+    private function storeAttachment(): ?array
+    {
+        if (! $this->channelSupportsAttachment() || ! $this->attachment instanceof TemporaryUploadedFile) {
+            return null;
+        }
+
+        $path = $this->attachment->store('broadcast-attachments', self::ATTACHMENT_DISK);
+
+        return [
+            'disk' => self::ATTACHMENT_DISK,
+            'path' => $path,
+            'type' => $this->attachmentMediaType(),
+        ];
+    }
+
+    /**
+     * Map the uploaded file to the WhatsApp media type the provider expects:
+     * images (jpg/png) go as `image`, everything else allowed (pdf) as
+     * `document`.
+     */
+    private function attachmentMediaType(): string
+    {
+        $extension = strtolower((string) $this->attachment?->getClientOriginalExtension());
+
+        return in_array($extension, ['jpg', 'jpeg', 'png'], true) ? 'image' : 'document';
+    }
+
+    /**
+     * @return array<string, array<int, string>>
+     */
+    private function attachmentRules(): array
+    {
+        return [
+            'attachment' => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:'.self::ATTACHMENT_MAX_KB],
+        ];
     }
 
     /**

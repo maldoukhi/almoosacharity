@@ -93,6 +93,31 @@ class OktaWhatsAppGateway implements WhatsAppChannelPairingInterface, WhatsAppGa
         });
     }
 
+    public function sendMedia(
+        string $to,
+        string $type,
+        string $mediaUrl,
+        string $caption = '',
+        ?string $idempotencyKey = null,
+    ): GatewayResponse {
+        $config = $this->resolvedConfig();
+
+        return $this->attempt(function () use ($to, $type, $mediaUrl, $caption, $idempotencyKey, $config) {
+            // messages()->sendMedia (SDK) POSTs the flat {channel_id, wa_id,
+            // type, body: caption, media_url} payload to /api/v1/messages;
+            // the platform fetches $mediaUrl itself, so it must be a public
+            // HTTPS URL reachable from outside our network.
+            return $this->client($config)->messages()->sendMedia(
+                $config['channelId'],
+                MobileNumber::toInternational($to),
+                $type,
+                $mediaUrl,
+                $caption,
+                $idempotencyKey,
+            );
+        });
+    }
+
     public function sendTemplate(
         string $to,
         string $templateName,

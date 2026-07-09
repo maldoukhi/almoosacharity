@@ -63,6 +63,40 @@ class Messenger
     }
 
     /**
+     * Queue a WhatsApp media message: an attached document/image the
+     * provider fetches from $mediaUrl (a public HTTPS URL), with $caption as
+     * the accompanying text. message_logs.body stores the caption so the
+     * audit trail still carries a human-readable value.
+     */
+    public function whatsappMedia(
+        string $to,
+        string $mediaType,
+        string $mediaUrl,
+        string $caption = '',
+        ?Model $related = null,
+        ?string $idempotencyKey = null,
+    ): MessageLog {
+        $log = $this->createLog(
+            channel: MessageChannel::WhatsApp,
+            provider: (string) config('services.whatsapp.driver', 'fake'),
+            to: $to,
+            body: $caption,
+            related: $related,
+        );
+
+        SendWhatsAppMessage::dispatch(
+            $log->id,
+            $to,
+            body: $caption,
+            idempotencyKey: $idempotencyKey ?? $this->defaultIdempotencyKey($log),
+            mediaUrl: $mediaUrl,
+            mediaType: $mediaType,
+        );
+
+        return $log;
+    }
+
+    /**
      * Queue a Meta-approved WhatsApp template message.
      *
      * @param  array<string, mixed>  $variables

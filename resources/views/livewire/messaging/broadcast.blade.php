@@ -98,6 +98,54 @@
                         </div>
                     @endif
                 </div>
+
+                {{-- Attachment (WhatsApp only — SMS is text-only). --}}
+                @if ($this->channelSupportsAttachment())
+                    <div class="mt-4 border-t border-gray-100 pt-4 dark:border-white/10">
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                            {{ __('messaging.broadcast.attachment_label') }}
+                        </label>
+
+                        <div class="flex flex-wrap items-center gap-3">
+                            <label
+                                class="inline-flex cursor-pointer items-center gap-2 rounded-(--radius-brand) border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 transition duration-150 hover:bg-gray-50 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-200 dark:hover:bg-white/5"
+                            >
+                                <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 0 1-6.364-6.364l10.94-10.94A3 3 0 1 1 19.5 7.372L8.552 18.32m.009-.01-.01.01m5.699-9.941-7.81 7.81a1.5 1.5 0 0 0 2.112 2.13" />
+                                </svg>
+                                {{ __('messaging.broadcast.attachment_choose') }}
+                                <input type="file" wire:model="attachment" accept=".pdf,.jpg,.jpeg,.png" class="sr-only" />
+                            </label>
+
+                            <span wire:loading wire:target="attachment" class="text-xs text-gray-500 dark:text-gray-400">
+                                {{ __('messaging.broadcast.attachment_uploading') }}
+                            </span>
+
+                            @if ($attachment)
+                                <span wire:loading.remove wire:target="attachment" class="inline-flex items-center gap-2 text-xs">
+                                    <span class="font-medium text-status-approved">
+                                        {{ __('messaging.broadcast.attachment_selected', ['name' => $attachment->getClientOriginalName()]) }}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        wire:click="removeAttachment"
+                                        class="font-medium text-status-rejected hover:underline"
+                                    >
+                                        {{ __('messaging.broadcast.attachment_remove') }}
+                                    </button>
+                                </span>
+                            @endif
+                        </div>
+
+                        <p class="mt-1.5 text-xs text-gray-500 dark:text-gray-400">
+                            {{ __('messaging.broadcast.attachment_hint') }}
+                        </p>
+
+                        @error('attachment')
+                            <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                        @enderror
+                    </div>
+                @endif
             </x-ui.card>
 
             <x-ui.card>

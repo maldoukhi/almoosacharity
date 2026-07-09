@@ -40,6 +40,8 @@ class SendWhatsAppMessage implements ShouldQueue
         public readonly array $variables = [],
         public readonly string $language = 'ar',
         public readonly ?string $idempotencyKey = null,
+        public readonly ?string $mediaUrl = null,
+        public readonly ?string $mediaType = null,
     ) {}
 
     public function handle(WhatsAppGatewayInterface $gateway): void
@@ -48,9 +50,25 @@ class SendWhatsAppMessage implements ShouldQueue
         $log->increment('attempts');
         $log->refresh();
 
-        $response = $this->templateName !== null
-            ? $gateway->sendTemplate($this->to, $this->templateName, $this->variables, $this->language, $this->idempotencyKey)
-            : $gateway->sendText($this->to, (string) $this->body, $this->idempotencyKey);
+        // A media send (an attached document/image with the message as its
+        // caption) takes precedence over a plain text/template send.
+        $response = match (true) {
+            $this->mediaUrl !== null => $gateway->sendMedia(
+                $this->to,
+                (string) $this->mediaType,
+                $this->mediaUrl,
+                (string) $this->body,
+                $this->idempotencyKey,
+            ),
+            $this->templateName !== null => $gateway->sendTemplate(
+                $this->to,
+                $this->templateName,
+                $this->variables,
+                $this->language,
+                $this->idempotencyKey,
+            ),
+            default => $gateway->sendText($this->to, (string) $this->body, $this->idempotencyKey),
+        };
 
         if ($response->success) {
             $log->update([

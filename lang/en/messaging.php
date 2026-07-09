@@ -44,6 +44,12 @@ return [
         'manual_numbers_invalid_count' => ':count invalid numbers',
         'manual_numbers_invalid' => 'The following numbers are invalid: :numbers',
         'recipients_breakdown' => ':beneficiaries beneficiaries + :manual additional numbers = :total recipients',
+        'attachment_label' => 'Attachment (optional)',
+        'attachment_hint' => 'The file is delivered with the WhatsApp message only. Accepted types: PDF, JPG or PNG, up to 8 MB.',
+        'attachment_choose' => 'Choose file',
+        'attachment_remove' => 'Remove attachment',
+        'attachment_uploading' => 'Uploading file...',
+        'attachment_selected' => 'Attached file: :name',
     ],
 
     'quick_send' => [

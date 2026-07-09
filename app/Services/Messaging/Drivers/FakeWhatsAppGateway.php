@@ -37,6 +37,21 @@ class FakeWhatsAppGateway implements WhatsAppGatewayInterface
         ]);
     }
 
+    public function sendMedia(
+        string $to,
+        string $type,
+        string $mediaUrl,
+        string $caption = '',
+        ?string $idempotencyKey = null,
+    ): GatewayResponse {
+        return $this->record('media', $to, [
+            'media_type' => $type,
+            'media_url' => $mediaUrl,
+            'caption' => $caption,
+            'idempotency_key' => $idempotencyKey,
+        ]);
+    }
+
     public function sendTemplate(
         string $to,
         string $templateName,

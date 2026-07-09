@@ -44,12 +44,19 @@ class SendBroadcast
      * @param  array<int, string>  $manualNumbers  Already normalized/valid
      *                                             numbers (see {@see \App\Livewire\Messaging\Broadcast::parsedManualNumbers()});
      *                                             any overlap with the selected beneficiaries' mobiles is removed here.
+     * @param  array{disk: string, path: string, type: string}|null  $attachment
+     *                                                                            An optional already-stored file to deliver with the message. Only
+     *                                                                            honoured on the WhatsApp channel; ignored (and dropped) for SMS.
      */
-    public function handle(array $beneficiaryIds, string $channel, string $body, ?string $templateName, User $actor, array $manualNumbers = []): Broadcast
+    public function handle(array $beneficiaryIds, string $channel, string $body, ?string $templateName, User $actor, array $manualNumbers = [], ?array $attachment = null): Broadcast
     {
         Gate::forUser($actor)->authorize('messages.broadcast');
 
         $channelEnum = MessageChannel::from($channel);
+
+        // SMS has no attachment concept: drop any file so it is never
+        // referenced downstream for a text-only channel.
+        $attachment = $channelEnum === MessageChannel::WhatsApp ? $attachment : null;
 
         $eligibleIds = Beneficiary::query()
             ->whereIn('id', $beneficiaryIds)
@@ -94,7 +101,7 @@ class SendBroadcast
         }
 
         if ($total > self::INLINE_THRESHOLD) {
-            SendBroadcastMessages::dispatch($broadcast->id, $eligibleIds, $channelEnum->value, $body, $manualNumbers);
+            SendBroadcastMessages::dispatch($broadcast->id, $eligibleIds, $channelEnum->value, $body, $manualNumbers, $attachment);
 
             return $broadcast;
         }
@@ -108,6 +115,7 @@ class SendBroadcast
             'channel' => $channelEnum->value,
             'body' => $body,
             'manualNumbers' => $manualNumbers,
+            'attachment' => $attachment,
         ])->handle($this->messenger);
 
         return $broadcast->fresh();

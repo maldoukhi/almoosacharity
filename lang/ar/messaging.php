@@ -44,6 +44,12 @@ return [
         'manual_numbers_invalid_count' => ':count رقم غير صالح',
         'manual_numbers_invalid' => 'الأرقام التالية غير صحيحة: :numbers',
         'recipients_breakdown' => ':beneficiaries مستفيد + :manual رقم إضافي = :total مستلم',
+        'attachment_label' => 'مرفق (اختياري)',
+        'attachment_hint' => 'يُرسَل المرفق مع رسالة الواتساب فقط. الصيغ المقبولة: PDF أو JPG أو PNG، بحد أقصى 8 ميجابايت.',
+        'attachment_choose' => 'اختيار ملف',
+        'attachment_remove' => 'إزالة المرفق',
+        'attachment_uploading' => 'جارٍ رفع الملف...',
+        'attachment_selected' => 'الملف المرفق: :name',
     ],
 
     'quick_send' => [
