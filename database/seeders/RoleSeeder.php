@@ -28,6 +28,7 @@ class RoleSeeder extends Seeder
             'aids.view',
             'aids.create',
             'aids.update',
+            'aids.recurring.manage',
             'aids.submit',
             'approvals.view',
             'approvals.act',
@@ -48,6 +49,7 @@ class RoleSeeder extends Seeder
             'beneficiaries.submit',
             'aids.view',
             'aids.create',
+            'aids.recurring.manage',
             'disbursements.view',
             'disbursements.manage',
         ]);

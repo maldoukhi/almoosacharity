@@ -77,6 +77,9 @@ return [
             'delete' => 'Delete Aids',
             'submit' => 'Submit Aids for Approval',
             'export' => 'Export Aids',
+            'recurring' => [
+                'manage' => 'Manage recurring aids',
+            ],
         ],
         'approvals' => [
             'view' => 'View Approvals',

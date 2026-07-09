@@ -156,7 +156,7 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
     Route::prefix('aids')->name('aids.')->group(function (): void {
         Route::get('/', AidIndex::class)->name('index')->middleware('permission:aids.view');
-        Route::get('/recurring-plans', RecurringPlanIndex::class)->name('recurring-plans.index')->middleware('permission:aids.view');
+        Route::get('/recurring-plans', RecurringPlanIndex::class)->name('recurring-plans.index')->middleware('permission:aids.recurring.manage');
         Route::get('/create', AidForm::class)->name('create')->middleware('permission:aids.create');
         Route::get('/batch', AidBatchCreate::class)->name('batch')->middleware('permission:aids.create');
         Route::get('/{aid}/edit', AidForm::class)->name('edit')->middleware('permission:aids.update');

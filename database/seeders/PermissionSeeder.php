@@ -50,6 +50,7 @@ class PermissionSeeder extends Seeder
         'aids.delete',
         'aids.submit',
         'aids.export',
+        'aids.recurring.manage',
 
         // Approvals
         'approvals.view',
