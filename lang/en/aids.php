@@ -63,6 +63,19 @@ return [
 
     'confirm_submit' => 'Are you sure you want to submit this aid for approval?',
 
+    'wizard' => [
+        'step_beneficiaries' => 'Beneficiaries',
+        'step_details' => 'Aid details',
+        'step_schedule' => 'Schedule & documents',
+        'step_review' => 'Review',
+        'next' => 'Next',
+        'back' => 'Back',
+        'review_title' => 'Review before saving',
+        'review_subtitle' => 'Check the aid summary, then save it as a draft or submit it for approval.',
+        'recurring_summary' => ':frequency, starting :date',
+        'not_recurring' => 'Not recurring',
+    ],
+
     'submit_confirm' => [
         'title' => 'Save & submit for approval',
         'subtitle' => 'Review the details below before saving and sending into the approval workflow.',

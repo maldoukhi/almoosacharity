@@ -63,6 +63,19 @@ return [
 
     'confirm_submit' => 'هل أنت متأكد من رغبتك في تقديم هذه الإعانة للموافقة؟',
 
+    'wizard' => [
+        'step_beneficiaries' => 'المستفيدون',
+        'step_details' => 'تفاصيل الإعانة',
+        'step_schedule' => 'الدورية والمستندات',
+        'step_review' => 'المراجعة',
+        'next' => 'التالي',
+        'back' => 'السابق',
+        'review_title' => 'مراجعة قبل الحفظ',
+        'review_subtitle' => 'راجِع ملخص الإعانة، ثم احفظها كمسودة أو قدّمها للموافقة.',
+        'recurring_summary' => ':frequency، تبدأ :date',
+        'not_recurring' => 'غير متكررة',
+    ],
+
     'submit_confirm' => [
         'title' => 'حفظ وتقديم للموافقة',
         'subtitle' => 'راجِع التفاصيل التالية قبل الحفظ والإرسال إلى سير الموافقات.',

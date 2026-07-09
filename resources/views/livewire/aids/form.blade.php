@@ -5,6 +5,14 @@
     $programOptions = $this->programs->mapWithKeys(fn ($program) => [$program->id => $program->name]);
     $frequencyOptions = collect(\App\Enums\RecurrenceFrequency::cases())->mapWithKeys(fn ($frequency) => [$frequency->value => $frequency->label()]);
     $existingDocuments = $isEdit ? $aid->getMedia('aid_documents') : collect();
+
+    // Create-mode wizard steps (edit mode renders everything on one page).
+    $wizardSteps = [
+        ['label' => __('aids.wizard.step_beneficiaries')],
+        ['label' => __('aids.wizard.step_details')],
+        ['label' => __('aids.wizard.step_schedule')],
+        ['label' => __('aids.wizard.step_review')],
+    ];
 @endphp
 
 <div class="space-y-6">
@@ -24,16 +32,39 @@
     </div>
 
     <x-ui.card>
-        <form wire:submit="save" class="space-y-6">
-            <x-ui.input
-                :label="__('aids.field_title')"
-                name="title"
-                wire:model="title"
-                :hint="__('aids.field_title_hint')"
-                :placeholder="__('aids.field_title_placeholder')"
-            />
+        @if (! $isEdit)
+            {{-- Wizard progress. The stepper itself is display-only, so an
+                 overlay of transparent, flex-aligned buttons makes each step
+                 clickable; goToStep() guards forward jumps. --}}
+            <div class="relative mb-6">
+                <x-ui.stepper :steps="$wizardSteps" :current="$step - 1" />
 
-            @if (! $isEdit)
+                <div class="pointer-events-none absolute inset-0 hidden sm:flex">
+                    @foreach ($wizardSteps as $wizardIndex => $wizardStep)
+                        <button
+                            type="button"
+                            wire:key="aid-wizard-step-{{ $wizardIndex }}"
+                            wire:click="goToStep({{ $wizardIndex + 1 }})"
+                            class="pointer-events-auto flex-1 cursor-pointer rounded-(--radius-brand) focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+                            aria-label="{{ $wizardStep['label'] }}"
+                        ></button>
+                    @endforeach
+                </div>
+            </div>
+        @endif
+
+        <form wire:submit="submitForm" class="space-y-6">
+            @if ($isEdit || $step === 2)
+                <x-ui.input
+                    :label="__('aids.field_title')"
+                    name="title"
+                    wire:model="title"
+                    :hint="__('aids.field_title_hint')"
+                    :placeholder="__('aids.field_title_placeholder')"
+                />
+            @endif
+
+            @if (! $isEdit && $step === 1)
                 {{-- Batch selection conveniences (ported from BatchCreate):
                      categories + Excel national-id upload merge eligible
                      beneficiaries into the picker below. --}}
@@ -82,8 +113,8 @@
                 </div>
             @endif
 
-            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                @if ($isEdit)
+            @if ($isEdit)
+                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <x-ui.select
                         :label="__('aids.field_beneficiary')"
                         name="beneficiary_id"
@@ -91,7 +122,17 @@
                         :placeholder="__('aids.select_placeholder')"
                         :options="$beneficiaryOptions"
                     />
-                @else
+
+                    <x-ui.select
+                        :label="__('aids.field_program')"
+                        name="aid_program_id"
+                        wire:model.live="aid_program_id"
+                        :placeholder="__('aids.select_placeholder')"
+                        :options="$programOptions"
+                    />
+                </div>
+            @else
+                @if ($step === 1)
                     <div
                         x-data="{
                             open: false,
@@ -256,373 +297,477 @@
                     </div>
                 @endif
 
-                <x-ui.select
-                    :label="__('aids.field_program')"
-                    name="aid_program_id"
-                    wire:model.live="aid_program_id"
-                    :placeholder="__('aids.select_placeholder')"
-                    :options="$programOptions"
-                />
-            </div>
-
-            <div>
-                <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aids.field_type') }}</p>
-
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <label class="flex cursor-pointer items-center gap-3 rounded-(--radius-brand) border border-gray-200 px-4 py-3 text-sm transition duration-150 ease-out hover:bg-gray-50 has-checked:border-primary-400 has-checked:bg-primary-50 dark:border-white/10 dark:hover:bg-white/5 dark:has-checked:border-primary-700 dark:has-checked:bg-primary-900/30">
-                        <input type="radio" wire:model.live="type" value="cash" class="h-4 w-4 border-gray-300 text-primary focus:ring-2 focus:ring-primary-500/30 dark:border-white/20" />
-                        <span>
-                            <span class="block font-medium text-gray-900 dark:text-white">{{ __('aids.type_cash') }}</span>
-                            <span class="block text-xs text-gray-500 dark:text-gray-400">{{ __('aids.type_cash_hint') }}</span>
-                        </span>
-                    </label>
-
-                    <label class="flex cursor-pointer items-center gap-3 rounded-(--radius-brand) border border-gray-200 px-4 py-3 text-sm transition duration-150 ease-out hover:bg-gray-50 has-checked:border-primary-400 has-checked:bg-primary-50 dark:border-white/10 dark:hover:bg-white/5 dark:has-checked:border-primary-700 dark:has-checked:bg-primary-900/30">
-                        <input type="radio" wire:model.live="type" value="in_kind" class="h-4 w-4 border-gray-300 text-primary focus:ring-2 focus:ring-primary-500/30 dark:border-white/20" />
-                        <span>
-                            <span class="block font-medium text-gray-900 dark:text-white">{{ __('aids.type_in_kind') }}</span>
-                            <span class="block text-xs text-gray-500 dark:text-gray-400">{{ __('aids.type_in_kind_hint') }}</span>
-                        </span>
-                    </label>
-                </div>
-
-                @error('type')
-                    <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
-                @enderror
-            </div>
-
-            @if ($type === 'cash')
-                <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 transition-opacity duration-200 ease-out">
-                    <x-ui.input
-                        :label="__('aids.field_amount')"
-                        name="amount"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        wire:model="amount"
-                        :hint="__('aids.currency_sar')"
+                @if ($step === 2)
+                    <x-ui.select
+                        :label="__('aids.field_program')"
+                        name="aid_program_id"
+                        wire:model.live="aid_program_id"
+                        :placeholder="__('aids.select_placeholder')"
+                        :options="$programOptions"
                     />
-
-                    <x-ui.input :label="__('aids.field_purpose')" name="purpose" wire:model="purpose" />
-                </div>
-            @else
-                <div class="space-y-4 transition-opacity duration-200 ease-out">
-                    <div class="flex items-center justify-between">
-                        <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aids.field_items') }}</p>
-
-                        <x-ui.button type="button" variant="ghost" size="sm" wire:click="addItem">
-                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            {{ __('aids.add_item') }}
-                        </x-ui.button>
-                    </div>
-
-                    @error('items')
-                        <p class="text-xs text-status-rejected">{{ $message }}</p>
-                    @enderror
-
-                    <div class="space-y-3">
-                        @forelse ($items as $index => $item)
-                            <div
-                                wire:key="aid-item-{{ $index }}"
-                                style="animation: fade-in-up 0.2s ease-out both"
-                                class="grid grid-cols-1 gap-3 rounded-(--radius-brand) border border-gray-200 p-4 sm:grid-cols-12 dark:border-white/10"
-                            >
-                                <div class="sm:col-span-4">
-                                    <x-ui.input :label="__('aids.field_item_name')" name="items.{{ $index }}.name" wire:model="items.{{ $index }}.name" />
-                                </div>
-
-                                <div class="sm:col-span-2">
-                                    <x-ui.input :label="__('aids.field_item_quantity')" type="number" min="1" name="items.{{ $index }}.quantity" wire:model="items.{{ $index }}.quantity" />
-                                </div>
-
-                                <div class="sm:col-span-2">
-                                    <x-ui.input :label="__('aids.field_item_estimated_value')" type="number" step="0.01" min="0" name="items.{{ $index }}.estimated_value" wire:model="items.{{ $index }}.estimated_value" />
-                                </div>
-
-                                <div class="sm:col-span-3">
-                                    <x-ui.input :label="__('aids.field_item_description')" name="items.{{ $index }}.description" wire:model="items.{{ $index }}.description" />
-                                </div>
-
-                                <div class="flex items-end justify-end sm:col-span-1">
-                                    <x-ui.button type="button" variant="danger" size="sm" wire:click="removeItem({{ $index }})">
-                                        <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                        </svg>
-                                        <span class="sr-only">{{ __('common.delete') }}</span>
-                                    </x-ui.button>
-                                </div>
-                            </div>
-                        @empty
-                            <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.no_items_yet') }}</p>
-                        @endforelse
-                    </div>
-                </div>
+                @endif
             @endif
 
-            {{-- Per-beneficiary cash amount override (create mode, cash only).
-                 Each selected beneficiary can carry its own amount; a blank
-                 input falls back to the form amount above. --}}
-            @if (! $isEdit && $this->selectedBeneficiaries->isNotEmpty())
-                <div class="space-y-2">
-                    <div class="flex items-center justify-between gap-2">
-                        <div>
-                            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                {{ __('aid_batches.step_beneficiaries') }}
-                                <span class="ms-1 text-xs font-normal text-gray-500 dark:text-gray-400">({{ $this->selectedBeneficiaries->count() }})</span>
-                            </p>
-                            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                                {{ $type === 'cash' ? __('aids.override_amounts_hint') : __('aids.selected_list_hint') }}
-                            </p>
-                        </div>
-                        <button type="button" wire:click="clearBeneficiaries" class="shrink-0 text-xs font-medium text-status-rejected hover:underline">
-                            {{ __('aids.clear_selection') }}
-                        </button>
-                    </div>
-
-                    <div class="max-h-80 overflow-y-auto rounded-(--radius-brand) border border-gray-200 dark:border-white/10">
-                        <x-ui.table>
-                            <thead>
-                                <tr>
-                                    <x-ui.table.th>{{ __('aids.field_beneficiary') }}</x-ui.table.th>
-                                    <x-ui.table.th>{{ __('beneficiaries.field_national_id') }}</x-ui.table.th>
-                                    @if ($type === 'cash')
-                                        <x-ui.table.th align="end">{{ __('aid_batches.amount_override') }}</x-ui.table.th>
-                                    @endif
-                                    <x-ui.table.th align="end">{{ __('common.actions') }}</x-ui.table.th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-gray-100 dark:divide-white/10">
-                                @foreach ($this->selectedBeneficiaries as $beneficiary)
-                                    <tr wire:key="aid-selected-{{ $beneficiary->id }}">
-                                        <x-ui.table.td class="text-gray-900 dark:text-white">{{ $beneficiary->full_name }}</x-ui.table.td>
-                                        <x-ui.table.td class="font-mono tabular-nums text-gray-500 dark:text-gray-400">{{ $beneficiary->national_id }}</x-ui.table.td>
-                                        @if ($type === 'cash')
-                                            <x-ui.table.td align="end">
-                                                <input
-                                                    type="number"
-                                                    step="0.01"
-                                                    min="0.01"
-                                                    wire:model="overrideAmounts.{{ $beneficiary->id }}"
-                                                    placeholder="{{ $amount ? number_format((float) $amount, 2) : __('aid_batches.default') }}"
-                                                    class="w-32 rounded-(--radius-brand) border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
-                                                />
-                                            </x-ui.table.td>
-                                        @endif
-                                        <x-ui.table.td align="end">
-                                            <button
-                                                type="button"
-                                                wire:click="removeBeneficiary({{ $beneficiary->id }})"
-                                                class="inline-flex items-center gap-1 text-xs font-medium text-status-rejected transition hover:underline"
-                                            >
-                                                <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-                                                </svg>
-                                                {{ __('common.delete') }}
-                                            </button>
-                                        </x-ui.table.td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </x-ui.table>
-                    </div>
-
-                    @error('overrideAmounts.*')
-                        <p class="text-xs text-status-rejected">{{ $message }}</p>
-                    @enderror
-                </div>
-            @endif
-
-            <div>
-                <label for="notes" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
-                    {{ __('aids.field_notes') }}
-                </label>
-                <textarea
-                    id="notes"
-                    wire:model="notes"
-                    rows="3"
-                    class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition duration-200 ease-out focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
-                ></textarea>
-                @error('notes')
-                    <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
-                @enderror
-            </div>
-
-            {{-- Supporting documents (phase 9) --}}
-            <div class="space-y-3 border-t border-gray-100 pt-5 dark:border-white/10">
+            @if ($isEdit || $step === 2)
                 <div>
-                    <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aids.documents.title') }}</p>
-                    <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.documents.hint') }}</p>
-                </div>
+                    <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aids.field_type') }}</p>
 
-                @if ($existingDocuments->isNotEmpty())
-                    <ul class="space-y-1.5">
-                        @foreach ($existingDocuments as $media)
-                            <li wire:key="aid-document-{{ $media->id }}" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-                                <svg class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                </svg>
-                                <span class="truncate">{{ $media->name }}</span>
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label class="flex cursor-pointer items-center gap-3 rounded-(--radius-brand) border border-gray-200 px-4 py-3 text-sm transition duration-150 ease-out hover:bg-gray-50 has-checked:border-primary-400 has-checked:bg-primary-50 dark:border-white/10 dark:hover:bg-white/5 dark:has-checked:border-primary-700 dark:has-checked:bg-primary-900/30">
+                            <input type="radio" wire:model.live="type" value="cash" class="h-4 w-4 border-gray-300 text-primary focus:ring-2 focus:ring-primary-500/30 dark:border-white/20" />
+                            <span>
+                                <span class="block font-medium text-gray-900 dark:text-white">{{ __('aids.type_cash') }}</span>
+                                <span class="block text-xs text-gray-500 dark:text-gray-400">{{ __('aids.type_cash_hint') }}</span>
+                            </span>
+                        </label>
 
-                <input
-                    type="file"
-                    wire:model="documents"
-                    multiple
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    class="block w-full text-sm text-gray-600 file:me-3 file:rounded-(--radius-brand) file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-700 hover:file:bg-primary-100 dark:text-gray-300 dark:file:bg-primary-500/20 dark:file:text-primary-200"
-                />
-
-                <div wire:loading wire:target="documents" class="text-xs text-gray-500 dark:text-gray-400">{{ __('aids.documents.uploading') }}</div>
-
-                @error('documents.*')
-                    <p class="text-xs text-status-rejected">{{ $message }}</p>
-                @enderror
-
-                @if (! empty($documents))
-                    <p class="text-xs text-secondary-700 dark:text-secondary-400">
-                        {{ trans_choice('aids.documents.pending_count', count($documents), ['count' => count($documents)]) }}
-                    </p>
-                @endif
-            </div>
-
-            {{-- Recurrence (phase 10) — a prominent, standalone card so the
-                 recurring-aid schedule is easy to find, not buried in a toggle. --}}
-            <div class="overflow-hidden rounded-(--radius-brand) border border-primary-100 bg-primary-50/40 dark:border-primary-500/20 dark:bg-primary-500/5">
-                <div class="flex items-start gap-3 border-b border-primary-100/70 px-5 py-4 dark:border-primary-500/20">
-                    <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-200">
-                        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                        </svg>
-                    </span>
-                    <div>
-                        <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('aids.recurrence.card_title') }}</h2>
-                        <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('aids.recurrence.card_subtitle') }}</p>
+                        <label class="flex cursor-pointer items-center gap-3 rounded-(--radius-brand) border border-gray-200 px-4 py-3 text-sm transition duration-150 ease-out hover:bg-gray-50 has-checked:border-primary-400 has-checked:bg-primary-50 dark:border-white/10 dark:hover:bg-white/5 dark:has-checked:border-primary-700 dark:has-checked:bg-primary-900/30">
+                            <input type="radio" wire:model.live="type" value="in_kind" class="h-4 w-4 border-gray-300 text-primary focus:ring-2 focus:ring-primary-500/30 dark:border-white/20" />
+                            <span>
+                                <span class="block font-medium text-gray-900 dark:text-white">{{ __('aids.type_in_kind') }}</span>
+                                <span class="block text-xs text-gray-500 dark:text-gray-400">{{ __('aids.type_in_kind_hint') }}</span>
+                            </span>
+                        </label>
                     </div>
+
+                    @error('type')
+                        <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                    @enderror
                 </div>
 
-                <div class="space-y-4 px-5 py-4">
-                    <x-ui.toggle
-                        :label="__('aids.recurrence.enable')"
-                        :description="__('aids.recurrence.enable_hint')"
-                        name="isRecurring"
-                        wire:model.live="isRecurring"
-                    />
+                @if ($type === 'cash')
+                    <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 transition-opacity duration-200 ease-out">
+                        <x-ui.input
+                            :label="__('aids.field_amount')"
+                            name="amount"
+                            type="number"
+                            step="0.01"
+                            min="0"
+                            wire:model="amount"
+                            :hint="__('aids.currency_sar')"
+                        />
 
-                    @if ($isRecurring)
-                        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                            <x-ui.select
-                                :label="__('aids.recurrence.frequency_label')"
-                                name="recurrenceFrequency"
-                                wire:model.live="recurrenceFrequency"
-                                :options="$frequencyOptions"
-                            />
+                        <x-ui.input :label="__('aids.field_purpose')" name="purpose" wire:model="purpose" />
+                    </div>
+                @else
+                    <div class="space-y-4 transition-opacity duration-200 ease-out">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aids.field_items') }}</p>
 
-                            @if ($recurrenceFrequency === \App\Enums\RecurrenceFrequency::CustomMonths->value)
-                                <x-ui.input
-                                    :label="__('aids.recurrence.interval_months')"
-                                    name="recurrenceIntervalMonths"
-                                    type="number"
-                                    min="1"
-                                    max="60"
-                                    wire:model="recurrenceIntervalMonths"
-                                />
-                            @endif
-
-                            <x-ui.input
-                                :label="__('aids.recurrence.starts_on')"
-                                name="recurrenceStartsOn"
-                                type="date"
-                                wire:model="recurrenceStartsOn"
-                                :hint="__('aids.recurrence.starts_on_hint')"
-                            />
-
-                            <x-ui.input
-                                :label="__('aids.recurrence.due_on')"
-                                name="recurrenceDueOn"
-                                type="date"
-                                wire:model="recurrenceDueOn"
-                                :hint="__('aids.recurrence.due_on_hint')"
-                            />
-
-                            <div>
-                                <x-ui.input
-                                    :label="__('aids.recurrence.title_template')"
-                                    name="recurrenceTitleTemplate"
-                                    wire:model.live.debounce.400ms="recurrenceTitleTemplate"
-                                    :hint="__('aids.recurrence.title_template_hint')"
-                                />
-                                <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                                    <button type="button" wire:click="useDefaultTitleTemplate" class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-300">
-                                        {{ __('aids.recurrence.title_use_default') }}
-                                    </button>
-                                    @if ($this->titlePreview)
-                                        <span class="text-xs text-gray-400 dark:text-gray-500">·</span>
-                                        <span class="text-xs text-gray-500 dark:text-gray-400">
-                                            {{ __('aids.recurrence.title_preview') }}
-                                            <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $this->titlePreview }}</span>
-                                        </span>
-                                    @endif
-                                </div>
-                            </div>
-
-                            <x-ui.input
-                                :label="__('aids.recurrence.ends_on')"
-                                name="recurrenceEndsOn"
-                                type="date"
-                                wire:model="recurrenceEndsOn"
-                                :hint="__('aids.recurrence.ends_on_hint')"
-                            />
-
-                            <x-ui.input
-                                :label="__('aids.recurrence.lead_days')"
-                                name="recurrenceLeadDays"
-                                type="number"
-                                min="0"
-                                max="365"
-                                wire:model="recurrenceLeadDays"
-                                :hint="__('aids.recurrence.lead_days_hint')"
-                            />
+                            <x-ui.button type="button" variant="ghost" size="sm" wire:click="addItem">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                </svg>
+                                {{ __('aids.add_item') }}
+                            </x-ui.button>
                         </div>
 
-                        <x-ui.toggle
-                            :label="__('aids.recurrence.active')"
-                            :description="__('aids.recurrence.active_hint')"
-                            name="recurrenceActive"
-                            wire:model="recurrenceActive"
-                        />
+                        @error('items')
+                            <p class="text-xs text-status-rejected">{{ $message }}</p>
+                        @enderror
+
+                        <div class="space-y-3">
+                            @forelse ($items as $index => $item)
+                                <div
+                                    wire:key="aid-item-{{ $index }}"
+                                    style="animation: fade-in-up 0.2s ease-out both"
+                                    class="grid grid-cols-1 gap-3 rounded-(--radius-brand) border border-gray-200 p-4 sm:grid-cols-12 dark:border-white/10"
+                                >
+                                    <div class="sm:col-span-4">
+                                        <x-ui.input :label="__('aids.field_item_name')" name="items.{{ $index }}.name" wire:model="items.{{ $index }}.name" />
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <x-ui.input :label="__('aids.field_item_quantity')" type="number" min="1" name="items.{{ $index }}.quantity" wire:model="items.{{ $index }}.quantity" />
+                                    </div>
+
+                                    <div class="sm:col-span-2">
+                                        <x-ui.input :label="__('aids.field_item_estimated_value')" type="number" step="0.01" min="0" name="items.{{ $index }}.estimated_value" wire:model="items.{{ $index }}.estimated_value" />
+                                    </div>
+
+                                    <div class="sm:col-span-3">
+                                        <x-ui.input :label="__('aids.field_item_description')" name="items.{{ $index }}.description" wire:model="items.{{ $index }}.description" />
+                                    </div>
+
+                                    <div class="flex items-end justify-end sm:col-span-1">
+                                        <x-ui.button type="button" variant="danger" size="sm" wire:click="removeItem({{ $index }})">
+                                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                            </svg>
+                                            <span class="sr-only">{{ __('common.delete') }}</span>
+                                        </x-ui.button>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.no_items_yet') }}</p>
+                            @endforelse
+                        </div>
+                    </div>
+                @endif
+
+                {{-- Per-beneficiary cash amount override (create mode, cash only).
+                     Each selected beneficiary can carry its own amount; a blank
+                     input falls back to the form amount above. --}}
+                @if (! $isEdit && $this->selectedBeneficiaries->isNotEmpty())
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between gap-2">
+                            <div>
+                                <p class="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                    {{ __('aid_batches.step_beneficiaries') }}
+                                    <span class="ms-1 text-xs font-normal text-gray-500 dark:text-gray-400">({{ $this->selectedBeneficiaries->count() }})</span>
+                                </p>
+                                <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                                    {{ $type === 'cash' ? __('aids.override_amounts_hint') : __('aids.selected_list_hint') }}
+                                </p>
+                            </div>
+                            <button type="button" wire:click="clearBeneficiaries" class="shrink-0 text-xs font-medium text-status-rejected hover:underline">
+                                {{ __('aids.clear_selection') }}
+                            </button>
+                        </div>
+
+                        <div class="max-h-80 overflow-y-auto rounded-(--radius-brand) border border-gray-200 dark:border-white/10">
+                            <x-ui.table>
+                                <thead>
+                                    <tr>
+                                        <x-ui.table.th>{{ __('aids.field_beneficiary') }}</x-ui.table.th>
+                                        <x-ui.table.th>{{ __('beneficiaries.field_national_id') }}</x-ui.table.th>
+                                        @if ($type === 'cash')
+                                            <x-ui.table.th align="end">{{ __('aid_batches.amount_override') }}</x-ui.table.th>
+                                        @endif
+                                        <x-ui.table.th align="end">{{ __('common.actions') }}</x-ui.table.th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100 dark:divide-white/10">
+                                    @foreach ($this->selectedBeneficiaries as $beneficiary)
+                                        <tr wire:key="aid-selected-{{ $beneficiary->id }}">
+                                            <x-ui.table.td class="text-gray-900 dark:text-white">{{ $beneficiary->full_name }}</x-ui.table.td>
+                                            <x-ui.table.td class="font-mono tabular-nums text-gray-500 dark:text-gray-400">{{ $beneficiary->national_id }}</x-ui.table.td>
+                                            @if ($type === 'cash')
+                                                <x-ui.table.td align="end">
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0.01"
+                                                        wire:model="overrideAmounts.{{ $beneficiary->id }}"
+                                                        placeholder="{{ $amount ? number_format((float) $amount, 2) : __('aid_batches.default') }}"
+                                                        class="w-32 rounded-(--radius-brand) border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
+                                                    />
+                                                </x-ui.table.td>
+                                            @endif
+                                            <x-ui.table.td align="end">
+                                                <button
+                                                    type="button"
+                                                    wire:click="removeBeneficiary({{ $beneficiary->id }})"
+                                                    class="inline-flex items-center gap-1 text-xs font-medium text-status-rejected transition hover:underline"
+                                                >
+                                                    <svg class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                                                    </svg>
+                                                    {{ __('common.delete') }}
+                                                </button>
+                                            </x-ui.table.td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </x-ui.table>
+                        </div>
+
+                        @error('overrideAmounts.*')
+                            <p class="text-xs text-status-rejected">{{ $message }}</p>
+                        @enderror
+                    </div>
+                @endif
+
+                <div>
+                    <label for="notes" class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-200">
+                        {{ __('aids.field_notes') }}
+                    </label>
+                    <textarea
+                        id="notes"
+                        wire:model="notes"
+                        rows="3"
+                        class="block w-full rounded-(--radius-brand) border border-gray-300 bg-white px-3.5 py-2.5 text-sm text-gray-900 shadow-sm transition duration-200 ease-out focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-white/10 dark:bg-primary-950/30 dark:text-gray-100"
+                    ></textarea>
+                    @error('notes')
+                        <p class="mt-1.5 text-xs text-status-rejected">{{ $message }}</p>
+                    @enderror
+                </div>
+            @endif
+
+            @if ($isEdit || $step === 3)
+                {{-- Supporting documents (phase 9) --}}
+                <div class="space-y-3 border-t border-gray-100 pt-5 dark:border-white/10">
+                    <div>
+                        <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('aids.documents.title') }}</p>
+                        <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">{{ __('aids.documents.hint') }}</p>
+                    </div>
+
+                    @if ($existingDocuments->isNotEmpty())
+                        <ul class="space-y-1.5">
+                            @foreach ($existingDocuments as $media)
+                                <li wire:key="aid-document-{{ $media->id }}" class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+                                    <svg class="h-4 w-4 shrink-0 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                    </svg>
+                                    <span class="truncate">{{ $media->name }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+
+                    <input
+                        type="file"
+                        wire:model="documents"
+                        multiple
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        class="block w-full text-sm text-gray-600 file:me-3 file:rounded-(--radius-brand) file:border-0 file:bg-primary-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-primary-700 hover:file:bg-primary-100 dark:text-gray-300 dark:file:bg-primary-500/20 dark:file:text-primary-200"
+                    />
+
+                    <div wire:loading wire:target="documents" class="text-xs text-gray-500 dark:text-gray-400">{{ __('aids.documents.uploading') }}</div>
+
+                    @error('documents.*')
+                        <p class="text-xs text-status-rejected">{{ $message }}</p>
+                    @enderror
+
+                    @if (! empty($documents))
+                        <p class="text-xs text-secondary-700 dark:text-secondary-400">
+                            {{ trans_choice('aids.documents.pending_count', count($documents), ['count' => count($documents)]) }}
+                        </p>
                     @endif
                 </div>
-            </div>
 
-            @if (! $isEdit && count($beneficiary_ids) > 1)
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {{ __('aids.bulk_create_hint', ['count' => count($beneficiary_ids)]) }}
-                </p>
+                {{-- Recurrence (phase 10) — a prominent, standalone card so the
+                     recurring-aid schedule is easy to find, not buried in a toggle. --}}
+                <div class="overflow-hidden rounded-(--radius-brand) border border-primary-100 bg-primary-50/40 dark:border-primary-500/20 dark:bg-primary-500/5">
+                    <div class="flex items-start gap-3 border-b border-primary-100/70 px-5 py-4 dark:border-primary-500/20">
+                        <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-200">
+                            <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.6" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+                            </svg>
+                        </span>
+                        <div>
+                            <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('aids.recurrence.card_title') }}</h2>
+                            <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('aids.recurrence.card_subtitle') }}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4 px-5 py-4">
+                        <x-ui.toggle
+                            :label="__('aids.recurrence.enable')"
+                            :description="__('aids.recurrence.enable_hint')"
+                            name="isRecurring"
+                            wire:model.live="isRecurring"
+                        />
+
+                        @if ($isRecurring)
+                            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                                <x-ui.select
+                                    :label="__('aids.recurrence.frequency_label')"
+                                    name="recurrenceFrequency"
+                                    wire:model.live="recurrenceFrequency"
+                                    :options="$frequencyOptions"
+                                />
+
+                                @if ($recurrenceFrequency === \App\Enums\RecurrenceFrequency::CustomMonths->value)
+                                    <x-ui.input
+                                        :label="__('aids.recurrence.interval_months')"
+                                        name="recurrenceIntervalMonths"
+                                        type="number"
+                                        min="1"
+                                        max="60"
+                                        wire:model="recurrenceIntervalMonths"
+                                    />
+                                @endif
+
+                                <x-ui.input
+                                    :label="__('aids.recurrence.starts_on')"
+                                    name="recurrenceStartsOn"
+                                    type="date"
+                                    wire:model="recurrenceStartsOn"
+                                    :hint="__('aids.recurrence.starts_on_hint')"
+                                />
+
+                                <x-ui.input
+                                    :label="__('aids.recurrence.due_on')"
+                                    name="recurrenceDueOn"
+                                    type="date"
+                                    wire:model="recurrenceDueOn"
+                                    :hint="__('aids.recurrence.due_on_hint')"
+                                />
+
+                                <div>
+                                    <x-ui.input
+                                        :label="__('aids.recurrence.title_template')"
+                                        name="recurrenceTitleTemplate"
+                                        wire:model.live.debounce.400ms="recurrenceTitleTemplate"
+                                        :hint="__('aids.recurrence.title_template_hint')"
+                                    />
+                                    <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <button type="button" wire:click="useDefaultTitleTemplate" class="text-xs font-medium text-primary-600 hover:text-primary-700 dark:text-primary-300">
+                                            {{ __('aids.recurrence.title_use_default') }}
+                                        </button>
+                                        @if ($this->titlePreview)
+                                            <span class="text-xs text-gray-400 dark:text-gray-500">·</span>
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">
+                                                {{ __('aids.recurrence.title_preview') }}
+                                                <span class="font-semibold text-gray-700 dark:text-gray-200">{{ $this->titlePreview }}</span>
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <x-ui.input
+                                    :label="__('aids.recurrence.ends_on')"
+                                    name="recurrenceEndsOn"
+                                    type="date"
+                                    wire:model="recurrenceEndsOn"
+                                    :hint="__('aids.recurrence.ends_on_hint')"
+                                />
+
+                                <x-ui.input
+                                    :label="__('aids.recurrence.lead_days')"
+                                    name="recurrenceLeadDays"
+                                    type="number"
+                                    min="0"
+                                    max="365"
+                                    wire:model="recurrenceLeadDays"
+                                    :hint="__('aids.recurrence.lead_days_hint')"
+                                />
+                            </div>
+
+                            <x-ui.toggle
+                                :label="__('aids.recurrence.active')"
+                                :description="__('aids.recurrence.active_hint')"
+                                name="recurrenceActive"
+                                wire:model="recurrenceActive"
+                            />
+                        @endif
+                    </div>
+                </div>
             @endif
 
-            <div class="flex flex-col-reverse items-stretch justify-end gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center dark:border-white/10">
-                <x-ui.button href="{{ route('aids.index') }}" variant="ghost">
-                    {{ __('common.cancel') }}
-                </x-ui.button>
+            @if (! $isEdit && $step === 4)
+                {{-- Review: a concise, read-only summary of what will be created. --}}
+                <div class="space-y-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('aids.wizard.review_title') }}</h2>
+                        <p class="mt-0.5 text-sm text-gray-500 dark:text-gray-400">{{ __('aids.wizard.review_subtitle') }}</p>
+                    </div>
 
-                <x-ui.button type="submit" variant="ghost" wire:target="save">
-                    {{ __('aids.save_draft') }}
-                </x-ui.button>
+                    <dl class="divide-y divide-gray-100 rounded-(--radius-brand) border border-gray-100 dark:divide-white/10 dark:border-white/10">
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_title') }}</dt>
+                            <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ filled($title) ? $title : __('aids.submit_confirm.none') }}</dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_program') }}</dt>
+                            <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ $programOptions[$aid_program_id] ?? __('aids.submit_confirm.none') }}</dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_type') }}</dt>
+                            <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ \App\Enums\AidType::from($type)->label() }}</dd>
+                        </div>
+                        @if ($type === \App\Enums\AidType::Cash->value)
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_amount') }}</dt>
+                                <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+                                    {{ __('aids.currency_sar') }} {{ $amount ? number_format((float) $amount, 2) : __('aids.submit_confirm.none') }}
+                                </dd>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_purpose') }}</dt>
+                                <dd class="text-sm font-medium text-gray-900 dark:text-white">{{ filled($purpose) ? $purpose : __('aids.submit_confirm.none') }}</dd>
+                            </div>
+                        @else
+                            <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                                <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_items') }}</dt>
+                                <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">
+                                    {{ trans_choice('aids.submit_confirm.items_count', count($items), ['count' => count($items)]) }}
+                                </dd>
+                            </div>
+                        @endif
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.field_beneficiaries') }}</dt>
+                            <dd class="text-sm font-semibold tabular-nums text-gray-900 dark:text-white">{{ count($beneficiary_ids) }}</dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-3 px-4 py-2.5">
+                            <dt class="text-sm text-gray-500 dark:text-gray-400">{{ __('aids.recurrence.card_title') }}</dt>
+                            <dd class="text-sm font-medium text-gray-900 dark:text-white">
+                                @if ($isRecurring)
+                                    {{ __('aids.wizard.recurring_summary', [
+                                        'frequency' => \App\Enums\RecurrenceFrequency::from($recurrenceFrequency)->label(),
+                                        'date' => filled($recurrenceDueOn) ? $recurrenceDueOn : $recurrenceStartsOn,
+                                    ]) }}
+                                @else
+                                    {{ __('aids.wizard.not_recurring') }}
+                                @endif
+                            </dd>
+                        </div>
+                    </dl>
 
-                <x-ui.button
-                    type="button"
-                    variant="primary"
-                    wire:click="confirmSubmit"
-                    wire:target="confirmSubmit"
-                >
-                    {{ __('aids.save_and_submit') }}
-                </x-ui.button>
-            </div>
+                    @if (count($beneficiary_ids) > 1)
+                        <p class="text-xs text-gray-500 dark:text-gray-400">
+                            {{ __('aids.bulk_create_hint', ['count' => count($beneficiary_ids)]) }}
+                        </p>
+                    @endif
+                </div>
+            @endif
+
+            @if ($isEdit)
+                <div class="flex flex-col-reverse items-stretch justify-end gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center dark:border-white/10">
+                    <x-ui.button href="{{ route('aids.index') }}" variant="ghost">
+                        {{ __('common.cancel') }}
+                    </x-ui.button>
+
+                    <x-ui.button type="button" variant="ghost" wire:click="save" wire:target="save">
+                        {{ __('aids.save_draft') }}
+                    </x-ui.button>
+
+                    <x-ui.button
+                        type="button"
+                        variant="primary"
+                        wire:click="confirmSubmit"
+                        wire:target="confirmSubmit"
+                    >
+                        {{ __('aids.save_and_submit') }}
+                    </x-ui.button>
+                </div>
+            @else
+                <div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:items-center sm:justify-between dark:border-white/10">
+                    <div>
+                        @if ($step > 1)
+                            <x-ui.button type="button" variant="ghost" wire:click="previousStep" class="w-full sm:w-auto">
+                                {{ __('aids.wizard.back') }}
+                            </x-ui.button>
+                        @endif
+                    </div>
+
+                    <div class="flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center">
+                        <x-ui.button href="{{ route('aids.index') }}" variant="ghost">
+                            {{ __('common.cancel') }}
+                        </x-ui.button>
+
+                        @if ($step < 4)
+                            <x-ui.button type="button" variant="primary" wire:click="nextStep" wire:target="nextStep">
+                                {{ __('aids.wizard.next') }}
+                            </x-ui.button>
+                        @else
+                            <x-ui.button type="button" variant="ghost" wire:click="save" wire:target="save">
+                                {{ __('aids.save_draft') }}
+                            </x-ui.button>
+
+                            <x-ui.button
+                                type="button"
+                                variant="primary"
+                                wire:click="confirmSubmit"
+                                wire:target="confirmSubmit"
+                            >
+                                {{ __('aids.save_and_submit') }}
+                            </x-ui.button>
+                        @endif
+                    </div>
+                </div>
+            @endif
         </form>
     </x-ui.card>
 

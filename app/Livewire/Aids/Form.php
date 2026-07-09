@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
@@ -50,6 +51,13 @@ class Form extends Component
      * and the resulting confirmation/chip list bounded.
      */
     private const int MAX_SELECT_ALL = 200;
+
+    /**
+     * Number of wizard steps in create mode. The create screen is split into
+     * a stepper (beneficiaries → details → schedule & documents → review);
+     * edit mode ignores this and renders the whole form on one page.
+     */
+    private const int TOTAL_STEPS = 4;
 
     /**
      * Private disk the uploaded national-id workbook is parked on while we
@@ -138,6 +146,12 @@ class Form extends Component
      * opened by {@see confirmSubmit()} once the form validates.
      */
     public bool $showSubmitConfirm = false;
+
+    /**
+     * Current wizard step in create mode (1-based, 1..{@see TOTAL_STEPS}).
+     * Ignored in edit mode, where the whole form renders on a single page.
+     */
+    public int $step = 1;
 
     /**
      * Phase 10 recurrence controls. When {@see $isRecurring} is on, saving
@@ -667,8 +681,205 @@ class Form extends Component
         $this->overrideAmounts = [];
     }
 
+    /**
+     * Whether the form is editing an existing aid (single-page layout) as
+     * opposed to creating one (the multi-step wizard).
+     */
+    private function isEditing(): bool
+    {
+        return $this->aid?->exists ?? false;
+    }
+
+    /**
+     * Advance one step in the create-mode wizard, but only when the current
+     * step validates. Validation errors are surfaced on the current step and
+     * the wizard stays put. No-op in edit mode.
+     */
+    public function nextStep(): void
+    {
+        if ($this->isEditing() || $this->step >= self::TOTAL_STEPS) {
+            return;
+        }
+
+        // Throws on an invalid step: Livewire renders the errors and, because
+        // the increment below is skipped, the wizard stays on this step.
+        $this->validateStep($this->step);
+
+        $this->step++;
+    }
+
+    /**
+     * Go back one step. Backward navigation never validates. No-op in edit
+     * mode or already on the first step.
+     */
+    public function previousStep(): void
+    {
+        if ($this->isEditing() || $this->step <= 1) {
+            return;
+        }
+
+        $this->step--;
+    }
+
+    /**
+     * Jump directly to a step. Going backward (or staying) is always allowed;
+     * jumping forward is gated — every step between the current one and the
+     * target must validate, and the wizard stops at the first invalid step so
+     * a user can never skip past an incomplete step.
+     */
+    public function goToStep(int $target): void
+    {
+        if ($this->isEditing()) {
+            return;
+        }
+
+        $target = max(1, min(self::TOTAL_STEPS, $target));
+
+        if ($target <= $this->step) {
+            $this->step = $target;
+
+            return;
+        }
+
+        // Forward jumps validate each intervening step; the first invalid one
+        // throws, so Livewire shows its errors and the wizard stops there.
+        while ($this->step < $target) {
+            $this->validateStep($this->step);
+
+            $this->step++;
+        }
+    }
+
+    /**
+     * Validation rule keys owned by each create-mode wizard step. Only the
+     * relevant subset of {@see validationRules()} is checked per step, keeping
+     * the rules the single source of truth. Keys not present in the active
+     * rule set (e.g. recurrence fields while recurrence is off, or the cash
+     * override while in-kind) are ignored via array_intersect_key below.
+     *
+     * @return array<int, string>
+     */
+    private function stepRuleKeys(int $step): array
+    {
+        return match ($step) {
+            1 => ['beneficiary_ids', 'beneficiary_ids.*'],
+            2 => [
+                'aid_program_id', 'title', 'type', 'amount', 'purpose', 'notes',
+                'items', 'items.*.name', 'items.*.quantity',
+                'items.*.estimated_value', 'items.*.description',
+                'overrideAmounts.*',
+            ],
+            3 => [
+                'documents', 'documents.*',
+                'recurrenceFrequency', 'recurrenceIntervalMonths',
+                'recurrenceStartsOn', 'recurrenceDueOn',
+                'recurrenceTitleTemplate', 'recurrenceEndsOn', 'recurrenceLeadDays',
+            ],
+            default => [],
+        };
+    }
+
+    /**
+     * Validate only the fields owned by the given create-mode step, reusing
+     * the shared {@see validationRules()}. Returns whether the step is valid;
+     * on failure the step's errors are surfaced. Also enforces the two
+     * cross-field guards that persist() relies on: step 1 must end with at
+     * least one eligible beneficiary, and step 2's type must match its program.
+     */
+    /**
+     * Validate the fields owned by a create-mode step, plus that step's
+     * cross-field guards. Throws {@see ValidationException} on failure so
+     * Livewire records the failed rules and renders the messages the normal
+     * way (callers that want to stay put simply let it propagate). The rule
+     * subset reuses {@see validationRules()} so the rules stay the single
+     * source of truth.
+     */
+    private function validateStep(int $step): void
+    {
+        $subset = array_intersect_key(
+            $this->validationRules(false),
+            array_flip($this->stepRuleKeys($step)),
+        );
+
+        if ($subset !== []) {
+            $this->validate($subset);
+        }
+
+        if ($step === 1) {
+            $eligibleCount = $this->eligibleBeneficiariesQuery()
+                ->whereIn('id', $this->beneficiary_ids)
+                ->count();
+
+            if ($eligibleCount === 0) {
+                throw ValidationException::withMessages([
+                    'beneficiary_ids' => __('aid_batches.no_eligible_selected'),
+                ]);
+            }
+        }
+
+        if ($step === 2) {
+            $program = AidProgram::find($this->aid_program_id);
+
+            if ($program) {
+                try {
+                    app(AssertAidTypeMatchesProgram::class)->handle(AidType::from($this->type), $program);
+                } catch (InvalidArgumentException $exception) {
+                    throw ValidationException::withMessages([
+                        'aid_program_id' => $exception->getMessage(),
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Walk the create-mode input steps (1..3) in order and, at the first step
+     * that fails validation, jump the wizard back to it so its errors are
+     * visible. Returns whether every step is valid. Called before persisting
+     * from the review step so a submit never silently swallows an error that
+     * belongs to an earlier step.
+     */
+    private function ensureStepsValid(): void
+    {
+        foreach ([1, 2, 3] as $inputStep) {
+            try {
+                $this->validateStep($inputStep);
+            } catch (ValidationException $exception) {
+                // Jump the wizard to the first offending step so its errors are
+                // visible, then rethrow so Livewire records the failed rules.
+                $this->step = $inputStep;
+
+                throw $exception;
+            }
+        }
+    }
+
+    /**
+     * Form-submit handler (Enter key / the submit buttons). In the create-mode
+     * wizard, submitting from an input step just advances; only the review step
+     * (or edit mode) actually persists. {@see save()} stays the canonical
+     * "persist as draft" action so buttons and tests can call it directly.
+     */
+    public function submitForm(): void
+    {
+        if (! $this->isEditing() && $this->step < self::TOTAL_STEPS) {
+            $this->nextStep();
+
+            return;
+        }
+
+        $this->save();
+    }
+
     public function save(): void
     {
+        // Persist as a draft. In create mode make sure every input step is
+        // valid first (throws + jumps the wizard back to the first offending
+        // step on failure, which Livewire surfaces normally).
+        if (! $this->isEditing()) {
+            $this->ensureStepsValid();
+        }
+
         $result = $this->persist();
 
         if ($result === null) {
@@ -993,6 +1204,14 @@ class Form extends Component
      */
     public function confirmSubmit(): void
     {
+        // Create mode: bounce back to the first invalid input step (so its
+        // errors are visible) before the full pre-flight below. Throws on an
+        // invalid step, which Livewire surfaces and which aborts opening the
+        // modal.
+        if (! $this->isEditing()) {
+            $this->ensureStepsValid();
+        }
+
         if (! $this->passesSubmitPreflight()) {
             return;
         }
