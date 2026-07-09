@@ -10,6 +10,7 @@ use App\Models\AidConfirmation;
 use App\Models\AidProgram;
 use App\Models\Beneficiary;
 use App\Models\RecurringAidPlan;
+use App\Models\User;
 use Database\Factories\AidFactory;
 use Illuminate\Support\Facades\DB;
 use Livewire\Livewire;
@@ -133,4 +134,25 @@ it('hides operational indicator cards a role lacks the matching permission for',
 
     Livewire::test(Dashboard::class)
         ->assertDontSee(__('dashboard.ops.overdue_approvals_label'));
+});
+
+it('hides every stat, chart and receipt-issue figure from a user with no view permissions', function () {
+    // A bare authenticated user with no role: the dashboard must not leak
+    // beneficiary/aid counts, monthly cash sums, or beneficiary names.
+    $user = User::factory()->create();
+    test()->actingAs($user);
+
+    $dashboard = Livewire::test(Dashboard::class);
+
+    $dashboard
+        ->assertDontSee(__('ui.stat_beneficiaries'))
+        ->assertDontSee(__('ui.stat_aids'))
+        ->assertDontSee(__('reports.dashboard.receipt_issues_title'))
+        ->assertDontSee(__('reports.dashboard.chart_by_month'));
+
+    // Defense-in-depth: the computeds themselves return nothing.
+    expect($dashboard->instance()->beneficiariesCount)->toBe(0);
+    expect($dashboard->instance()->aidsCount)->toBe(0);
+    expect($dashboard->instance()->receiptIssues)->toBeEmpty();
+    expect($dashboard->instance()->aidsByMonth['cashSums'])->toBe([]);
 });

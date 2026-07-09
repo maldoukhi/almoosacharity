@@ -135,31 +135,35 @@
     </div>
 
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <x-ui.stat-card :label="__('ui.stat_beneficiaries')" :value="$this->beneficiariesCount">
-            <x-slot:icon>
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 9.75 12 6l3 3.75M9 14.25 12 18l3-3.75" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 4.5h15v15h-15z" />
-                </svg>
-            </x-slot:icon>
-        </x-ui.stat-card>
+        @can('beneficiaries.view')
+            <x-ui.stat-card :label="__('ui.stat_beneficiaries')" :value="$this->beneficiariesCount">
+                <x-slot:icon>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 9.75 12 6l3 3.75M9 14.25 12 18l3-3.75" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 4.5h15v15h-15z" />
+                    </svg>
+                </x-slot:icon>
+            </x-ui.stat-card>
+        @endcan
 
-        <x-ui.stat-card :label="__('ui.stat_aids')" :value="$this->aidsCount">
-            <x-slot:icon>
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-6-6h12" />
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75h16.5v16.5H3.75z" />
-                </svg>
-            </x-slot:icon>
-        </x-ui.stat-card>
+        @can('aids.view')
+            <x-ui.stat-card :label="__('ui.stat_aids')" :value="$this->aidsCount">
+                <x-slot:icon>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-6-6h12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75h16.5v16.5H3.75z" />
+                    </svg>
+                </x-slot:icon>
+            </x-ui.stat-card>
 
-        <x-ui.stat-card :label="__('reports.dashboard.stat_approved_this_month')" :value="$this->approvedThisMonth">
-            <x-slot:icon>
-                <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                </svg>
-            </x-slot:icon>
-        </x-ui.stat-card>
+            <x-ui.stat-card :label="__('reports.dashboard.stat_approved_this_month')" :value="$this->approvedThisMonth">
+                <x-slot:icon>
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                    </svg>
+                </x-slot:icon>
+            </x-ui.stat-card>
+        @endcan
 
         @can('approvals.view')
             <a href="{{ route('approvals.inbox') }}" wire:navigate class="block rounded-(--radius-brand) transition duration-150 ease-out hover:-translate-y-0.5">
@@ -173,6 +177,7 @@
     </div>
 
     {{-- Aids the beneficiary reported as partially or not received --}}
+    @can('aids.view')
     <x-ui.card>
         <x-slot:header>
             <div class="flex items-center justify-between gap-3">
@@ -259,4 +264,5 @@
             :height="320"
         />
     </x-ui.card>
+    @endcan
 </div>

@@ -53,12 +53,20 @@ class Dashboard extends Component
     #[Computed]
     public function beneficiariesCount(): int
     {
+        if (! Auth::user()->can('beneficiaries.view')) {
+            return 0;
+        }
+
         return Beneficiary::query()->count();
     }
 
     #[Computed]
     public function aidsCount(): int
     {
+        if (! Auth::user()->can('aids.view')) {
+            return 0;
+        }
+
         return Aid::query()->count();
     }
 
@@ -69,6 +77,10 @@ class Dashboard extends Component
     #[Computed]
     public function approvedThisMonth(): int
     {
+        if (! Auth::user()->can('aids.view')) {
+            return 0;
+        }
+
         return Aid::query()
             ->where('status', AidStatus::Approved->value)
             ->whereBetween('decided_at', [now()->startOfMonth(), now()->endOfMonth()])
@@ -197,6 +209,10 @@ class Dashboard extends Component
     #[Computed]
     public function receiptIssuesCount(): int
     {
+        if (! Auth::user()->can('aids.view')) {
+            return 0;
+        }
+
         return Aid::query()
             ->whereHas('confirmation', function (Builder $query): void {
                 $query->whereIn('receipt_status', $this->attentionReceiptValues());
@@ -213,6 +229,12 @@ class Dashboard extends Component
     #[Computed]
     public function receiptIssues(): Collection
     {
+        // Carries beneficiary names — never expose it to a user who can't
+        // view aids.
+        if (! Auth::user()->can('aids.view')) {
+            return collect();
+        }
+
         return Aid::query()
             ->with(['beneficiary:id,first_name,second_name,third_name,last_name', 'program:id,name', 'confirmation:id,aid_id,receipt_status,confirmed_at'])
             ->whereHas('confirmation', function (Builder $query): void {
@@ -232,6 +254,10 @@ class Dashboard extends Component
     #[Computed]
     public function aidsByStatus(): array
     {
+        if (! Auth::user()->can('aids.view')) {
+            return ['labels' => [], 'series' => [], 'colors' => []];
+        }
+
         // Plain GROUP BY status — portable across MySQL/SQLite, no
         // date-truncation functions involved.
         $counts = Aid::query()
@@ -260,6 +286,10 @@ class Dashboard extends Component
     #[Computed]
     public function aidsByType(): array
     {
+        if (! Auth::user()->can('aids.view')) {
+            return ['labels' => [], 'series' => [], 'colors' => []];
+        }
+
         $counts = Aid::query()
             ->selectRaw('type, count(*) as aggregate')
             ->groupBy('type')
@@ -290,6 +320,11 @@ class Dashboard extends Component
     #[Computed]
     public function aidsByMonth(): array
     {
+        // Carries monthly cash totals — gate like the other aid figures.
+        if (! Auth::user()->can('aids.view')) {
+            return ['labels' => [], 'counts' => [], 'cashSums' => []];
+        }
+
         $start = now()->subMonths(11)->startOfMonth();
         $end = now()->endOfMonth();
 
