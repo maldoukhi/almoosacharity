@@ -4,12 +4,17 @@ namespace App\Livewire\Settings\Notifications;
 
 use App\Enums\MessageChannel;
 use App\Enums\NotificationEvent;
+use App\Mail\OutboundMessage;
 use App\Models\NotificationTemplate;
+use App\Services\Mail\ApplyMailSettings;
 use App\Services\Messaging\Contracts\WhatsAppChannelPairingInterface;
 use App\Services\Messaging\Drivers\OktaWhatsAppGateway;
 use App\Services\Messaging\Drivers\TaqnyatSmsGateway;
 use App\Support\Settings;
+use Database\Seeders\NotificationTemplateSeeder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Throwable;
@@ -67,6 +72,30 @@ class Manage extends Component
      * left empty, the currently-saved key (if any) is kept as-is.
      */
     public string $taqnyatApiKeyInput = '';
+
+    // --- Email (SMTP) settings ---------------------------------------
+
+    public string $mailHost = '';
+
+    public string $mailPort = '';
+
+    /** One of tls|ssl|none. */
+    public string $mailEncryption = 'tls';
+
+    public string $mailUsername = '';
+
+    /** Always starts empty — never pre-filled from the stored secret (see {@see $taqnyatApiKeyInput}). */
+    public string $mailPasswordInput = '';
+
+    public string $mailFromAddress = '';
+
+    public string $mailFromName = '';
+
+    /** Recipient for the "send test email" action — not persisted. */
+    public string $testEmailAddress = '';
+
+    /** @var array{success: bool, message: ?string}|null */
+    public ?array $mailTestResult = null;
 
     public string $oktaBaseUrl = '';
 
@@ -137,8 +166,18 @@ class Manage extends Component
                     ->where('channel', $channel->value)
                     ->first();
 
+                // An empty (or missing) template row falls back to the
+                // shipped seeded default so the editor always shows real
+                // default content — mirroring how confirmationBody below
+                // falls back to a shipped default.
+                $body = $template?->body ?? '';
+
+                if (trim($body) === '') {
+                    $body = NotificationTemplateSeeder::defaultBody($event->value, $channel->value);
+                }
+
                 $this->templates[$event->value][$channel->value] = [
-                    'body' => $template?->body ?? '',
+                    'body' => $body,
                     'is_active' => $template?->is_active ?? false,
                 ];
             }
@@ -159,6 +198,16 @@ class Manage extends Component
         // channel id.
         $this->oktaBaseUrl = $settings->get('okta_base_url') ?: '';
         $this->oktaChannelId = $settings->get('okta_channel_id') ?: '';
+
+        // SMTP settings — non-secret fields are shown as-is (saved override
+        // or blank to fall back to config/.env); the password is a secret
+        // that is never sent back (see mailPasswordInput above).
+        $this->mailHost = $settings->get('mail_host') ?: '';
+        $this->mailPort = $settings->get('mail_port') ?: '';
+        $this->mailEncryption = $settings->get('mail_encryption') ?: 'tls';
+        $this->mailUsername = $settings->get('mail_username') ?: '';
+        $this->mailFromAddress = $settings->get('mail_from_address') ?: '';
+        $this->mailFromName = $settings->get('mail_from_name') ?: '';
     }
 
     public function save(): void
@@ -184,6 +233,13 @@ class Manage extends Component
             'confirmationSignatureRequired' => ['boolean'],
             'confirmationBody' => $confirmationBodyRules,
             'taqnyatApiKeyInput' => ['nullable', 'string', 'max:255'],
+            'mailHost' => ['nullable', 'string', 'max:255'],
+            'mailPort' => ['nullable', 'integer', 'min:1', 'max:65535'],
+            'mailEncryption' => ['required', Rule::in(['tls', 'ssl', 'none'])],
+            'mailUsername' => ['nullable', 'string', 'max:255'],
+            'mailPasswordInput' => ['nullable', 'string', 'max:255'],
+            'mailFromAddress' => ['nullable', 'email', 'max:255'],
+            'mailFromName' => ['nullable', 'string', 'max:255'],
             'oktaBaseUrl' => ['nullable', 'string', 'max:255'],
             'oktaChannelId' => ['nullable', 'string', 'max:255'],
             'oktaTokenInput' => ['nullable', 'string', 'max:255'],
@@ -216,6 +272,19 @@ class Manage extends Component
         $settings->set('okta_base_url', trim($this->oktaBaseUrl) !== '' ? trim($this->oktaBaseUrl) : null);
         $settings->set('okta_channel_id', trim($this->oktaChannelId) !== '' ? trim($this->oktaChannelId) : null);
 
+        // SMTP: non-secret fields stored as-is (or nulled to fall back to
+        // .env); the password only overwritten when actually typed.
+        $settings->set('mail_host', trim($this->mailHost) !== '' ? trim($this->mailHost) : null);
+        $settings->set('mail_port', trim($this->mailPort) !== '' ? trim($this->mailPort) : null);
+        $settings->set('mail_encryption', $this->mailEncryption);
+        $settings->set('mail_username', trim($this->mailUsername) !== '' ? trim($this->mailUsername) : null);
+        $settings->set('mail_from_address', trim($this->mailFromAddress) !== '' ? trim($this->mailFromAddress) : null);
+        $settings->set('mail_from_name', trim($this->mailFromName) !== '' ? trim($this->mailFromName) : null);
+
+        if (trim($this->mailPasswordInput) !== '') {
+            $settings->setSecret('mail_password', trim($this->mailPasswordInput));
+        }
+
         // An empty input means "keep the currently-saved secret" — only
         // overwrite when the admin actually typed something.
         if (trim($this->taqnyatApiKeyInput) !== '') {
@@ -230,10 +299,12 @@ class Manage extends Component
         // it's persisted.
         $this->taqnyatApiKeyInput = '';
         $this->oktaTokenInput = '';
+        $this->mailPasswordInput = '';
 
         // Stale verify/QR state referred to the previous credentials.
         $this->taqnyatVerifyResult = null;
         $this->oktaVerifyResult = null;
+        $this->mailTestResult = null;
         $this->resetWhatsappQrState();
 
         $this->dispatch('toast', type: 'success', message: __('notifications.settings.saved'));
@@ -296,6 +367,70 @@ class Manage extends Component
         $this->oktaVerifyResult = null;
 
         $this->dispatch('toast', type: 'success', message: __('notifications.settings.okta_token_cleared'));
+    }
+
+    public function clearMailPassword(): void
+    {
+        Gate::authorize('notifications.settings.manage');
+
+        app(Settings::class)->setSecret('mail_password', null);
+        $this->mailPasswordInput = '';
+        $this->mailTestResult = null;
+
+        $this->dispatch('toast', type: 'success', message: __('notifications.settings.mail_password_cleared'));
+    }
+
+    #[Computed]
+    public function mailHasPassword(): bool
+    {
+        return app(Settings::class)->getSecret('mail_password') !== null;
+    }
+
+    #[Computed]
+    public function mailPasswordMasked(): ?string
+    {
+        return app(Settings::class)->maskedSecret('mail_password');
+    }
+
+    /**
+     * Sends a one-off test email to the typed address using the *saved*
+     * SMTP settings (applied over the .env config via
+     * {@see ApplyMailSettings}), reporting success/failure inline — the same
+     * pattern as the Taqnyat/Okta "verify connection" actions. Sent
+     * synchronously (not queued) so the operator gets an immediate result.
+     */
+    public function sendTestEmail(): void
+    {
+        Gate::authorize('notifications.settings.manage');
+
+        $this->validate([
+            'testEmailAddress' => ['required', 'email', 'max:255'],
+        ]);
+
+        // Persist-then-apply is deliberately avoided here: the test uses the
+        // already-saved settings so the operator tests exactly what is in
+        // effect. Save first if you changed the fields.
+        app(ApplyMailSettings::class)->apply();
+        app('mail.manager')->purge('smtp');
+
+        try {
+            Mail::to($this->testEmailAddress)->send(new OutboundMessage(
+                subjectLine: __('notifications.settings.test_email_subject'),
+                bodyText: __('notifications.settings.test_email_body'),
+            ));
+        } catch (Throwable $e) {
+            $this->mailTestResult = [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+
+            return;
+        }
+
+        $this->mailTestResult = [
+            'success' => true,
+            'message' => null,
+        ];
     }
 
     /**

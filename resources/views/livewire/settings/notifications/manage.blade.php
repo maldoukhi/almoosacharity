@@ -13,7 +13,7 @@
     <form
         wire:submit="save"
         class="space-y-6"
-        x-data="{ tab: @js($errors->hasAny(['senderName', 'taqnyatApiKeyInput', 'oktaBaseUrl', 'oktaChannelId', 'oktaTokenInput']) ? 'connections' : 'messages') }"
+        x-data="{ tab: @js($errors->hasAny(['senderName', 'taqnyatApiKeyInput', 'oktaBaseUrl', 'oktaChannelId', 'oktaTokenInput', 'mailHost', 'mailPort', 'mailEncryption', 'mailUsername', 'mailPasswordInput', 'mailFromAddress', 'mailFromName', 'testEmailAddress']) ? 'connections' : 'messages') }"
     >
         {{-- Two groups: message content (templates + confirmation body) and
              connection/provider settings (channels + Taqnyat + Okta). --}}
@@ -194,6 +194,135 @@
                 </label>
             </div>
 
+        </x-ui.card>
+
+        <x-ui.card>
+            <x-slot:header>
+                <div>
+                    <h2 class="text-base font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_smtp_title') }}</h2>
+                    <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('notifications.settings.section_smtp_description') }}</p>
+                </div>
+            </x-slot:header>
+
+            <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <x-ui.input
+                    :label="__('notifications.settings.field_mail_host')"
+                    name="mailHost"
+                    wire:model="mailHost"
+                    maxlength="255"
+                    dir="ltr"
+                    :hint="__('notifications.settings.field_mail_host_hint')"
+                />
+
+                <x-ui.input
+                    :label="__('notifications.settings.field_mail_port')"
+                    name="mailPort"
+                    type="number"
+                    min="1"
+                    max="65535"
+                    wire:model="mailPort"
+                    dir="ltr"
+                    :hint="__('notifications.settings.field_mail_port_hint')"
+                />
+
+                <x-ui.select
+                    :label="__('notifications.settings.field_mail_encryption')"
+                    name="mailEncryption"
+                    wire:model="mailEncryption"
+                >
+                    <option value="tls">{{ __('notifications.settings.mail_encryption_tls') }}</option>
+                    <option value="ssl">{{ __('notifications.settings.mail_encryption_ssl') }}</option>
+                    <option value="none">{{ __('notifications.settings.mail_encryption_none') }}</option>
+                </x-ui.select>
+
+                <x-ui.input
+                    :label="__('notifications.settings.field_mail_username')"
+                    name="mailUsername"
+                    wire:model="mailUsername"
+                    maxlength="255"
+                    autocomplete="off"
+                    dir="ltr"
+                    :hint="__('notifications.settings.field_mail_username_hint')"
+                />
+
+                <div>
+                    <x-ui.input
+                        :label="__('notifications.settings.field_mail_password')"
+                        name="mailPasswordInput"
+                        type="password"
+                        autocomplete="new-password"
+                        wire:model="mailPasswordInput"
+                        maxlength="255"
+                        dir="ltr"
+                        :placeholder="$this->mailHasPassword ? $this->mailPasswordMasked : __('notifications.settings.field_mail_password_placeholder')"
+                        :hint="__('notifications.settings.field_mail_password_hint')"
+                    />
+
+                    @if ($this->mailHasPassword)
+                        <button
+                            type="button"
+                            data-confirm="{{ __('notifications.settings.confirm_clear_secret') }}"
+                            x-on:click="uiConfirm($el.dataset.confirm, () => $wire.clearMailPassword(), { danger: true })"
+                            class="mt-1.5 text-xs font-medium text-status-rejected hover:underline"
+                        >
+                            {{ __('notifications.settings.action_clear') }}
+                        </button>
+                    @endif
+                </div>
+
+                <x-ui.input
+                    :label="__('notifications.settings.field_mail_from_address')"
+                    name="mailFromAddress"
+                    type="email"
+                    wire:model="mailFromAddress"
+                    maxlength="255"
+                    dir="ltr"
+                    :hint="__('notifications.settings.field_mail_from_address_hint')"
+                />
+
+                <x-ui.input
+                    :label="__('notifications.settings.field_mail_from_name')"
+                    name="mailFromName"
+                    wire:model="mailFromName"
+                    maxlength="255"
+                    :hint="__('notifications.settings.field_mail_from_name_hint')"
+                />
+            </div>
+
+            <div class="mt-6 border-t border-gray-200 pt-5 dark:border-white/10">
+                <h3 class="mb-1 text-sm font-semibold text-gray-900 dark:text-white">{{ __('notifications.settings.section_smtp_test_title') }}</h3>
+                <p class="mb-3 text-xs text-gray-500 dark:text-gray-400">{{ __('notifications.settings.section_smtp_test_description') }}</p>
+
+                <div class="max-w-md">
+                    <x-ui.input
+                        :label="__('notifications.settings.field_test_email')"
+                        name="testEmailAddress"
+                        type="email"
+                        wire:model="testEmailAddress"
+                        maxlength="255"
+                        dir="ltr"
+                        :placeholder="__('notifications.settings.field_test_email_placeholder')"
+                    />
+                </div>
+
+                <div class="mt-4 flex flex-wrap items-center gap-3">
+                    <x-ui.button type="button" variant="ghost" size="sm" wire:click="sendTestEmail" wire:target="sendTestEmail" wire:loading.attr="disabled">
+                        {{ __('notifications.settings.action_send_test_email') }}
+                    </x-ui.button>
+
+                    @if ($mailTestResult)
+                        @if ($mailTestResult['success'])
+                            <x-ui.badge color="approved">
+                                {{ __('notifications.settings.test_email_success', ['email' => $testEmailAddress]) }}
+                            </x-ui.badge>
+                        @else
+                            <x-ui.badge color="rejected">
+                                {{ __('notifications.settings.test_email_failed', ['message' => $mailTestResult['message'] ?? '']) }}
+                            </x-ui.badge>
+                        @endif
+                    @endif
+                </div>
+            </div>
         </x-ui.card>
 
         <x-ui.card>

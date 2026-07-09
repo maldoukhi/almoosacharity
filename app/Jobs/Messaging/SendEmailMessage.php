@@ -5,6 +5,7 @@ namespace App\Jobs\Messaging;
 use App\Enums\MessageStatus;
 use App\Mail\OutboundMessage;
 use App\Models\MessageLog;
+use App\Services\Mail\ApplyMailSettings;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -47,6 +48,13 @@ class SendEmailMessage implements ShouldQueue
         $log = MessageLog::findOrFail($this->messageLogId);
         $log->increment('attempts');
         $log->refresh();
+
+        // Apply the admin-managed SMTP settings (host/port/encryption/auth
+        // + from address) over the .env mailer config before sending, then
+        // purge any mailer the worker built from the previous config so the
+        // new settings take effect on this send.
+        app(ApplyMailSettings::class)->apply();
+        app('mail.manager')->purge('smtp');
 
         try {
             Mail::to($this->to)->send(new OutboundMessage(
