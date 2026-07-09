@@ -13,6 +13,7 @@ use App\Livewire\Auth\ForgotPassword;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\ResetPassword;
 use App\Livewire\Beneficiaries\Form as BeneficiaryForm;
+use App\Livewire\Beneficiaries\Import as BeneficiaryImport;
 use App\Livewire\Beneficiaries\Index as BeneficiaryIndex;
 use App\Livewire\Beneficiaries\Show as BeneficiaryShow;
 use App\Livewire\Dashboard;
@@ -94,6 +95,7 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
         Route::prefix('beneficiaries')->name('beneficiaries.')->group(function (): void {
             Route::get('/', BeneficiaryIndex::class)->name('index')->middleware('permission:beneficiaries.view');
+            Route::get('/import', BeneficiaryImport::class)->name('import')->middleware('permission:beneficiaries.import');
             Route::get('/create', BeneficiaryForm::class)->name('create')->middleware('permission:beneficiaries.create');
             Route::get('/{beneficiary}/edit', BeneficiaryForm::class)->name('edit')->middleware('permission:beneficiaries.update');
             Route::get('/{beneficiary}/documents/{media}', function (Beneficiary $beneficiary, Media $media) {
