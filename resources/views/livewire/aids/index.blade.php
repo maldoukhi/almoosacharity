@@ -32,6 +32,19 @@
     </div>
 
     <x-ui.card>
+        @if ($this->hasActiveFilters)
+            <div class="mb-4 flex flex-wrap items-center gap-3">
+                <x-ui.badge color="accent">{{ __('common.active_filters', ['count' => $this->activeFiltersCount]) }}</x-ui.badge>
+
+                <x-ui.button variant="ghost" size="sm" wire:click="resetFilters">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.348 14.652 21 3m0 0h-5.25M21 3v5.25M3 21l5.652-5.652M3 21v-5.25M3 21h5.25" />
+                    </svg>
+                    {{ __('common.reset_filters') }}
+                </x-ui.button>
+            </div>
+        @endif
+
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <x-ui.input
                 :label="__('common.search')"

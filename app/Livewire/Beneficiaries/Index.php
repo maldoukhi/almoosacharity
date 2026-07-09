@@ -34,6 +34,7 @@ class Index extends Component
     #[Url]
     public string $cityFilter = '';
 
+    #[Url]
     public bool $trashed = false;
 
     /**
@@ -79,6 +80,47 @@ class Index extends Component
     {
         $this->resetPage();
         $this->selected = [];
+    }
+
+    /**
+     * Number of filters/search currently deviating from their defaults —
+     * backs both the "clear filters" button's visibility and the active
+     * filters count chip.
+     */
+    #[Computed]
+    public function activeFiltersCount(): int
+    {
+        return collect([
+            $this->search !== '',
+            $this->categoryFilter !== '',
+            $this->statusFilter !== '',
+            $this->cityFilter !== '',
+            $this->trashed !== false,
+        ])->filter()->count();
+    }
+
+    #[Computed]
+    public function hasActiveFilters(): bool
+    {
+        return $this->activeFiltersCount > 0;
+    }
+
+    /**
+     * Resets every filter/search field (and the pagination cursor plus the
+     * row selection) back to its default value in one step.
+     */
+    public function resetFilters(): void
+    {
+        $this->reset([
+            'search',
+            'categoryFilter',
+            'statusFilter',
+            'cityFilter',
+            'trashed',
+        ]);
+
+        $this->selected = [];
+        $this->resetPage();
     }
 
     /**

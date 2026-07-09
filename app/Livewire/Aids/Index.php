@@ -86,6 +86,48 @@ class Index extends Component
     }
 
     /**
+     * Number of filters/search currently deviating from their defaults —
+     * backs both the "clear filters" button's visibility and the active
+     * filters count chip.
+     */
+    #[Computed]
+    public function activeFiltersCount(): int
+    {
+        return collect([
+            $this->search !== '',
+            $this->statusFilter !== '',
+            $this->programFilter !== '',
+            $this->typeFilter !== '',
+            $this->beneficiaryFilter !== '',
+            $this->receiptFilter !== '',
+        ])->filter()->count();
+    }
+
+    #[Computed]
+    public function hasActiveFilters(): bool
+    {
+        return $this->activeFiltersCount > 0;
+    }
+
+    /**
+     * Resets every filter/search field (and the pagination cursor) back to
+     * its default value in one step.
+     */
+    public function resetFilters(): void
+    {
+        $this->reset([
+            'search',
+            'statusFilter',
+            'programFilter',
+            'typeFilter',
+            'beneficiaryFilter',
+            'receiptFilter',
+        ]);
+
+        $this->resetPage();
+    }
+
+    /**
      * @return LengthAwarePaginator<int, Aid>
      */
     #[Computed]

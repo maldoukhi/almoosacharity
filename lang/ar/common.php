@@ -20,4 +20,6 @@ return [
     'view' => 'عرض',
     'active' => 'نشط',
     'inactive' => 'معطل',
+    'reset_filters' => 'مسح الفلاتر',
+    'active_filters' => 'عدد الفلاتر النشطة: :count',
 ];

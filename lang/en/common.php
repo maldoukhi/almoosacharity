@@ -20,4 +20,6 @@ return [
     'view' => 'View',
     'active' => 'Active',
     'inactive' => 'Inactive',
+    'reset_filters' => 'Reset filters',
+    'active_filters' => 'Active filters: :count',
 ];
