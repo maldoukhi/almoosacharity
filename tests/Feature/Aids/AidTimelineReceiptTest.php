@@ -103,10 +103,14 @@ it('lets an authorized user download the PDF receipt once the aid is approved', 
         'amount' => 1200,
     ]);
 
-    Livewire::test(Show::class, ['aid' => $aid])
-        ->assertSet('aid.id', $aid->id)
-        ->call('downloadReceipt')
-        ->assertFileDownloaded('receipt-'.$aid->reference.'.pdf');
+    // The receipt is served INLINE (browser preview) by the mPDF route.
+    $response = test()->get(route('aids.receipt', $aid));
+
+    $response->assertOk();
+    $response->assertHeader('Content-Type', 'application/pdf');
+    expect($response->headers->get('Content-Disposition'))
+        ->toContain('inline')
+        ->toContain('receipt-'.$aid->reference.'.pdf');
 });
 
 it('only offers the receipt download once the aid has reached approved-or-later, never on a draft', function () {

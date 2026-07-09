@@ -17,7 +17,6 @@ use App\Models\BeneficiaryStageResponse;
 use App\Models\Disbursement;
 use App\Models\SurveyQuestion;
 use App\Models\SurveyResponse;
-use App\Support\ArabicPdf;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -26,7 +25,6 @@ use Illuminate\Support\Facades\Gate;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\On;
 use Livewire\Component;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Aid detail screen: timeline, decisions, items and the approval action
@@ -564,46 +562,6 @@ class Show extends Component
             'disbursement.deliveredBy',
             'disbursement.confirmedBy',
         ]);
-    }
-
-    /**
-     * Stream the "سند صرف إعانة" (aid receipt) PDF for this aid — same
-     * 'view' authorization as the page itself, so anyone who can see the
-     * aid can print its receipt. Returning a streamDownload response from
-     * a Livewire action triggers the browser download automatically (same
-     * pattern as App\Livewire\Reports\AidsReport::exportPdf()).
-     */
-    public function downloadReceipt(): StreamedResponse
-    {
-        Gate::authorize('view', $this->aid);
-
-        $aid = $this->aid;
-
-        // ArabicPdf shapes the Arabic runs before dompdf renders them —
-        // dompdf alone outputs Arabic disconnected/misordered.
-        $pdf = ArabicPdf::loadView('pdf.aid-receipt', [
-            'aid' => $aid,
-            'maskedNationalId' => $this->maskNationalId($aid->beneficiary?->national_id),
-        ]);
-
-        return response()->streamDownload(
-            fn () => print ($pdf->output()),
-            'receipt-'.$aid->reference.'.pdf',
-        );
-    }
-
-    /**
-     * Partial mask matching the pattern already used for national IDs in
-     * reports (App\Reports\BeneficiariesReport): keep the first and last
-     * two digits only, never the full identifier.
-     */
-    private function maskNationalId(?string $nationalId): ?string
-    {
-        if (! $nationalId) {
-            return null;
-        }
-
-        return substr($nationalId, 0, 2).'••••••'.substr($nationalId, -2);
     }
 
     /**

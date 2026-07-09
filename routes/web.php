@@ -38,8 +38,10 @@ use App\Livewire\Settings\FiscalLock as FiscalLockSettings;
 use App\Livewire\Settings\Notifications\Manage;
 use App\Livewire\Surveys\Builder;
 use App\Livewire\Surveys\Results;
+use App\Models\Aid;
 use App\Models\Beneficiary;
 use App\Models\Disbursement;
+use App\Support\AidReceiptPdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -159,6 +161,11 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
     Route::prefix('aids')->name('aids.')->group(function (): void {
         Route::get('/', AidIndex::class)->name('index')->middleware('permission:aids.view');
+        Route::get('/{aid}/receipt', function (Aid $aid) {
+            Gate::authorize('view', $aid);
+
+            return AidReceiptPdf::response($aid->load('beneficiary', 'program', 'items'));
+        })->name('receipt')->middleware('permission:aids.view');
         Route::get('/recurring-plans', RecurringPlanIndex::class)->name('recurring-plans.index')->middleware('permission:aids.recurring.manage');
         Route::get('/create', AidForm::class)->name('create')->middleware('permission:aids.create');
         // Batch creation was unified into the single aid create screen; keep

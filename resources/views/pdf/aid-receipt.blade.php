@@ -4,102 +4,52 @@
 <meta charset="utf-8">
 <title>{{ __('aids.receipt.title') }} — {{ $aid->reference }}</title>
 <style>
-    {{-- Self-hosted, local files only (no remote fetch — dompdf's
-    enable_remote stays false per CLAUDE.md's data-safety rules). Same
-    IBM Plex Sans Arabic embedding pattern as resources/views/reports/pdf. --}}
-    @font-face {
-        font-family: 'ibm-plex-sans-arabic';
-        font-weight: normal;
-        font-style: normal;
-        src: url('file://{{ storage_path('fonts/IBMPlexSansArabic-Regular.ttf') }}') format('truetype');
-    }
-    @font-face {
-        font-family: 'ibm-plex-sans-arabic';
-        font-weight: bold;
-        font-style: normal;
-        src: url('file://{{ storage_path('fonts/IBMPlexSansArabic-Bold.ttf') }}') format('truetype');
-    }
-
-    * {
-        font-family: 'ibm-plex-sans-arabic', sans-serif;
-    }
-
-    @page {
-        margin: 130px 28px 60px 28px;
-    }
-
+    {{-- Rendered by mPDF (see App\Support\AidReceiptPdf): fonts are
+         registered in the renderer's fontdata, RTL mirroring is native, and
+         the page footer is injected via SetHTMLFooter — so this template is
+         plain document flow. --}}
     body {
-        direction: rtl;
         font-size: 12px;
         color: #1f2937;
     }
 
-    #header {
-        position: fixed;
-        top: -110px;
-        right: 0;
-        left: 0;
-        height: 100px;
-        border-bottom: 2px solid #1C545E;
-        padding-bottom: 8px;
-    }
-
-    #header table {
+    table.header-table {
         width: 100%;
         border-collapse: collapse;
+        border-bottom: 2px solid #1C545E;
+        margin-bottom: 14px;
     }
 
-    #header td {
+    table.header-table td {
         border: none;
         vertical-align: middle;
+        padding: 0 0 8px 0;
     }
 
-    #header .logo-cell {
+    table.header-table .logo-cell {
         width: 70px;
     }
 
-    #header img {
-        height: 48px;
-    }
-
-    #header .brand-name {
+    .brand-name {
         font-size: 13px;
         font-weight: bold;
         color: #1C545E;
     }
 
-    #header .report-title {
+    .report-title {
         font-size: 18px;
         font-weight: bold;
         color: #1C545E;
         margin-top: 4px;
     }
 
-    #header .meta {
+    .meta {
         font-size: 9px;
         color: #6b7280;
         margin-top: 2px;
     }
 
-    #footer {
-        position: fixed;
-        bottom: -50px;
-        right: 0;
-        left: 0;
-        height: 40px;
-        border-top: 1px solid #e5e7eb;
-        padding-top: 6px;
-        font-size: 9px;
-        color: #6b7280;
-        text-align: center;
-    }
-
-    #footer .page-number:after {
-        content: counter(page) " / " counter(pages);
-    }
-
     .reference-bar {
-        font-family: monospace, 'ibm-plex-sans-arabic';
         font-size: 14px;
         font-weight: bold;
         color: #1C545E;
@@ -113,9 +63,7 @@
     }
 
     .status-badge {
-        display: inline-block;
-        padding: 3px 10px;
-        border-radius: 4px;
+        padding: 2px 8px;
         font-size: 10px;
         font-weight: bold;
         background-color: #eef2f1;
@@ -136,14 +84,13 @@
         width: 50%;
     }
 
-    table.details-table .label {
-        display: block;
+    .label {
         font-size: 9px;
         color: #6b7280;
         margin-bottom: 3px;
     }
 
-    table.details-table .value {
+    .value {
         font-size: 12px;
         color: #111827;
         font-weight: bold;
@@ -179,10 +126,6 @@
         font-size: 10px;
     }
 
-    table.items-table tbody tr:nth-child(even) {
-        background-color: #f9fafb;
-    }
-
     .amount-box {
         margin-top: 4px;
         margin-bottom: 16px;
@@ -192,7 +135,7 @@
         text-align: center;
     }
 
-    .amount-box .amount-value {
+    .amount-value {
         font-size: 20px;
         font-weight: bold;
         color: #1C545E;
@@ -209,6 +152,7 @@
         text-align: center;
         vertical-align: top;
         padding: 0 20px;
+        border: none;
     }
 
     .signature-line {
@@ -221,24 +165,18 @@
 </style>
 </head>
 <body>
-    <div id="header">
-        <table>
-            <tr>
-                <td class="logo-cell">
-                    <img src="{{ public_path('images/brand/logo-print.png') }}" alt="{{ config('app.name') }}">
-                </td>
-                <td>
-                    <div class="brand-name">{{ config('app.name') }}</div>
-                    <div class="report-title">{{ __('aids.receipt.title') }}</div>
-                    <div class="meta">{{ __('reports.pdf.generated_at', ['date' => now()->format('Y-m-d')]) }}</div>
-                </td>
-            </tr>
-        </table>
-    </div>
-
-    <div id="footer">
-        <span class="page-number"></span> — {{ __('aids.receipt.footer_note') }}
-    </div>
+    <table class="header-table">
+        <tr>
+            <td class="logo-cell">
+                <img src="{{ public_path('images/brand/logo-print.png') }}" alt="{{ config('app.name') }}" width="60">
+            </td>
+            <td>
+                <div class="brand-name">{{ config('app.name') }}</div>
+                <div class="report-title">{{ __('aids.receipt.title') }}</div>
+                <div class="meta">{{ __('reports.pdf.generated_at', ['date' => now()->format('Y-m-d')]) }}</div>
+            </td>
+        </tr>
+    </table>
 
     <div class="reference-bar">{{ $aid->reference }}</div>
     <div class="aid-title">{{ $aid->display_title ?? __('aids.receipt.no_title') }}</div>
@@ -246,32 +184,32 @@
     <table class="details-table">
         <tr>
             <td>
-                <span class="label">{{ __('aids.receipt.field_beneficiary') }}</span>
-                <span class="value">{{ $aid->beneficiary?->full_name }}</span>
+                <div class="label">{{ __('aids.receipt.field_beneficiary') }}</div>
+                <div class="value">{{ $aid->beneficiary?->full_name }}</div>
             </td>
             <td>
-                <span class="label">{{ __('aids.receipt.field_national_id') }}</span>
-                <span class="value">{{ $maskedNationalId ?? __('common.dash') }}</span>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <span class="label">{{ __('aids.receipt.field_program') }}</span>
-                <span class="value">{{ $aid->program?->name ?? __('common.dash') }}</span>
-            </td>
-            <td>
-                <span class="label">{{ __('aids.receipt.field_type') }}</span>
-                <span class="value">{{ $aid->type->label() }}</span>
+                <div class="label">{{ __('aids.receipt.field_national_id') }}</div>
+                <div class="value">{{ $maskedNationalId ?? __('common.dash') }}</div>
             </td>
         </tr>
         <tr>
             <td>
-                <span class="label">{{ __('aids.receipt.field_date') }}</span>
-                <span class="value">{{ now()->translatedFormat('Y/m/d') }}</span>
+                <div class="label">{{ __('aids.receipt.field_program') }}</div>
+                <div class="value">{{ $aid->program?->name ?? __('common.dash') }}</div>
             </td>
             <td>
-                <span class="label">{{ __('aids.receipt.field_status') }}</span>
-                <span class="value"><span class="status-badge">{{ $aid->status->label() }}</span></span>
+                <div class="label">{{ __('aids.receipt.field_type') }}</div>
+                <div class="value">{{ $aid->type->label() }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="label">{{ __('aids.receipt.field_date') }}</div>
+                <div class="value">{{ now()->translatedFormat('Y/m/d') }}</div>
+            </td>
+            <td>
+                <div class="label">{{ __('aids.receipt.field_status') }}</div>
+                <div class="value"><span class="status-badge">{{ $aid->status->label() }}</span></div>
             </td>
         </tr>
     </table>

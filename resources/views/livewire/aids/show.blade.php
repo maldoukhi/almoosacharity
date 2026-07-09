@@ -29,7 +29,9 @@
 
         <div class="flex flex-wrap items-center gap-2">
             @if ($this->canDownloadReceipt)
-                <x-ui.button wire:click="downloadReceipt" variant="ghost">
+                {{-- Opens the mPDF receipt INLINE in a new tab (no wire:navigate
+                     — it's a PDF response, not a Livewire page). --}}
+                <x-ui.button href="{{ route('aids.receipt', $aid) }}" target="_blank" variant="ghost">
                     {{ __('aids.receipt.button') }}
                 </x-ui.button>
             @endif
