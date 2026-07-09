@@ -13,6 +13,16 @@ return [
 
     'review_button' => 'المراجعة والقرار',
 
+    'tab_pending' => 'بانتظار قراري',
+    'tab_history' => 'الموافقات السابقة',
+
+    'history_empty' => 'لا توجد قرارات سابقة',
+    'history_empty_description' => 'لم تتخذ أي قرار على الإعانات بعد',
+
+    'col_action' => 'القرار',
+    'col_note' => 'الملاحظة',
+    'col_decided_at' => 'تاريخ القرار',
+
     'action' => [
         'approve' => 'الموافقة',
         'reject' => 'الرفض',

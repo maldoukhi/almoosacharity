@@ -13,6 +13,16 @@ return [
 
     'review_button' => 'Review & Decide',
 
+    'tab_pending' => 'Awaiting My Decision',
+    'tab_history' => 'Previous Approvals',
+
+    'history_empty' => 'No Previous Decisions',
+    'history_empty_description' => 'You have not made any decisions on aids yet',
+
+    'col_action' => 'Decision',
+    'col_note' => 'Note',
+    'col_decided_at' => 'Decided On',
+
     'action' => [
         'approve' => 'Approve',
         'reject' => 'Reject',

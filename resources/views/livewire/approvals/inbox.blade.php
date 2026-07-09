@@ -13,6 +13,35 @@
         </div>
     </div>
 
+    <div class="inline-flex rounded-lg bg-gray-100 p-1 dark:bg-white/5" role="tablist">
+        <button
+            type="button"
+            role="tab"
+            :aria-selected="@js($this->view === 'pending')"
+            wire:click="$set('view', 'pending')"
+            @class([
+                'rounded-md px-4 py-2 text-sm font-medium transition',
+                'bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-white' => $this->view === 'pending',
+                'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' => $this->view !== 'pending',
+            ])
+        >
+            {{ __('approvals.tab_pending') }}
+        </button>
+        <button
+            type="button"
+            role="tab"
+            :aria-selected="@js($this->view === 'history')"
+            wire:click="$set('view', 'history')"
+            @class([
+                'rounded-md px-4 py-2 text-sm font-medium transition',
+                'bg-white text-primary-700 shadow-sm dark:bg-white/10 dark:text-white' => $this->view === 'history',
+                'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200' => $this->view !== 'history',
+            ])
+        >
+            {{ __('approvals.tab_history') }}
+        </button>
+    </div>
+
     <x-ui.card>
         <div class="grid grid-cols-1 gap-4 sm:max-w-xs">
             <x-ui.select
@@ -25,6 +54,7 @@
         </div>
     </x-ui.card>
 
+    @if ($this->view === 'pending')
     <div class="relative">
         <div wire:loading.flex wire:target="programFilter" class="hidden flex-col gap-2" style="display: none">
             <x-ui.skeleton height="3rem" />
@@ -98,4 +128,82 @@
             @endif
         </div>
     </div>
+    @else
+    <div class="relative">
+        <div wire:loading.flex wire:target="programFilter,view" class="hidden flex-col gap-2" style="display: none">
+            <x-ui.skeleton height="3rem" />
+            <x-ui.skeleton height="3rem" />
+            <x-ui.skeleton height="3rem" />
+        </div>
+
+        <div wire:loading.remove wire:target="programFilter,view">
+            @if ($this->decisions->isEmpty())
+                <x-ui.empty-state :title="__('approvals.history_empty')" :description="__('approvals.history_empty_description')">
+                    <x-slot:icon>
+                        <svg class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                        </svg>
+                    </x-slot:icon>
+                </x-ui.empty-state>
+            @else
+                <x-ui.table>
+                    <thead>
+                        <tr>
+                            <x-ui.table.th>{{ __('aids.field_reference') }}</x-ui.table.th>
+                            <x-ui.table.th>{{ __('aids.field_title') }}</x-ui.table.th>
+                            <x-ui.table.th>{{ __('aids.field_beneficiary') }}</x-ui.table.th>
+                            <x-ui.table.th>{{ __('aids.field_program') }}</x-ui.table.th>
+                            <x-ui.table.th>{{ __('approvals.col_action') }}</x-ui.table.th>
+                            <x-ui.table.th>{{ __('approvals.col_note') }}</x-ui.table.th>
+                            <x-ui.table.th>{{ __('approvals.col_decided_at') }}</x-ui.table.th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-white/10">
+                        @foreach ($this->decisions as $decision)
+                            @php
+                                $actionColor = match ($decision->action) {
+                                    \App\Enums\ApprovalAction::Approve => 'approved',
+                                    \App\Enums\ApprovalAction::Reject => 'rejected',
+                                    \App\Enums\ApprovalAction::Return => 'review',
+                                    default => 'gray',
+                                };
+                            @endphp
+                            <tr wire:key="decision-{{ $decision->id }}" class="transition duration-150 hover:bg-gray-50 dark:hover:bg-white/5">
+                                <x-ui.table.td class="font-mono font-medium">
+                                    @if ($decision->aid)
+                                        <a href="{{ route('aids.show', $decision->aid) }}" class="text-primary-700 hover:underline dark:text-primary-300">
+                                            {{ $decision->aid->reference }}
+                                        </a>
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                    @endif
+                                </x-ui.table.td>
+                                <x-ui.table.td>{{ $decision->aid?->display_title ?? '—' }}</x-ui.table.td>
+                                <x-ui.table.td>{{ $decision->aid?->beneficiary?->full_name ?? '—' }}</x-ui.table.td>
+                                <x-ui.table.td>{{ $decision->aid?->program?->name ?? '—' }}</x-ui.table.td>
+                                <x-ui.table.td>
+                                    <x-ui.badge :color="$actionColor">{{ $decision->action->label() }}</x-ui.badge>
+                                </x-ui.table.td>
+                                <x-ui.table.td class="max-w-xs">
+                                    <span class="block truncate text-gray-600 dark:text-gray-300" title="{{ $decision->note }}">
+                                        {{ $decision->note ?: '—' }}
+                                    </span>
+                                </x-ui.table.td>
+                                <x-ui.table.td>
+                                    <span class="tabular-nums text-gray-500 dark:text-gray-400">
+                                        {{ $decision->decided_at?->translatedFormat('d MMM yyyy — HH:mm') }}
+                                    </span>
+                                </x-ui.table.td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </x-ui.table>
+
+                <div class="mt-4">
+                    {{ $this->decisions->links() }}
+                </div>
+            @endif
+        </div>
+    </div>
+    @endif
 </div>
