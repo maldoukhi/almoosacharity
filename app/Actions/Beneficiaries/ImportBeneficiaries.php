@@ -142,7 +142,7 @@ class ImportBeneficiaries
             'mobile' => ['required', 'string', new SaudiMobile],
             'gender' => ['required', Rule::enum(Gender::class)],
             'marital_status' => ['required', Rule::enum(MaritalStatus::class)],
-            'housing_type' => ['required', Rule::enum(HousingType::class)],
+            'housing_type' => ['nullable', Rule::enum(HousingType::class)],
             'monthly_income' => ['nullable', 'numeric', 'min:0'],
             'birth_date' => ['nullable', 'date', 'before:today'],
         ]);
@@ -244,10 +244,15 @@ class ImportBeneficiaries
      *
      * @param  class-string  $enum
      */
-    private function resolveEnum(string $enum, string $raw): string
+    private function resolveEnum(string $enum, string $raw): ?string
     {
         if ($raw === '') {
-            return '';
+            // Blank stays null so a nullable enum column (e.g. housing_type)
+            // stores null rather than '' — an empty string is not a valid
+            // enum backing value and would blow up the model's enum cast on
+            // read. Required enum fields fail their 'required' rule on null
+            // and the row is skipped, exactly as before.
+            return null;
         }
 
         $needle = $this->normalizeLabel($raw);

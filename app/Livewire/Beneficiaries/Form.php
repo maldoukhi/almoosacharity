@@ -117,7 +117,7 @@ class Form extends Component
             : null;
         $this->health_status = (string) $this->beneficiary->health_status;
         $this->special_needs = (string) $this->beneficiary->special_needs;
-        $this->housing_type = $this->beneficiary->housing_type->value;
+        $this->housing_type = $this->beneficiary->housing_type?->value ?? '';
         $this->rent_amount = $this->beneficiary->rent_amount !== null
             ? (float) $this->beneficiary->rent_amount
             : null;
