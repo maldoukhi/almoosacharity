@@ -88,6 +88,7 @@
                         @foreach ($this->aids as $aid)
                             @php
                                 $waitingDays = $aid->submitted_at?->diffInDays(now());
+                                $overdueDays = $this->overdueDays($aid);
                             @endphp
                             <tr class="transition duration-150 hover:bg-gray-50 dark:hover:bg-white/5">
                                 <x-ui.table.td class="font-mono font-medium text-gray-900 dark:text-white">{{ $aid->reference }}</x-ui.table.td>
@@ -101,7 +102,18 @@
                                     @endif
                                 </x-ui.table.td>
                                 <x-ui.table.td>
-                                    <span class="text-status-review">{{ $aid->currentStage?->name }}</span>
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-status-review">{{ $aid->currentStage?->name }}</span>
+
+                                        @if ($overdueDays !== null)
+                                            <span class="inline-flex w-fit items-center gap-1 rounded-full bg-status-rejected/10 px-2 py-0.5 text-xs font-medium text-status-rejected">
+                                                <svg class="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                                                </svg>
+                                                {{ __('approvals.overdue_badge', ['days' => $overdueDays]) }}
+                                            </span>
+                                        @endif
+                                    </div>
                                 </x-ui.table.td>
                                 <x-ui.table.td>
                                     <span @class([

@@ -15,7 +15,7 @@ use Spatie\Activitylog\Support\LogOptions;
 #[Fillable([
     'approval_flow_id', 'name', 'order', 'role', 'assignee_user_ids',
     'allowed_actions', 'type', 'documents_required', 'required_documents',
-    'notify_channels',
+    'notify_channels', 'max_days',
 ])]
 class ApprovalFlowStage extends Model
 {
@@ -34,6 +34,7 @@ class ApprovalFlowStage extends Model
             'documents_required' => 'boolean',
             'required_documents' => 'array',
             'notify_channels' => 'array',
+            'max_days' => 'integer',
         ];
     }
 

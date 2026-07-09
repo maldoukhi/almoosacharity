@@ -22,3 +22,7 @@ Schedule::command('aids:generate-recurring')->daily();
 // private documents + database. Failures email BACKUP_NOTIFICATION_EMAIL.
 Schedule::command('backup:clean')->dailyAt('01:30');
 Schedule::command('backup:run')->dailyAt('02:00');
+
+// Approval SLA: once a day, notify stage approvers about aids that have sat
+// in a stage past its configured max_days (idempotent per stage entry).
+Schedule::command('aids:escalate-overdue')->daily();

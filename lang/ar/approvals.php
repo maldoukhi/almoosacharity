@@ -11,6 +11,12 @@ return [
 
     'field_waiting_since' => 'بانتظر منذ',
 
+    'overdue_badge' => 'متأخرة منذ :days يوم',
+
+    'escalation' => [
+        'bell' => 'إعانة :reference متأخرة في مرحلة :stage منذ :days يوم',
+    ],
+
     'review_button' => 'المراجعة والقرار',
 
     'tab_pending' => 'بانتظار قراري',
@@ -72,6 +78,9 @@ return [
                 'email' => 'البريد الإلكتروني',
                 'whatsapp' => 'واتساب',
             ],
+            'field_max_days' => 'المدة القصوى (أيام)',
+            'field_max_days_hint' => 'اختياري: أقصى عدد أيام يبقى فيه الطلب في هذه المرحلة قبل اعتباره متأخرًا وتصعيده لأصحاب القرار يوميًا. اتركه فارغًا لتعطيل التصعيد.',
+            'max_days_placeholder' => 'بدون حد',
             'field_documents_required' => 'طلب مستندات في هذه المرحلة',
             'required_documents_hint' => 'حدد أنواع المستندات المطلوبة من صاحب القرار في هذه المرحلة، وهل كل مستند إجباري أم اختياري.',
             'document_type_placeholder' => 'مثال: صورة إثبات التسليم',

@@ -11,6 +11,12 @@ return [
 
     'field_waiting_since' => 'Waiting Since',
 
+    'overdue_badge' => 'Overdue by :days day(s)',
+
+    'escalation' => [
+        'bell' => 'Aid :reference is overdue at stage :stage by :days day(s)',
+    ],
+
     'review_button' => 'Review & Decide',
 
     'tab_pending' => 'Awaiting My Decision',
@@ -72,6 +78,9 @@ return [
                 'email' => 'Email',
                 'whatsapp' => 'WhatsApp',
             ],
+            'field_max_days' => 'Maximum days',
+            'field_max_days_hint' => 'Optional: the most days an aid may sit at this stage before it is flagged overdue and escalated daily to its approvers. Leave blank to disable escalation.',
+            'max_days_placeholder' => 'No limit',
             'field_documents_required' => 'Require documents at this stage',
             'required_documents_hint' => 'Define the document types the decision-maker must provide at this stage, and whether each one is mandatory or optional.',
             'document_type_placeholder' => 'e.g. Proof of delivery photo',

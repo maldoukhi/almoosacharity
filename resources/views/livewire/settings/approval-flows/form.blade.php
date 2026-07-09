@@ -281,6 +281,17 @@
                                         :hint="__('approvals.flows.builder.field_stage_type_hint')"
                                     />
 
+                                    {{-- SLA: optional max days at this stage before it is flagged overdue --}}
+                                    <x-ui.input
+                                        type="number"
+                                        min="1"
+                                        :label="__('approvals.flows.builder.field_max_days')"
+                                        name="stages.{{ $index }}.max_days"
+                                        wire:model="stages.{{ $index }}.max_days"
+                                        :placeholder="__('approvals.flows.builder.max_days_placeholder')"
+                                        :hint="__('approvals.flows.builder.field_max_days_hint')"
+                                    />
+
                                     {{-- Notify channels --}}
                                     <div>
                                         <p class="mb-2 text-sm font-medium text-gray-700 dark:text-gray-200">{{ __('approvals.flows.builder.field_notify_channels') }}</p>

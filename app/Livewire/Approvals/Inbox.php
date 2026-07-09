@@ -9,6 +9,7 @@ use App\Models\AidProgram;
 use App\Models\ApprovalDecision;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -65,6 +66,9 @@ class Inbox extends Component
                 'program',
                 'currentStage',
             ])
+            // Latest decision timestamp per aid (a portable MAX subquery),
+            // used to compute time-in-current-stage for the overdue badge.
+            ->withMax(['decisions as latest_decision_at' => fn (Builder $q) => $q->reorder()], 'decided_at')
             ->when($this->programFilter !== '', function (Builder $query): void {
                 $query->where('aid_program_id', $this->programFilter);
             })
@@ -121,6 +125,39 @@ class Inbox extends Component
     public function pendingCount(): int
     {
         return $this->pendingAtMyStages()->count();
+    }
+
+    /**
+     * How many days an aid has exceeded its current stage's SLA (max_days),
+     * or null when the stage has no SLA, is a beneficiary_response stage, or
+     * the aid is still within the SLA. Time-in-current-stage is measured
+     * from the aid's latest decision (which advanced it to this stage), or
+     * its submission time when no decision has been taken yet. Computed in
+     * PHP per row so the SQL stays portable (SQLite dev / MySQL prod).
+     */
+    public function overdueDays(Aid $aid): ?int
+    {
+        $stage = $aid->currentStage;
+
+        if ($stage === null || $stage->max_days === null || $stage->isBeneficiaryResponse()) {
+            return null;
+        }
+
+        $stageEntry = $aid->latest_decision_at !== null
+            ? Carbon::parse($aid->latest_decision_at)
+            : $aid->submitted_at;
+
+        if ($stageEntry === null) {
+            return null;
+        }
+
+        $now = Carbon::now();
+
+        if ($now->lessThanOrEqualTo($stageEntry->copy()->addDays($stage->max_days))) {
+            return null;
+        }
+
+        return (int) floor($stageEntry->diffInDays($now));
     }
 
     /**

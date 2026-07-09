@@ -34,7 +34,7 @@ class Form extends Component
     /** The notification channels a stage may fan out on (persisted only; the notifications domain does the actual sending). */
     public const NOTIFY_CHANNELS = ['in_app', 'email', 'whatsapp'];
 
-    /** @var array<int, array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, array{label: string, required: bool}>, notify_channels: array<int, string>}> */
+    /** @var array<int, array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, array{label: string, required: bool}>, notify_channels: array<int, string>, max_days: int|null}> */
     public array $stages = [];
 
     public function mount(?ApprovalFlow $flow = null): void
@@ -62,6 +62,9 @@ class Form extends Component
                     // plain-string entries (treated as mandatory).
                     'required_documents' => $stage->requiredDocumentTypes(),
                     'notify_channels' => array_values($stage->notify_channels ?? []),
+                    // Optional SLA: the max number of days an aid may wait at
+                    // this stage before it is flagged overdue / escalated.
+                    'max_days' => $stage->max_days,
                 ])
                 ->all();
 
@@ -211,6 +214,7 @@ class Form extends Component
             'stages.*.required_documents.*.required' => ['boolean'],
             'stages.*.notify_channels' => ['array'],
             'stages.*.notify_channels.*' => ['string', Rule::in(self::NOTIFY_CHANNELS)],
+            'stages.*.max_days' => ['nullable', 'integer', 'min:1', 'max:65535'],
         ]);
 
         // Each stage must target a role, at least one user, or both.
@@ -246,12 +250,17 @@ class Form extends Component
         ];
 
         try {
-            app(SaveApprovalFlow::class)->handle($data, $this->flow);
+            $flow = app(SaveApprovalFlow::class)->handle($data, $this->flow);
         } catch (InvalidArgumentException $exception) {
             $this->dispatch('toast', type: 'error', message: $exception->getMessage());
 
             return;
         }
+
+        // SaveApprovalFlow recreates the stages in the submitted order; stamp
+        // each fresh stage's optional SLA (max_days) by matching order to the
+        // builder rows (index + 1), so it is persisted alongside the stage.
+        $this->persistStageSlas($flow);
 
         $this->dispatch('toast', type: 'success', message: __('approvals.flows.messages.saved'));
 
@@ -259,7 +268,7 @@ class Form extends Component
     }
 
     /**
-     * @return array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, array{label: string, required: bool}>, notify_channels: array<int, string>}
+     * @return array{name: string, order: int, role: string, assignee_user_ids: array<int, int>, allowed_actions: array<int, string>, type: string, documents_required: bool, required_documents: array<int, array{label: string, required: bool}>, notify_channels: array<int, string>, max_days: int|null}
      */
     private function blankStage(): array
     {
@@ -273,7 +282,24 @@ class Form extends Component
             'documents_required' => false,
             'required_documents' => [],
             'notify_channels' => ['in_app'],
+            'max_days' => null,
         ];
+    }
+
+    /**
+     * Stamp each freshly-saved stage's optional SLA (max_days). The action
+     * recreates stages 1..n in submitted order, so stage order N maps to the
+     * builder row at index N-1. A blank/zero value clears the SLA.
+     */
+    private function persistStageSlas(ApprovalFlow $flow): void
+    {
+        foreach ($flow->stages()->orderBy('order')->get() as $stage) {
+            $row = $this->stages[$stage->order - 1] ?? null;
+
+            $maxDays = $row === null ? null : (int) ($row['max_days'] ?? 0);
+
+            $stage->update(['max_days' => $maxDays > 0 ? $maxDays : null]);
+        }
     }
 
     private function renumberStages(): void
