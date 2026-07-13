@@ -42,6 +42,7 @@ use App\Models\Aid;
 use App\Models\Beneficiary;
 use App\Models\Disbursement;
 use App\Support\AidReceiptPdf;
+use App\Support\UserGuide;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -80,6 +81,16 @@ Route::middleware(['auth', 'active'])->group(function (): void {
     Route::get('/help/user-guide', function () {
         return response()->file(base_path('docs/user-guide.html'));
     })->name('help.user-guide');
+
+    // One guide section on its own page — loaded inside the contextual
+    // "شرح" modal's iframe so each screen shows only its explanation.
+    Route::get('/help/user-guide/{section}', function (string $section) {
+        $page = UserGuide::sectionPage($section);
+
+        abort_if($page === null, 404);
+
+        return response($page)->header('Content-Type', 'text/html; charset=UTF-8');
+    })->name('help.user-guide.section')->where('section', '[a-z-]+');
 
     Route::post('/locale/{locale}', function (Request $request, string $locale) {
         if (! in_array($locale, array_column(Locale::cases(), 'value'), true)) {

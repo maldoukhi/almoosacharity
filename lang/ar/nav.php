@@ -14,6 +14,7 @@ return [
     'system_health' => 'صحة النظام',
     'user_guide' => 'دليل المستخدم',
     'help_button' => 'شرح',
+    'help_full_guide' => 'الدليل كاملًا',
     'categories' => 'التصنيفات',
     'aid_programs' => 'برامج الإعانات',
     'approval_flows' => 'مسارات الموافقات',

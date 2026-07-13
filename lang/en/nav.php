@@ -14,6 +14,7 @@ return [
     'system_health' => 'System Health',
     'user_guide' => 'User Guide',
     'help_button' => 'Help',
+    'help_full_guide' => 'Full guide',
     'categories' => 'Categories',
     'aid_programs' => 'Aid Programs',
     'approval_flows' => 'Approval Flows',
