@@ -52,6 +52,8 @@
         </div>
 
         <div class="flex items-center gap-3">
+            <x-ui.help-link section="beneficiaries" />
+
             @can('update', $beneficiary)
                 <x-ui.button href="{{ route('admin.beneficiaries.edit', $beneficiary) }}" variant="primary">
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">

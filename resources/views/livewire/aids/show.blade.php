@@ -28,6 +28,8 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <x-ui.help-link section="aids" />
+
             @if ($this->canDownloadReceipt)
                 {{-- Opens the mPDF receipt INLINE in a new tab (no wire:navigate
                      — it's a PDF response, not a Livewire page). --}}

@@ -13,6 +13,7 @@ return [
     'user_management_group' => 'إدارة المستخدمين',
     'system_health' => 'صحة النظام',
     'user_guide' => 'دليل المستخدم',
+    'help_button' => 'شرح',
     'categories' => 'التصنيفات',
     'aid_programs' => 'برامج الإعانات',
     'approval_flows' => 'مسارات الموافقات',

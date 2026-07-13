@@ -5,14 +5,18 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('approval_flows.index_subtitle') }}</p>
         </div>
 
-        @can('manage', \App\Models\ApprovalFlow::class)
-            <x-ui.button href="{{ route('admin.settings.approval-flows.create') }}" variant="primary">
-                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-                {{ __('approval_flows.create_button') }}
-            </x-ui.button>
-        @endcan
+        <div class="flex items-center gap-2">
+            <x-ui.help-link section="approvals" />
+
+            @can('manage', \App\Models\ApprovalFlow::class)
+                <x-ui.button href="{{ route('admin.settings.approval-flows.create') }}" variant="primary">
+                    <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    {{ __('approval_flows.create_button') }}
+                </x-ui.button>
+            @endcan
+        </div>
     </div>
 
     @if ($this->flows->isEmpty())

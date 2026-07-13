@@ -1,7 +1,11 @@
 <div class="space-y-6">
-    <div>
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ __('reports.index.title') }}</h1>
-        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('reports.index.subtitle') }}</p>
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">{{ __('reports.index.title') }}</h1>
+            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('reports.index.subtitle') }}</p>
+        </div>
+
+        <x-ui.help-link section="reports" />
     </div>
 
     <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

@@ -25,9 +25,13 @@
             </p>
         </div>
 
-        <x-ui.button href="{{ route('admin.surveys.index') }}" variant="ghost">
-            {{ __('common.back') }}
-        </x-ui.button>
+        <div class="flex items-center gap-2">
+            <x-ui.help-link section="surveys" />
+
+            <x-ui.button href="{{ route('admin.surveys.index') }}" variant="ghost">
+                {{ __('common.back') }}
+            </x-ui.button>
+        </div>
     </div>
 
     <form wire:submit="save" class="space-y-6">

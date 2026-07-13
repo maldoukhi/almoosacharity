@@ -46,6 +46,8 @@
         </div>
 
         <div class="flex items-center gap-3">
+            <x-ui.help-link section="beneficiaries" />
+
             @if ($isEdit)
                 <x-ui.badge :color="$beneficiary->status->color()">{{ $beneficiary->status->label() }}</x-ui.badge>
             @endif

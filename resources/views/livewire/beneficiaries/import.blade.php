@@ -5,12 +5,16 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('beneficiaries.import.subtitle') }}</p>
         </div>
 
-        <x-ui.button href="{{ route('admin.beneficiaries.index') }}" variant="ghost">
-            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" />
-            </svg>
-            {{ __('beneficiaries.import.back_to_list') }}
-        </x-ui.button>
+        <div class="flex items-center gap-2">
+            <x-ui.help-link section="import" />
+
+            <x-ui.button href="{{ route('admin.beneficiaries.index') }}" variant="ghost">
+                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 15.75 3 12m0 0 3.75-3.75M3 12h18" />
+                </svg>
+                {{ __('beneficiaries.import.back_to_list') }}
+            </x-ui.button>
+        </div>
     </div>
 
     {{-- Step 1: upload --}}

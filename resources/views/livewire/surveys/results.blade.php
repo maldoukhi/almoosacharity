@@ -6,6 +6,8 @@
         </div>
 
         <div class="flex items-center gap-2">
+            <x-ui.help-link section="surveys" />
+
             <span title="{{ __('surveys.results.export_hint') }}">
                 <x-ui.button type="button" variant="ghost" disabled>
                     <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">

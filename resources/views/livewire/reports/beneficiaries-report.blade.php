@@ -11,16 +11,18 @@
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('reports.beneficiaries.subtitle') }}</p>
         </div>
 
-        @can('reports.export')
-            <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2">
+            <x-ui.help-link section="reports" />
+
+            @can('reports.export')
                 <x-ui.button wire:click="exportExcel" variant="secondary" size="sm">
                     {{ __('reports.actions.export_excel') }}
                 </x-ui.button>
                 <x-ui.button wire:click="exportPdf" variant="ghost" size="sm">
                     {{ __('reports.actions.export_pdf') }}
                 </x-ui.button>
-            </div>
-        @endcan
+            @endcan
+        </div>
     </div>
 
     <x-ui.card>

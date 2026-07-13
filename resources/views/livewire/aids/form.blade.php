@@ -26,9 +26,13 @@
             </p>
         </div>
 
-        <x-ui.button href="{{ route('aids.index') }}" variant="ghost">
-            {{ __('common.back') }}
-        </x-ui.button>
+        <div class="flex items-center gap-2">
+            <x-ui.help-link section="aids" />
+
+            <x-ui.button href="{{ route('aids.index') }}" variant="ghost">
+                {{ __('common.back') }}
+            </x-ui.button>
+        </div>
     </div>
 
     <x-ui.card>

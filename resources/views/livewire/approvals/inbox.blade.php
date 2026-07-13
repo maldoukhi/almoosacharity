@@ -11,6 +11,8 @@
             </div>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('approvals.inbox_subtitle') }}</p>
         </div>
+
+        <x-ui.help-link section="approvals" />
     </div>
 
     <div class="inline-flex rounded-lg bg-gray-100 p-1 dark:bg-white/5" role="tablist">

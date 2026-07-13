@@ -7,6 +7,8 @@
             </div>
             <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('beneficiaries.flow.inbox_subtitle') }}</p>
         </div>
+
+        <x-ui.help-link section="beneficiaries" />
     </div>
 
     @if ($this->beneficiaries->isEmpty())

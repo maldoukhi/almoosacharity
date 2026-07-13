@@ -20,9 +20,13 @@
                 <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ __('recurring_aids.index_subtitle') }}</p>
             </div>
 
-            <x-ui.button href="{{ route('aids.index') }}" variant="ghost">
-                {{ __('common.back') }}
-            </x-ui.button>
+            <div class="flex items-center gap-2">
+                <x-ui.help-link section="recurring" />
+
+                <x-ui.button href="{{ route('aids.index') }}" variant="ghost">
+                    {{ __('common.back') }}
+                </x-ui.button>
+            </div>
         </div>
     @else
         <div>

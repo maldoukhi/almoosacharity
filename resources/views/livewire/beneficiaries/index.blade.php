@@ -16,6 +16,8 @@
         </div>
 
         <div class="flex items-center gap-2">
+            <x-ui.help-link section="beneficiaries" />
+
             @can('messages.broadcast')
                 @if (count($selected) > 0)
                     <x-ui.button variant="secondary" wire:click="sendBroadcast" wire:target="sendBroadcast">

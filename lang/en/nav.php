@@ -13,6 +13,7 @@ return [
     'user_management_group' => 'User Management',
     'system_health' => 'System Health',
     'user_guide' => 'User Guide',
+    'help_button' => 'Help',
     'categories' => 'Categories',
     'aid_programs' => 'Aid Programs',
     'approval_flows' => 'Approval Flows',
