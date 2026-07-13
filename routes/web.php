@@ -74,6 +74,13 @@ Route::middleware(['auth', 'active'])->group(function (): void {
 
     Route::get('/notifications', Index::class)->name('notifications.index');
 
+    // The illustrated user guide (docs/user-guide.html), served to any
+    // signed-in employee — a self-contained RTL page, so it opens in its
+    // own tab rather than inside the SPA shell.
+    Route::get('/help/user-guide', function () {
+        return response()->file(base_path('docs/user-guide.html'));
+    })->name('help.user-guide');
+
     Route::post('/locale/{locale}', function (Request $request, string $locale) {
         if (! in_array($locale, array_column(Locale::cases(), 'value'), true)) {
             abort(404);

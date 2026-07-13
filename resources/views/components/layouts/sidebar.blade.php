@@ -362,6 +362,23 @@
                 </span>
             </a>
         @endcan
+
+        {{-- User guide: available to every signed-in employee; opens in a
+             new tab since it's a standalone document, not an SPA page. --}}
+        <a
+            href="{{ route('help.user-guide') }}"
+            target="_blank"
+            rel="noopener"
+            title="{{ __('nav.user_guide') }}"
+            class="group flex items-center gap-3 rounded-(--radius-brand) border-s-4 border-transparent px-3 py-2.5 text-sm font-medium text-gray-600 transition duration-150 ease-out hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-white/5 dark:hover:text-white"
+        >
+            <svg class="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+            </svg>
+            <span x-show="! sidebarCollapsed" x-transition.opacity.duration.150ms class="truncate">
+                {{ __('nav.user_guide') }}
+            </span>
+        </a>
     </nav>
 
     <div class="shrink-0 border-t border-gray-100 p-3 dark:border-white/10">
